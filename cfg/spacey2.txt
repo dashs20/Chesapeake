@@ -1,0 +1,35 @@
+# SPACEY_FSW
+# -------------------------
+
+set looprate_hz = 1000.0
+
+# ROLL PID
+set pid_x_kp = 1.0
+set pid_x_ki = 0.0
+set pid_x_kd = 0.0
+set pid_x_i_lim = 20.0
+
+# PITCH PID
+set pid_y_kp = 1.0
+set pid_y_ki = 0.0
+set pid_y_kd = 0.0
+set pid_y_i_lim = 20.0
+
+# YAW PID
+set pid_z_kp = 1.0
+set pid_z_ki = 0.0
+set pid_z_kd = 0.0
+set pid_z_i_lim = 20.0
+
+# ALLOCATOR
+set alloc_t_min_frac = 0.1
+set alloc_theta_min_deg = 20.0
+set alloc_theta_max_deg = 70.0
+
+# IMU LPF
+set imu_lpf_fc_hz = 20.0
+
+# IMU ORIENTATION
+set imu_euler_x_deg = 0.0
+set imu_euler_y_deg = 0.0
+set imu_euler_z_deg = 45.0
