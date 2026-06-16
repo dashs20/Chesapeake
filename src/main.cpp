@@ -1,12 +1,11 @@
 #include "hardware/hardware_util.hpp"
-#include "vehicle_cfg.hpp"
-#include <Arduino.h>
+#include "vehicle_config/vehicle_config.hpp"
 
 // Instantiate actuator struct
 act_cmd act_cmd_struct;
 
 // build GNC object
-gnc fsw(cfg);
+gnc fsw(spacey_config);
 
 // build loop regulator
 hardware_util::enforce_looprate loop_regulator(looprate_hz);
