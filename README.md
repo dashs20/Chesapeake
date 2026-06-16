@@ -1,1 +1,1 @@
-bidirectional CG shifting axial bicopter flight software
+This flight software is for a vehicle called "Spacey." Actually, it's technically Spacey 2; the first one sucked and didn't work. The name comes from "Space Y" (a play on space X) since the control scheme is kind of similar to a vertically landed rocket stage. Except for the fact that Spacey 2 uses ballast shifting to pitch/roll instead of conventional thrust vectoring.
