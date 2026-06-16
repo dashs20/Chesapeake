@@ -4,6 +4,7 @@ struct alloc_cfg {
   double t_min_frac;
   double theta_min_deg;
   double theta_max_deg;
+  double gear_ratio;
 };
 
 struct act_cmd {
@@ -27,4 +28,7 @@ private:
   // theta limits
   double theta_min_rad;
   double theta_max_rad;
+
+  // servo gearing
+  double gear_ratio;
 };

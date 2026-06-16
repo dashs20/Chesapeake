@@ -1,5 +1,5 @@
 #include "pid.hpp"
-#include "../util/util.hpp"
+#include "../gnc_util/gnc_util.hpp"
 #include <cmath>
 
 // constructor
@@ -20,7 +20,7 @@ double pid::query(double est, double des) {
 
   // update integral (trapezoidal)
   double mean_err = (prev_err + err) / 2;
-  i_err += util::double_clip(mean_err * dt_s, i_min, i_max);
+  i_err += gnc_util::double_clip(mean_err * dt_s, i_min, i_max);
 
   // compute derivative (euler)
   double d_err = (err - prev_err) / dt_s;

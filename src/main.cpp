@@ -1,18 +1,28 @@
+#include "hardware/hardware_util.hpp"
+#include "vehicle_cfg.hpp"
 #include <Arduino.h>
 
-// put function declarations here:
-int myFunction(int, int);
+// Instantiate actuator struct
+act_cmd act_cmd_struct;
 
-void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
-}
+// build GNC object
+gnc fsw(cfg);
+
+// build loop regulator
+hardware_util::enforce_looprate loop_regulator(looprate_hz);
+
+void setup() {}
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
+  loop_regulator.ping(); // start loop timer
 
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+  // get inputs from hardware (dummy for now)
+  gnc_util::vec imu_raw_degps;
+  gnc_util::vec rate_cmd_radps;
+  double thr_frac;
+
+  // execute flight code
+  act_cmd_struct = fsw.query(imu_raw_degps, rate_cmd_radps, thr_frac);
+
+  loop_regulator.pong_and_wait(); // regulate looprate
 }

@@ -2,7 +2,7 @@
 #include "allocation/alloc.hpp"
 #include "controllers/pid.hpp"
 #include "filters/lowpass_filter.hpp"
-#include "util/util.hpp"
+#include "gnc_util/gnc_util.hpp"
 
 gnc::gnc(gnc_cfg config)
     : config(config), imu_x_lpf(config.imu_lpf_cfg),
@@ -12,12 +12,12 @@ gnc::gnc(gnc_cfg config)
 
 gnc::~gnc() {}
 
-act_cmd gnc::query(util::vec imu_raw_degps, util::vec rate_cmd_degps,
-                   double throttle) {
+act_cmd gnc::query(gnc_util::vec imu_raw_degps, gnc_util::vec rate_cmd_degps,
+                   double thr_frac) {
 
   // Rotate IMU signal
-  util::vec imu_raw_rotated_degps =
-      util::euler_xyz_rotate_deg(imu_raw_degps, config.imu_euler_xyz_deg);
+  gnc_util::vec imu_raw_rotated_degps =
+      gnc_util::euler_xyz_rotate_deg(imu_raw_degps, config.imu_euler_xyz_deg);
 
   // filter IMU signal
   double imu_filt_x_degps = imu_x_lpf.filter(imu_raw_rotated_degps.x);
@@ -30,5 +30,5 @@ act_cmd gnc::query(util::vec imu_raw_degps, util::vec rate_cmd_degps,
   double alpha_z = pid_z.query(imu_filt_z_degps, rate_cmd_degps.z);
 
   // Allocation
-  return allocator.query(alpha_x, alpha_y, alpha_z, throttle);
+  return allocator.query(alpha_x, alpha_y, alpha_z, thr_frac);
 }
