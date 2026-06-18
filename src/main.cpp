@@ -61,9 +61,11 @@ void setup() {
   // ELRS
   Serial1.setRX(ELRS_RX_PIN);
   Serial1.setTX(ELRS_TX_PIN);
+  Serial1.begin(CRSF_BAUDRATE);
   elrs.begin(Serial1);
 
   // IMU
+  imu.begin();
   imu.setGyroODR(ICM42688::odr1k); // 1 kHz output rate
   imu.setGyroFS(ICM42688::dps500); // 500 deg/s range
 
@@ -73,7 +75,7 @@ void setup() {
 
   // DSHOT (last so we can immediately send 0 throttle until they arm)
   // Command zero throttle for 5 seconds
-
+  esc = new DShotX4(ESC_1_PIN, 2, 300);
   uint32_t start = millis();
   while (millis() - start < 5000) {
     esc->sendThrottles(throttles);
@@ -83,6 +85,9 @@ void setup() {
 
 void loop() {
   loop_regulator.ping(); // start loop timer
+
+  // Update ELRS receiver state
+  elrs.update();
 
   /*
   Get Inputs from Hardware
@@ -95,11 +100,11 @@ void loop() {
   imu_raw_degps.z = imu.gyrZ();
 
   // Get RC command and convert to rate/throttle fraction
-  roll_raw = elrs.getChannel(0);
-  pitch_raw = elrs.getChannel(1);
-  thr_raw = elrs.getChannel(2);
-  yaw_raw = elrs.getChannel(3);
-  arm_raw = elrs.getChannel(5);
+  roll_raw = elrs.getChannel(1);
+  pitch_raw = elrs.getChannel(2);
+  thr_raw = elrs.getChannel(3);
+  yaw_raw = elrs.getChannel(4);
+  arm_raw = elrs.getChannel(6);
   rate_cmd_degps.x =
       hardware_util::raw_rc_2_rate_degps(roll_raw, max_rate_degps);
   rate_cmd_degps.y =
@@ -107,10 +112,10 @@ void loop() {
   rate_cmd_degps.z =
       hardware_util::raw_rc_2_rate_degps(yaw_raw, max_rate_degps);
   thr_frac = hardware_util::raw_thr_2_thr_frac(thr_raw);
-  if (arm_raw > 900 & arm_raw < 1100) {
+  if (arm_raw > 900 && arm_raw < 1100) {
     arm_state = STATE::NOTHING;
   }
-  if (arm_raw > 1400 & arm_raw < 1600) {
+  if (arm_raw > 1400 && arm_raw < 1600) {
     arm_state = STATE::SERVOS;
   }
   if (arm_raw > 1900) {

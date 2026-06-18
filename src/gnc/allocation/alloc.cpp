@@ -15,13 +15,18 @@ alloc::~alloc() {}
 act_cmd alloc::query(double alpha_x, double alpha_y, double alpha_z,
                      double t_frac) {
 
+  // clip throttle to prevent divide by zeros
+  t_frac = gnc_util::double_clip(t_frac, t_min_frac, 1.0);
+
   // scale alpha by throttle to get delta command
   double dx = alpha_x / t_frac;
   double dy = alpha_y / t_frac;
 
   // calculate servo angles
-  double theta_1_rad = acos((dx - dy) / 2.0 * sqrtf(2)) - PC::PI / 4.0;
-  double theta_2_rad = acos((dx + dy) / 2.0 * sqrtf(2)) - PC::PI / 4.0;
+  double arg1 = gnc_util::double_clip((dx - dy) / (2.0 * sqrtf(2)), -1.0, 1.0);
+  double arg2 = gnc_util::double_clip((dx + dy) / (2.0 * sqrtf(2)), -1.0, 1.0);
+  double theta_1_rad = acos(arg1) - PC::PI / 4.0;
+  double theta_2_rad = acos(arg2) - PC::PI / 4.0;
 
   // saturate theta
   theta_1_rad =
@@ -34,8 +39,8 @@ act_cmd alloc::query(double alpha_x, double alpha_y, double alpha_z,
   double tl_frac = gnc_util::double_clip(t_frac - alpha_z, t_min_frac, 1.0);
 
   act_cmd result;
-  result.theta_1_deg = gnc_util::rad2deg(theta_1_rad);
-  result.theta_2_deg = gnc_util::rad2deg(theta_2_rad);
+  result.theta_1_deg = gnc_util::rad2deg(theta_1_rad) / gear_ratio;
+  result.theta_2_deg = gnc_util::rad2deg(theta_2_rad) / gear_ratio;
   result.th_frac = th_frac;
   result.tl_frac = tl_frac;
 

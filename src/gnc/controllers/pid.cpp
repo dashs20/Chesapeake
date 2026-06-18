@@ -20,7 +20,8 @@ double pid::query(double est, double des) {
 
   // update integral (trapezoidal)
   double mean_err = (prev_err + err) / 2;
-  i_err += gnc_util::double_clip(mean_err * dt_s, i_min, i_max);
+  i_err += mean_err * dt_s;
+  i_err = gnc_util::double_clip(i_err, i_min, i_max); // clip integral
 
   // compute derivative (euler)
   double d_err = (err - prev_err) / dt_s;

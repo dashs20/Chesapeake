@@ -26,7 +26,7 @@ double raw_thr_2_thr_frac(int raw_thr) {
   return gnc_util::double_clip(((double)(raw_thr)-990.0) / 1021, 0.0, 1.0);
 }
 
-uint16_t thr_frac_2_DSHOT(double thr_frac) {
+uint16_t thr_frac_2_DSHOT_int(double thr_frac) {
   return (uint16_t)(
       gnc_util::double_clip(thr_frac * 1999.0 + 47.0, 48, 2047.0));
 }
