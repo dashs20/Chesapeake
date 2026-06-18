@@ -116,10 +116,6 @@ void loop() {
 
   if (!elrs.isLinkUp()) {
     arm_state = STATE::NOTHING;
-    rate_cmd_degps.x = 0.0;
-    rate_cmd_degps.y = 0.0;
-    rate_cmd_degps.z = 0.0;
-    thr_frac = 0.0;
   } else {
     // Get RC command and convert to rate/throttle fraction
     roll_raw = elrs.getChannel(1);
