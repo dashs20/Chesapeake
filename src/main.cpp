@@ -75,10 +75,10 @@ void setup() {
   servo2.attach(SERVO_2_PIN, 500, 2500);
 
   // DSHOT (last so we can immediately send 0 throttle until they arm)
-  // Command zero throttle for 1 seconds
+  // Command zero throttle for 3 seconds
   esc = new DShotX4(ESC_1_PIN, 2, 300);
   uint32_t start = millis();
-  while (millis() - start < 1000) {
+  while (millis() - start < 3000) {
     esc->sendThrottles(throttles);
     delay(1);
   }
@@ -154,15 +154,15 @@ void loop() {
   case STATE::NOTHING: // fully disarmed (switch all the way down)
     servo1.write(90.0);
     servo2.write(90.0);
-    throttles[0] = hardware_util::thr_frac_2_DSHOT_int(0);
-    throttles[1] = hardware_util::thr_frac_2_DSHOT_int(0);
+    throttles[0] = 0;
+    throttles[1] = 0;
     esc->sendThrottles(throttles);
     break;
   case STATE::SERVOS: // servos only
     servo1.write(act_cmd_struct.theta_1_deg);
     servo2.write(act_cmd_struct.theta_2_deg);
-    throttles[0] = hardware_util::thr_frac_2_DSHOT_int(0);
-    throttles[1] = hardware_util::thr_frac_2_DSHOT_int(0);
+    throttles[0] = 0;
+    throttles[1] = 0;
     esc->sendThrottles(throttles);
     break;
   case STATE::EVERYTHING: // servos + motors
