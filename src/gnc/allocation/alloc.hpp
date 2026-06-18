@@ -5,6 +5,8 @@ struct alloc_cfg {
   double theta_min_deg;
   double theta_max_deg;
   double gear_ratio;
+  double servo1_offset_deg;
+  double servo2_offset_deg;
 };
 
 struct act_cmd {
@@ -31,4 +33,8 @@ private:
 
   // servo gearing
   double gear_ratio;
+
+  // servo offsets
+  double servo1_offset_deg;
+  double servo2_offset_deg;
 };

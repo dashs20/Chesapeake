@@ -34,21 +34,21 @@ vec euler_xyz_rotate_deg(vec input_vec, vec angles_deg) {
   double cz = std::cos(gnc_util::deg2rad(angles_deg.z));
   double sz = std::sin(gnc_util::deg2rad(angles_deg.z));
 
-  // 1. Rotate around local Z-axis
-  double x1 = input_vec.x * cz - input_vec.y * sz;
-  double y1 = input_vec.x * sz + input_vec.y * cz;
-  double z1 = input_vec.z;
+  // 1. Rotate around X-axis
+  double x1 = input_vec.x;
+  double y1 = input_vec.y * cx - input_vec.z * sx;
+  double z1 = input_vec.y * sx + input_vec.z * cx;
 
-  // 2. Rotate around local Y-axis
+  // 2. Rotate around Y-axis
   double x2 = x1 * cy + z1 * sy;
   double y2 = y1;
   double z2 = -x1 * sy + z1 * cy;
 
-  // 3. Rotate around local X-axis
+  // 3. Rotate around Z-axis
   vec result;
-  result.x = x2;
-  result.y = y2 * cx - z2 * sx;
-  result.z = y2 * sx + z2 * cx;
+  result.x = x2 * cz - y2 * sz;
+  result.y = x2 * sz + y2 * cz;
+  result.z = z2;
   return result;
 }
 

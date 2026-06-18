@@ -53,6 +53,7 @@ ICM42688 imu(SPI, CS_PIN);
 gnc_util::vec imu_raw_degps;
 
 void setup() {
+  Serial.begin(115200);
 
   /*
   Hardware setup
@@ -74,10 +75,10 @@ void setup() {
   servo2.attach(SERVO_2_PIN, 500, 2500);
 
   // DSHOT (last so we can immediately send 0 throttle until they arm)
-  // Command zero throttle for 5 seconds
+  // Command zero throttle for 1 seconds
   esc = new DShotX4(ESC_1_PIN, 2, 300);
   uint32_t start = millis();
-  while (millis() - start < 5000) {
+  while (millis() - start < 1000) {
     esc->sendThrottles(throttles);
     delay(1);
   }
@@ -98,6 +99,20 @@ void loop() {
   imu_raw_degps.x = imu.gyrX();
   imu_raw_degps.y = imu.gyrY();
   imu_raw_degps.z = imu.gyrZ();
+
+  // Debug: Print rotated IMU rate
+  static uint32_t last_print = 0;
+  if (millis() - last_print >= 100) {
+    last_print = millis();
+    gnc_util::vec imu_rotated = gnc_util::euler_xyz_rotate_deg(
+        imu_raw_degps, spacey_config.imu_euler_xyz_deg);
+    Serial.print("Rot_X: ");
+    Serial.print(imu_rotated.x);
+    Serial.print(" | Rot_Y: ");
+    Serial.print(imu_rotated.y);
+    Serial.print(" | Rot_Z: ");
+    Serial.println(imu_rotated.z);
+  }
 
   // Get RC command and convert to rate/throttle fraction
   roll_raw = elrs.getChannel(1);
