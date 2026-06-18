@@ -1,6 +1,7 @@
 #include "gnc_config.hpp"
 
 double looprate_hz = 1000.0;
+double max_rate_degps = 100.0;
 
 // define vehicle configuration
 pid_cfg pid_x_cfg{

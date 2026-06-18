@@ -6,6 +6,7 @@ namespace gnc_util {
 double double_clip(double x, double x_min, double x_max); // clip/saturate
 double hz2ps(double hz);                                  // Hz to per second
 double deg2rad(double deg);                               // degrees to radians
+double rad2deg(double rad);
 struct vec { // vector struct (we don't use a ton of vectors in here, so just
              // declaring this instead of using Eigen)
   double x;

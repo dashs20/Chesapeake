@@ -22,6 +22,7 @@ double double_clip(double x, double x_min, double x_max) {
 double hz2ps(double hz) { return 1.0 / hz; }
 
 double deg2rad(double deg) { return PC::PI / 180.0 * deg; }
+double rad2deg(double rad) { return 180.0 / PC::PI * rad; }
 
 vec euler_xyz_rotate_deg(vec input_vec, vec angles_deg) {
 

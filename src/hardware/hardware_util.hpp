@@ -15,4 +15,10 @@ private:
   unsigned long start_time_micro_s;
 };
 
+double raw_rc_2_rate_degps(int rc_raw, double max_rate_degps);
+
+double raw_thr_2_thr_frac(int raw_thr);
+
+uint16_t thr_frac_2_DSHOT_int(double thr_frac);
+
 } // namespace hardware_util

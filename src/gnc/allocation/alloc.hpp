@@ -8,8 +8,8 @@ struct alloc_cfg {
 };
 
 struct act_cmd {
-  double theta_1_rad;
-  double theta_2_rad;
+  double theta_1_deg;
+  double theta_2_deg;
   double th_frac;
   double tl_frac;
 };

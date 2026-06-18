@@ -1,6 +1,6 @@
+#include "ICM42688.h"
 #include <Arduino.h>
 #include <SPI.h>
-#include "ICM42688.h"
 
 // SPI Pin Mapping for Seeed XIAO RP2350
 // The default hardware SPI on the XIAO RP2350 uses:
@@ -9,16 +9,16 @@
 // MOSI -> D10
 // We use D11 (Bottom Pad) for Chip Select.
 
-const int CS_PIN = D11; 
+const int CS_PIN = D11;
 
 // Instantiate ICM42688 on SPI bus
 ICM42688 imu(SPI, CS_PIN);
 
 void setup() {
   Serial.begin(115200);
-  
+
   // Wait a moment for the USB CDC to connect before spamming
-  delay(3000); 
+  delay(3000);
 
   Serial.println("\n\n--- Starting ICM-42688 SPI Test ---");
 
@@ -29,12 +29,12 @@ void setup() {
     Serial.print("IMU initialization failed with status code: ");
     Serial.println(status);
     while (1) {
-        delay(1000); // keep yielding so serial flushes
+      delay(1000); // keep yielding so serial flushes
     }
   }
 
   Serial.println("ICM-42688 initialized successfully.");
-  
+
   // Set output data rate to 100 Hz
   imu.setGyroODR(ICM42688::odr100);
 }
