@@ -1,11 +1,6 @@
 #include <Arduino.h>
 #include <AlfredoCRSF.h>
-
-// ELRS Receiver Pin Mapping referenced from src/vehicle_config/pinmap.csv:
-// - XIAO RP2350 Pin D7 (GPIO 1 / UART 0 RX) connects to ELRS Receiver TX.
-// - XIAO RP2350 Pin D6 (GPIO 0 / UART 0 TX) connects to ELRS Receiver RX.
-const int ELRS_RX_PIN = D7; 
-const int ELRS_TX_PIN = D6;
+#include "pin_config/pin_config.hpp"
 
 AlfredoCRSF crsf;
 

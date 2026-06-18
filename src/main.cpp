@@ -1,5 +1,6 @@
 #include "hardware/hardware_util.hpp"
-#include "vehicle_config/vehicle_config.hpp"
+#include "gnc_config/gnc_config.hpp"
+
 
 // Instantiate actuator command storage struct
 act_cmd act_cmd_struct;

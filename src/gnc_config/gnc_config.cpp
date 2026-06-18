@@ -1,4 +1,4 @@
-#include "vehicle_config.hpp"
+#include "gnc_config.hpp"
 
 double looprate_hz = 1000.0;
 
