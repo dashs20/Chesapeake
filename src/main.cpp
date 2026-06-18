@@ -114,27 +114,35 @@ void loop() {
     Serial.println(imu_rotated.z);
   }
 
-  // Get RC command and convert to rate/throttle fraction
-  roll_raw = elrs.getChannel(1);
-  pitch_raw = elrs.getChannel(2);
-  thr_raw = elrs.getChannel(3);
-  yaw_raw = elrs.getChannel(4);
-  arm_raw = elrs.getChannel(6);
-  rate_cmd_degps.x =
-      hardware_util::raw_rc_2_rate_degps(roll_raw, max_rate_degps);
-  rate_cmd_degps.y =
-      hardware_util::raw_rc_2_rate_degps(pitch_raw, max_rate_degps);
-  rate_cmd_degps.z =
-      hardware_util::raw_rc_2_rate_degps(yaw_raw, max_rate_degps);
-  thr_frac = hardware_util::raw_thr_2_thr_frac(thr_raw);
-  if (arm_raw > 900 && arm_raw < 1100) {
+  if (!elrs.isLinkUp()) {
     arm_state = STATE::NOTHING;
-  }
-  if (arm_raw > 1400 && arm_raw < 1600) {
-    arm_state = STATE::SERVOS;
-  }
-  if (arm_raw > 1900) {
-    arm_state = STATE::EVERYTHING;
+    rate_cmd_degps.x = 0.0;
+    rate_cmd_degps.y = 0.0;
+    rate_cmd_degps.z = 0.0;
+    thr_frac = 0.0;
+  } else {
+    // Get RC command and convert to rate/throttle fraction
+    roll_raw = elrs.getChannel(1);
+    pitch_raw = elrs.getChannel(2);
+    thr_raw = elrs.getChannel(3);
+    yaw_raw = elrs.getChannel(4);
+    arm_raw = elrs.getChannel(6);
+    rate_cmd_degps.x =
+        hardware_util::raw_rc_2_rate_degps(roll_raw, max_rate_degps);
+    rate_cmd_degps.y =
+        hardware_util::raw_rc_2_rate_degps(pitch_raw, max_rate_degps);
+    rate_cmd_degps.z =
+        hardware_util::raw_rc_2_rate_degps(yaw_raw, max_rate_degps);
+    thr_frac = hardware_util::raw_thr_2_thr_frac(thr_raw);
+    if (arm_raw > 900 && arm_raw < 1100) {
+      arm_state = STATE::NOTHING;
+    }
+    if (arm_raw > 1400 && arm_raw < 1600) {
+      arm_state = STATE::SERVOS;
+    }
+    if (arm_raw > 1900) {
+      arm_state = STATE::EVERYTHING;
+    }
   }
 
   /*
