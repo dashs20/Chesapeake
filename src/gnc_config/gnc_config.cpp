@@ -4,17 +4,21 @@ double looprate_hz = 1000.0;
 double max_rate_degps = 100.0;
 
 // define vehicle configuration
-pid_cfg pid_x_cfg{.kp = 0.0005,
+pid_cfg pid_x_cfg{.kp = 0.004,
                   .ki = 0.0,
                   .kd = 0.0,
                   .i_lim = 20.0,
                   .looprate_hz = looprate_hz};
-pid_cfg pid_y_cfg{
-    .kp = 0.0, .ki = 0.0, .kd = 0.0, .i_lim = 20.0, .looprate_hz = looprate_hz};
+pid_cfg pid_y_cfg{.kp = 0.004,
+                  .ki = 0.0,
+                  .kd = 0.0,
+                  .i_lim = 20.0,
+                  .looprate_hz = looprate_hz};
 pid_cfg pid_z_cfg{
     .kp = 0.0, .ki = 0.0, .kd = 0.0, .i_lim = 20.0, .looprate_hz = looprate_hz};
 
 alloc_cfg veh_alloc_cfg{.t_min_frac = 0.05,
+                        .max_delta_throttle = 0.10,
                         .theta_min_deg = 20.0,
                         .theta_max_deg = 70.0,
                         .gear_ratio = 16.0 / 30.0,

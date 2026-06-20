@@ -2,6 +2,7 @@
 
 struct alloc_cfg {
   double t_min_frac;
+  double max_delta_throttle;
   double theta_min_deg;
   double theta_max_deg;
   double gear_ratio;
@@ -26,6 +27,7 @@ public:
 private:
   // throttle limits
   double t_min_frac;
+  double max_delta_throttle;
 
   // theta limits
   double theta_min_rad;
