@@ -13,4 +13,7 @@ const int SERVO_1_PIN = D8;
 const int SERVO_2_PIN = D9;
 
 // IMU Pins
-const int CS_PIN = D18;
+const int CS_PIN = 9;
+const int IMU_SCK_PIN = 10;
+const int IMU_MOSI_PIN = 11;
+const int IMU_MISO_PIN = 12;

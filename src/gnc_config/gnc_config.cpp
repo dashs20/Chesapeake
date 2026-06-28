@@ -21,7 +21,7 @@ alloc_cfg veh_alloc_cfg{.t_min_frac = 0.05,
                         .max_delta_throttle = 0.10,
                         .theta_min_deg = 20.0,
                         .theta_max_deg = 70.0,
-                        .gear_ratio = 16.0 / 30.0,
+                        .gear_ratio = 0.5,
                         .servo1_offset_deg = 2,
                         .servo2_offset_deg = -4};
 lpf_cfg imu_lpf_cfg{.fc_hz = 50.0, .looprate_hz = looprate_hz};

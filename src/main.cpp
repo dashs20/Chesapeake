@@ -1,4 +1,4 @@
-#include "ICM42688.h"
+#include <LSM6DSV16XSensor.h>
 #include "gnc_config/gnc_config.hpp"
 #include "hardware/hardware_util.hpp"
 #include "pin_config/pin_config.hpp"
@@ -49,7 +49,7 @@ Servo servo1;
 Servo servo2;
 
 // IMU
-ICM42688 imu(SPI, CS_PIN);
+LSM6DSV16XSensor imu(&SPI1, CS_PIN);
 gnc_util::vec imu_raw_degps;
 
 void setup() {
@@ -66,9 +66,19 @@ void setup() {
   elrs.begin(Serial1);
 
   // IMU
-  imu.begin();
-  imu.setGyroODR(ICM42688::odr1k); // 1 kHz output rate
-  imu.setGyroFS(ICM42688::dps500); // 500 deg/s range
+  SPI1.setSCK(IMU_SCK_PIN);
+  SPI1.setTX(IMU_MOSI_PIN);
+  SPI1.setRX(IMU_MISO_PIN);
+  SPI1.begin();
+
+  if (imu.begin() != LSM6DSV16X_OK) {
+    Serial.println("LSM6DSV16X IMU initialization failed!");
+  }
+  imu.Enable_X();
+  imu.Enable_G();
+  imu.Set_X_ODR(960.0f);
+  imu.Set_G_ODR(960.0f);
+  imu.Set_G_FS(2000);
 
   // SERVO
   servo1.attach(SERVO_1_PIN, 500, 2500); // duty cycle range for my servos
@@ -95,10 +105,11 @@ void loop() {
   */
 
   // Get raw IMU reading and store in vector
-  imu.getAGT();
-  imu_raw_degps.x = imu.gyrX();
-  imu_raw_degps.y = imu.gyrY();
-  imu_raw_degps.z = imu.gyrZ();
+  int32_t gyro_raw[3];
+  imu.Get_G_Axes(gyro_raw);
+  imu_raw_degps.x = gyro_raw[0] / 1000.0;
+  imu_raw_degps.y = gyro_raw[1] / 1000.0;
+  imu_raw_degps.z = gyro_raw[2] / 1000.0;
 
   // Debug: Print rotated IMU rate
   static uint32_t last_print = 0;

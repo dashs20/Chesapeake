@@ -1,18 +1,14 @@
-#include "ICM42688.h"
+#include <LSM6DSV16XSensor.h>
 #include <Arduino.h>
 #include <SPI.h>
 
-// SPI Pin Mapping for Seeed XIAO RP2350
-// The default hardware SPI on the XIAO RP2350 uses:
-// SCK -> D8
-// MISO -> D9
-// MOSI -> D10
-// We use D11 (Bottom Pad) for Chip Select.
+const int IMU_CS_PIN = 9;
+const int IMU_SCK_PIN = 10;
+const int IMU_MOSI_PIN = 11;
+const int IMU_MISO_PIN = 12;
 
-const int CS_PIN = D11;
-
-// Instantiate ICM42688 on SPI bus
-ICM42688 imu(SPI, CS_PIN);
+// Instantiate LSM6DSV16X on SPI1 bus
+LSM6DSV16XSensor imu(&SPI1, IMU_CS_PIN);
 
 void setup() {
   Serial.begin(115200);
@@ -24,32 +20,39 @@ void setup() {
 
   // Do NOT explicitly set SCK/TX/RX, let the core handle the defaults
   // Initialize IMU
-  int status = imu.begin();
-  if (status < 0) {
-    Serial.print("IMU initialization failed with status code: ");
-    Serial.println(status);
+  SPI1.setSCK(IMU_SCK_PIN);
+  SPI1.setTX(IMU_MOSI_PIN);
+  SPI1.setRX(IMU_MISO_PIN);
+  SPI1.begin();
+
+  if (imu.begin() != LSM6DSV16X_OK) {
+    Serial.println("IMU initialization failed.");
     while (1) {
       delay(1000); // keep yielding so serial flushes
     }
   }
 
-  Serial.println("ICM-42688 initialized successfully.");
+  Serial.println("LSM6DSV16X initialized successfully.");
 
-  // Set output data rate to 100 Hz
-  imu.setGyroODR(ICM42688::odr100);
+  imu.Enable_X();
+  imu.Enable_G();
+  imu.Set_X_ODR(960.0f);
+  imu.Set_G_ODR(960.0f);
+  imu.Set_G_FS(2000);
 }
 
 void loop() {
   // Read data from sensor
-  imu.getAGT();
+  int32_t gyro_raw[3];
+  imu.Get_G_Axes(gyro_raw);
 
   // Print gyro data (dps)
   Serial.print("Gyro X: ");
-  Serial.print(imu.gyrX());
+  Serial.print(gyro_raw[0] / 1000.0);
   Serial.print(" | Y: ");
-  Serial.print(imu.gyrY());
+  Serial.print(gyro_raw[1] / 1000.0);
   Serial.print(" | Z: ");
-  Serial.println(imu.gyrZ());
+  Serial.println(gyro_raw[2] / 1000.0);
 
   delay(10);
 }
