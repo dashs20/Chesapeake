@@ -1,10 +1,11 @@
-#include <LSM6DSV16XSensor.h>
 #include "gnc_config/gnc_config.hpp"
 #include "hardware/hardware_util.hpp"
 #include "pin_config/pin_config.hpp"
 #include <AlfredoCrsf.h>
+#include <LSM6DSV16XSensor.h>
 #include <PIO_DShot.h>
 #include <Servo.h>
+
 
 /*
 ~~~ Configure GNC ~~~

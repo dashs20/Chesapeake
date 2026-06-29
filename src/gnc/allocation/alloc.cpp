@@ -22,17 +22,13 @@ act_cmd alloc::query(double alpha_x, double alpha_y, double alpha_z,
   // clip throttle to prevent divide by zeros
   t_frac = gnc_util::double_clip(t_frac, t_min_frac, 1.0);
 
-  // scale alpha by throttle to get delta command
-  double dx = alpha_x / t_frac;
-  double dy = alpha_y / t_frac;
-
   // calculate servo angles
   double theta_1_rad =
-      PC::PI / 2 + gnc_util::double_clip((alpha_y - alpha_x) / gear_ratio,
-                                         theta_min_rad, theta_max_rad);
+      gnc_util::double_clip(PC::PI / 2 + (alpha_y - alpha_x) / gear_ratio,
+                            theta_min_rad, theta_max_rad);
   double theta_2_rad =
-      PC::PI / 2 + gnc_util::double_clip((alpha_y + alpha_x) / gear_ratio,
-                                         theta_min_rad, theta_max_rad);
+      gnc_util::double_clip(PC::PI / 2 + (-alpha_y - alpha_x) / gear_ratio,
+                            theta_min_rad, theta_max_rad);
 
   // compute th and tl
   double alpha_z_sat =
