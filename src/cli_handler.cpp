@@ -7,6 +7,7 @@
 #include <string.h>
 
 extern FlightVsm fsm;
+extern double battery_voltage;
 
 #define BUFFER_SIZE 80
 static char cli_buffer[BUFFER_SIZE];
@@ -49,6 +50,9 @@ static void parse_and_execute(char* line) {
     Serial.println(" deg/s");
     Serial.print("Flight State: ");
     Serial.println(fsm.get_state_string());
+    Serial.print("Battery Voltage: ");
+    Serial.print(battery_voltage);
+    Serial.println(" V");
     Serial.println("----------------------");
     return;
   }

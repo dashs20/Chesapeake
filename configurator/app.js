@@ -300,6 +300,123 @@ async function readSerialLoop() {
   }
 }
 
+let statusInterval = null;
+
+function startStatusPolling() {
+  if (statusInterval) clearInterval(statusInterval);
+  statusInterval = setInterval(() => {
+    if (port && writer && !isReconnecting) {
+      sendBackgroundCommand('status');
+    }
+  }, 1000);
+}
+
+function stopStatusPolling() {
+  if (statusInterval) {
+    clearInterval(statusInterval);
+    statusInterval = null;
+  }
+}
+
+async function sendBackgroundCommand(commandText) {
+  if (!writer) return;
+  try {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(commandText + '\n');
+    await writer.write(data);
+  } catch (err) {
+    console.error('Background write error:', err);
+  }
+}
+
+function parseStatusLine(line) {
+  const lineLower = line.toLowerCase();
+  
+  if (lineLower.startsWith('battery voltage:')) {
+    const parts = line.split(':');
+    if (parts.length === 2) {
+      const volts = parseFloat(parts[1].trim());
+      if (!isNaN(volts)) {
+        updateBatteryUI(volts);
+      }
+    }
+    return true;
+  }
+  
+  if (lineLower.startsWith('flight state:')) {
+    const parts = line.split(':');
+    if (parts.length === 2) {
+      const stateStr = parts[1].trim();
+      updateFlightStateUI(stateStr);
+    }
+    return true;
+  }
+
+  if (lineLower.startsWith('--- vehicle status ---') ||
+      lineLower.startsWith('loop rate (target):') ||
+      lineLower.startsWith('max rate:') ||
+      lineLower.startsWith('----------------------')) {
+    return true;
+  }
+  
+  return false;
+}
+
+function updateBatteryUI(volts) {
+  const batteryStatusDiv = document.getElementById('battery-status');
+  const batteryIcon = document.getElementById('battery-icon');
+  const batteryText = document.getElementById('battery-text');
+  
+  if (!batteryStatusDiv || !batteryIcon || !batteryText) return;
+  
+  batteryStatusDiv.style.display = 'inline-flex';
+  
+  if (volts < 2.0) {
+    batteryText.textContent = 'USB Power';
+    batteryIcon.setAttribute('data-lucide', 'battery');
+    batteryIcon.style.color = '#6b7280';
+  } else {
+    const cells = Math.max(1, Math.round(volts / 3.7));
+    const voltsPerCell = volts / cells;
+    
+    batteryText.textContent = `${volts.toFixed(2)}V (${cells}S)`;
+    
+    if (voltsPerCell > 4.0) {
+      batteryIcon.setAttribute('data-lucide', 'battery');
+      batteryIcon.style.color = '#10b981';
+    } else if (voltsPerCell > 3.6) {
+      batteryIcon.setAttribute('data-lucide', 'battery-medium');
+      batteryIcon.style.color = '#ffc72c';
+    } else {
+      batteryIcon.setAttribute('data-lucide', 'battery-low');
+      batteryIcon.style.color = '#c8102e';
+    }
+  }
+  lucide.createIcons();
+}
+
+function updateFlightStateUI(stateStr) {
+  const flightStateBadge = document.getElementById('flight-state-badge');
+  if (!flightStateBadge) return;
+  
+  flightStateBadge.style.display = 'inline-flex';
+  flightStateBadge.textContent = stateStr;
+  
+  if (stateStr === 'DISARMED') {
+    flightStateBadge.style.backgroundColor = '#374151';
+    flightStateBadge.style.color = '#f3f4f6';
+    flightStateBadge.style.borderColor = 'rgba(255,255,255,0.08)';
+  } else if (stateStr === 'PREFLIGHT') {
+    flightStateBadge.style.backgroundColor = '#ffc72c';
+    flightStateBadge.style.color = '#0c0c0d';
+    flightStateBadge.style.borderColor = '#ffc72c';
+  } else if (stateStr === 'ARMED') {
+    flightStateBadge.style.backgroundColor = '#c8102e';
+    flightStateBadge.style.color = '#ffffff';
+    flightStateBadge.style.borderColor = '#c8102e';
+  }
+}
+
 function processIncomingData(text) {
   serialBuffer += text;
   
@@ -309,8 +426,11 @@ function processIncomingData(text) {
     serialBuffer = serialBuffer.substring(lineEnd + 1);
     
     if (line) {
-      logTerminal(line, 'recv');
-      parseDumpLine(line);
+      // Check if it's a status line first to suppress terminal spam
+      if (!parseStatusLine(line)) {
+        logTerminal(line, 'recv');
+        parseDumpLine(line);
+      }
     }
     lineEnd = serialBuffer.indexOf('\n');
   }
@@ -404,6 +524,9 @@ function setConnectionState(state) {
   const isConnected = state === true || state === 'connected';
   const isReconnecting = state === 'reconnecting';
   
+  const batteryStatusDiv = document.getElementById('battery-status');
+  const flightStateBadge = document.getElementById('flight-state-badge');
+  
   if (isConnected) {
     statusDot.className = 'status-dot connected';
     statusText.textContent = 'Connected';
@@ -413,6 +536,7 @@ function setConnectionState(state) {
     btnSave.removeAttribute('disabled');
     btnDefaults.removeAttribute('disabled');
     terminalInput.removeAttribute('disabled');
+    startStatusPolling();
   } else if (isReconnecting) {
     statusDot.className = 'status-dot reconnecting';
     statusText.textContent = 'Rebooting...';
@@ -422,6 +546,9 @@ function setConnectionState(state) {
     btnSave.setAttribute('disabled', 'true');
     btnDefaults.setAttribute('disabled', 'true');
     terminalInput.setAttribute('disabled', 'true');
+    stopStatusPolling();
+    if (batteryStatusDiv) batteryStatusDiv.style.display = 'none';
+    if (flightStateBadge) flightStateBadge.style.display = 'none';
   } else {
     statusDot.className = 'status-dot disconnected';
     statusText.textContent = 'Disconnected';
@@ -431,6 +558,9 @@ function setConnectionState(state) {
     btnSave.setAttribute('disabled', 'true');
     btnDefaults.setAttribute('disabled', 'true');
     terminalInput.setAttribute('disabled', 'true');
+    stopStatusPolling();
+    if (batteryStatusDiv) batteryStatusDiv.style.display = 'none';
+    if (flightStateBadge) flightStateBadge.style.display = 'none';
   }
   lucide.createIcons();
 }

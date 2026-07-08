@@ -7,6 +7,7 @@ gnc_params_t gnc_params;
 // Define legacy global variables
 double looprate_hz = 1000.0;
 double max_rate_degps = 100.0;
+double battery_multiplier = 10.1;
 gnc_cfg chesapeake_config;
 
 struct DoubleParam {
@@ -18,6 +19,7 @@ struct DoubleParam {
 static DoubleParam gnc_double_params[] = {
   {"looprate_hz", &gnc_params.looprate_hz},
   {"max_rate_degps", &gnc_params.max_rate_degps},
+  {"battery_multiplier", &gnc_params.battery_multiplier},
   {"pid_x_kp", &gnc_params.chesapeake_config.pid_x_cfg.kp},
   {"pid_x_ki", &gnc_params.chesapeake_config.pid_x_cfg.ki},
   {"pid_x_kd", &gnc_params.chesapeake_config.pid_x_cfg.kd},
@@ -42,6 +44,7 @@ static const size_t num_gnc_double_params = sizeof(gnc_double_params) / sizeof(D
 void gnc_config_load_defaults() {
   gnc_params.looprate_hz = 1000.0;
   gnc_params.max_rate_degps = 100.0;
+  gnc_params.battery_multiplier = 10.1;
   
   gnc_params.chesapeake_config.pid_x_cfg = {.kp = 0.0022, .ki = 0.0, .kd = 0.0, .i_lim = 20.0, .looprate_hz = 1000.0};
   gnc_params.chesapeake_config.pid_y_cfg = {.kp = 0.0022, .ki = 0.0, .kd = 0.0, .i_lim = 20.0, .looprate_hz = 1000.0};
@@ -60,6 +63,7 @@ void gnc_config_load_defaults() {
 void gnc_config_sync_legacy() {
   looprate_hz = gnc_params.looprate_hz;
   max_rate_degps = gnc_params.max_rate_degps;
+  battery_multiplier = gnc_params.battery_multiplier;
   
   // Update the nested looprate_hz variables inside components config
   gnc_params.chesapeake_config.pid_x_cfg.looprate_hz = gnc_params.looprate_hz;

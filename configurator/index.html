@@ -28,6 +28,15 @@
       <span class="sub-logo">CONFIGURATOR</span>
     </div>
     <div class="connection-bar">
+      <!-- Flight State Badge -->
+      <div class="flight-state-badge" id="flight-state-badge" style="display: none; align-items: center; font-size: 0.75rem; font-weight: 800; background: #374151; color: var(--text-primary); padding: 4px 10px; border-radius: 6px; margin-right: 5px; letter-spacing: 0.05rem; font-family: var(--font-mono); border: 1px solid rgba(255,255,255,0.08);">
+        DISARMED
+      </div>
+      <!-- Battery Status -->
+      <div class="battery-status" id="battery-status" style="display: none; align-items: center; gap: 8px; margin-right: 10px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 4px 10px; border-radius: 6px;">
+        <i data-lucide="battery" id="battery-icon" style="color: var(--md-gold); width: 16px; height: 16px;"></i>
+        <span id="battery-text" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary); font-family: var(--font-mono);">0.00 V</span>
+      </div>
       <div class="port-status">
         <span class="status-dot disconnected" id="status-dot"></span>
         <span id="status-text">Disconnected</span>

@@ -1,5 +1,6 @@
 #include "gnc_config/gnc_config.hpp"
 #include "hardware/hardware_util.hpp"
+#include "hardware/battery_monitor.hpp"
 #include "pin_config/pin_config.hpp"
 #include "config_manager.hpp"
 #include "cli_handler.hpp"
@@ -50,6 +51,10 @@ Servo servo2;
 Servo servo3;
 Servo servo4;
 
+// Battery Monitor
+hardware_util::battery_monitor *bat_monitor = nullptr;
+double battery_voltage = 0.0;
+
 // IMU pointer
 LSM6DSV16XSensor *imu = nullptr;
 gnc_util::vec imu_raw_degps;
@@ -62,6 +67,10 @@ void setup() {
 
   // Initialize Flight State Machine
   fsm.begin();
+
+  // Instantiate battery monitor
+  bat_monitor = new hardware_util::battery_monitor(BATTERY_PIN, battery_multiplier);
+  bat_monitor->begin();
 
   // Instantiate gnc_inst and loop regulator using loaded parameters
   gnc_inst = new gnc(chesapeake_config);
@@ -126,6 +135,9 @@ void loop() {
   imu_raw_degps.x = gyro_raw[0] / 1000.0;
   imu_raw_degps.y = gyro_raw[1] / 1000.0;
   imu_raw_degps.z = gyro_raw[2] / 1000.0;
+
+  // Read battery voltage
+  battery_voltage = bat_monitor->read_voltage();
 
   // Build input for State Machine
   VsmInput fsm_input = {};

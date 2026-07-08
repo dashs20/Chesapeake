@@ -6,7 +6,7 @@
 
 #define EEPROM_SIZE 512
 #define EEPROM_MAGIC 0x50414359 // "SPCY" in hex
-#define EEPROM_VERSION 2
+#define EEPROM_VERSION 3
 
 #define ADDR_MAGIC 0
 #define ADDR_VERSION 4
