@@ -1,6 +1,8 @@
 #include "gnc_config/gnc_config.hpp"
 #include "hardware/hardware_util.hpp"
 #include "pin_config/pin_config.hpp"
+#include "config_manager.hpp"
+#include "cli_handler.hpp"
 #include <AlfredoCrsf.h>
 #include <LSM6DSV16XSensor.h>
 #include <PIO_DShot.h>
@@ -14,11 +16,11 @@
 // Instantiate actuator command storage struct
 act_cmd act_cmd_struct;
 
-// build GNC object
-gnc fsw(spacey_config);
+// build GNC object pointer
+gnc *fsw = nullptr;
 
-// build loop regulator
-hardware_util::enforce_looprate loop_regulator(looprate_hz);
+// build loop regulator pointer
+hardware_util::enforce_looprate *loop_regulator = nullptr;
 
 /*
 ~~~ Configure Hardware ~~~
@@ -49,12 +51,19 @@ uint16_t throttles[4] = {0};
 Servo servo1;
 Servo servo2;
 
-// IMU
-LSM6DSV16XSensor imu(&SPI1, CS_PIN);
+// IMU pointer
+LSM6DSV16XSensor *imu = nullptr;
 gnc_util::vec imu_raw_degps;
 
 void setup() {
   Serial.begin(115200);
+
+  // Initialize and load configurations from EEPROM or defaults
+  config_manager_init();
+
+  // Instantiate fsw and loop regulator using loaded parameters
+  fsw = new gnc(spacey_config);
+  loop_regulator = new hardware_util::enforce_looprate(looprate_hz);
 
   /*
   Hardware setup
@@ -72,14 +81,15 @@ void setup() {
   SPI1.setRX(IMU_MISO_PIN);
   SPI1.begin();
 
-  if (imu.begin() != LSM6DSV16X_OK) {
+  imu = new LSM6DSV16XSensor(&SPI1, CS_PIN);
+  if (imu->begin() != LSM6DSV16X_OK) {
     Serial.println("LSM6DSV16X IMU initialization failed!");
   }
-  imu.Enable_X();
-  imu.Enable_G();
-  imu.Set_X_ODR(960.0f);
-  imu.Set_G_ODR(960.0f);
-  imu.Set_G_FS(2000);
+  imu->Enable_X();
+  imu->Enable_G();
+  imu->Set_X_ODR(960.0f);
+  imu->Set_G_ODR(960.0f);
+  imu->Set_G_FS(2000);
 
   // SERVO
   servo1.attach(SERVO_1_PIN, 500, 2500); // duty cycle range for my servos
@@ -96,7 +106,7 @@ void setup() {
 }
 
 void loop() {
-  loop_regulator.ping(); // start loop timer
+  loop_regulator->ping(); // start loop timer
 
   // Update ELRS receiver state
   elrs.update();
@@ -107,7 +117,7 @@ void loop() {
 
   // Get raw IMU reading and store in vector
   int32_t gyro_raw[3];
-  imu.Get_G_Axes(gyro_raw);
+  imu->Get_G_Axes(gyro_raw);
   imu_raw_degps.x = gyro_raw[0] / 1000.0;
   imu_raw_degps.y = gyro_raw[1] / 1000.0;
   imu_raw_degps.z = gyro_raw[2] / 1000.0;
@@ -156,7 +166,7 @@ void loop() {
   /*
   Execute GNC
   */
-  act_cmd_struct = fsw.query(imu_raw_degps, rate_cmd_degps, thr_frac);
+  act_cmd_struct = fsw->query(imu_raw_degps, rate_cmd_degps, thr_frac);
 
   /*
   Command outputs to hardware
@@ -186,5 +196,8 @@ void loop() {
     break;
   }
 
-  loop_regulator.pong_and_wait(); // regulate looprate
+  // Update Serial CLI
+  cli_handler_update();
+
+  loop_regulator->pong_and_wait(); // regulate looprate
 }

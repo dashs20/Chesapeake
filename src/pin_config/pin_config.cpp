@@ -1,19 +1,94 @@
 #include "pin_config.hpp"
+#include <string.h>
 
-// ELRS Receiver Pins (D7/D6)
-const int ELRS_RX_PIN = D7; // UART 0 RX (GPIO 1)
-const int ELRS_TX_PIN = D6; // UART 0 TX (GPIO 0)
+pin_cfg_t pin_config;
 
-// ESC Pins (D0/D1)
-const int ESC_1_PIN = D1;
-const int ESC_2_PIN = D2;
+// Define legacy global pin variables
+int ELRS_RX_PIN = D7;
+int ELRS_TX_PIN = D6;
+int ESC_1_PIN = D1;
+int ESC_2_PIN = D2;
+int SERVO_1_PIN = D8;
+int SERVO_2_PIN = D9;
+int CS_PIN = 9;
+int IMU_SCK_PIN = 10;
+int IMU_MOSI_PIN = 11;
+int IMU_MISO_PIN = 12;
 
-// Servo Pins (D4/D5)
-const int SERVO_1_PIN = D8;
-const int SERVO_2_PIN = D9;
+struct PinParam {
+  const char* name;
+  int* value_ptr;
+};
 
-// IMU Pins
-const int CS_PIN = 9;
-const int IMU_SCK_PIN = 10;
-const int IMU_MOSI_PIN = 11;
-const int IMU_MISO_PIN = 12;
+// Map parameter names to struct members
+static PinParam pin_params[] = {
+  {"elrs_rx", &pin_config.elrs_rx_pin},
+  {"elrs_tx", &pin_config.elrs_tx_pin},
+  {"esc_1", &pin_config.esc_1_pin},
+  {"esc_2", &pin_config.esc_2_pin},
+  {"servo_1", &pin_config.servo_1_pin},
+  {"servo_2", &pin_config.servo_2_pin},
+  {"cs", &pin_config.cs_pin},
+  {"imu_sck", &pin_config.imu_sck_pin},
+  {"imu_mosi", &pin_config.imu_mosi_pin},
+  {"imu_miso", &pin_config.imu_miso_pin}
+};
+
+static const size_t num_pin_params = sizeof(pin_params) / sizeof(PinParam);
+
+void pin_config_load_defaults() {
+  pin_config.elrs_rx_pin = D7;
+  pin_config.elrs_tx_pin = D6;
+  pin_config.esc_1_pin = D1;
+  pin_config.esc_2_pin = D2;
+  pin_config.servo_1_pin = D8;
+  pin_config.servo_2_pin = D9;
+  pin_config.cs_pin = 9;
+  pin_config.imu_sck_pin = 10;
+  pin_config.imu_mosi_pin = 11;
+  pin_config.imu_miso_pin = 12;
+  pin_config_sync_legacy();
+}
+
+void pin_config_sync_legacy() {
+  ELRS_RX_PIN = pin_config.elrs_rx_pin;
+  ELRS_TX_PIN = pin_config.elrs_tx_pin;
+  ESC_1_PIN = pin_config.esc_1_pin;
+  ESC_2_PIN = pin_config.esc_2_pin;
+  SERVO_1_PIN = pin_config.servo_1_pin;
+  SERVO_2_PIN = pin_config.servo_2_pin;
+  CS_PIN = pin_config.cs_pin;
+  IMU_SCK_PIN = pin_config.imu_sck_pin;
+  IMU_MOSI_PIN = pin_config.imu_mosi_pin;
+  IMU_MISO_PIN = pin_config.imu_miso_pin;
+}
+
+bool pin_config_set(const char* name, int value) {
+  for (size_t i = 0; i < num_pin_params; ++i) {
+    if (strcasecmp(name, pin_params[i].name) == 0) {
+      *(pin_params[i].value_ptr) = value;
+      pin_config_sync_legacy();
+      return true;
+    }
+  }
+  return false;
+}
+
+bool pin_config_get(const char* name, int& value) {
+  for (size_t i = 0; i < num_pin_params; ++i) {
+    if (strcasecmp(name, pin_params[i].name) == 0) {
+      value = *(pin_params[i].value_ptr);
+      return true;
+    }
+  }
+  return false;
+}
+
+void pin_config_print_all() {
+  for (size_t i = 0; i < num_pin_params; ++i) {
+    Serial.print("set pin_");
+    Serial.print(pin_params[i].name);
+    Serial.print(" = ");
+    Serial.println(*(pin_params[i].value_ptr));
+  }
+}
