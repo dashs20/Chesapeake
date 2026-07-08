@@ -6,6 +6,7 @@
 
 // Plain old data object; vehicle parameters
 struct gnc_cfg {
+  AllocatorType allocator_type; // Swappable allocator type
   pid_cfg pid_x_cfg;           // Roll controller cfg
   pid_cfg pid_y_cfg;           // Pitch controller cfg
   pid_cfg pid_z_cfg;           // Yaw controller cfg
@@ -29,5 +30,5 @@ private:
   pid pid_x;       // Roll PID controller
   pid pid_y;       // Pitch PID controller
   pid pid_z;       // Yaw PID controller
-  alloc allocator; // Actuator allocator
+  allocator_fn allocator_func; // Actuator allocator function pointer
 };

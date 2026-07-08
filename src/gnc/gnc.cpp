@@ -7,8 +7,13 @@
 gnc::gnc(gnc_cfg config)
     : config(config), imu_x_lpf(config.imu_lpf_cfg),
       imu_y_lpf(config.imu_lpf_cfg), imu_z_lpf(config.imu_lpf_cfg),
-      pid_x(config.pid_x_cfg), pid_y(config.pid_y_cfg), pid_z(config.pid_z_cfg),
-      allocator(config.veh_alloc_cfg) {}
+      pid_x(config.pid_x_cfg), pid_y(config.pid_y_cfg), pid_z(config.pid_z_cfg) {
+  if (config.allocator_type == AllocatorType::VTVL) {
+    allocator_func = VTVL_allocator;
+  } else {
+    allocator_func = quad_allocator;
+  }
+}
 
 gnc::~gnc() {}
 
@@ -30,5 +35,5 @@ act_cmd gnc::query(gnc_util::vec imu_raw_degps, gnc_util::vec rate_cmd_degps,
   double alpha_z = pid_z.query(imu_filt_z_degps, rate_cmd_degps.z);
 
   // Allocation
-  return allocator.query(alpha_x, alpha_y, alpha_z, thr_frac);
+  return allocator_func(alpha_x, alpha_y, alpha_z, thr_frac, config.veh_alloc_cfg);
 }

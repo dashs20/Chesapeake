@@ -97,7 +97,8 @@ void setup() {
 
   // DSHOT (last so we can immediately send 0 throttle until they arm)
   // Command zero throttle for 3 seconds
-  esc = new DShotX4(ESC_1_PIN, 2, 300);
+  int num_motors = (spacey_config.allocator_type == AllocatorType::QUAD) ? 4 : 2;
+  esc = new DShotX4(ESC_1_PIN, num_motors, 300);
   uint32_t start = millis();
   while (millis() - start < 3000) {
     esc->sendThrottles(throttles);
@@ -172,26 +173,31 @@ void loop() {
   Command outputs to hardware
   */
 
+  int active_motors = (spacey_config.allocator_type == AllocatorType::QUAD) ? 4 : 2;
+
   switch (arm_state) {
   case STATE::NOTHING: // fully disarmed (switch all the way down)
     servo1.write(90.0);
     servo2.write(90.0);
-    throttles[0] = 0;
-    throttles[1] = 0;
+    for (int i = 0; i < 4; i++) throttles[i] = 0;
     esc->sendThrottles(throttles);
     break;
   case STATE::SERVOS: // servos only
-    servo1.write(act_cmd_struct.theta_1_deg);
-    servo2.write(act_cmd_struct.theta_2_deg);
-    throttles[0] = 0;
-    throttles[1] = 0;
+    servo1.write(act_cmd_struct.servos[0]);
+    servo2.write(act_cmd_struct.servos[1]);
+    for (int i = 0; i < 4; i++) throttles[i] = 0;
     esc->sendThrottles(throttles);
     break;
   case STATE::EVERYTHING: // servos + motors
-    servo1.write(act_cmd_struct.theta_1_deg);
-    servo2.write(act_cmd_struct.theta_2_deg);
-    throttles[0] = hardware_util::thr_frac_2_DSHOT_int(act_cmd_struct.th_frac);
-    throttles[1] = hardware_util::thr_frac_2_DSHOT_int(act_cmd_struct.tl_frac);
+    servo1.write(act_cmd_struct.servos[0]);
+    servo2.write(act_cmd_struct.servos[1]);
+    for (int i = 0; i < active_motors; i++) {
+      throttles[i] = hardware_util::thr_frac_2_DSHOT_int(act_cmd_struct.motors[i]);
+    }
+    // Set inactive motors to 0
+    for (int i = active_motors; i < 4; i++) {
+      throttles[i] = 0;
+    }
     esc->sendThrottles(throttles);
     break;
   }

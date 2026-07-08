@@ -17,6 +17,7 @@ struct DoubleParam {
 static DoubleParam gnc_double_params[] = {
   {"looprate_hz", &gnc_params.looprate_hz},
   {"max_rate_degps", &gnc_params.max_rate_degps},
+  {"allocator_type", &gnc_params.allocator_type},
   {"pid_x_kp", &gnc_params.spacey_config.pid_x_cfg.kp},
   {"pid_x_ki", &gnc_params.spacey_config.pid_x_cfg.ki},
   {"pid_x_kd", &gnc_params.spacey_config.pid_x_cfg.kd},
@@ -47,6 +48,7 @@ static const size_t num_gnc_double_params = sizeof(gnc_double_params) / sizeof(D
 void gnc_config_load_defaults() {
   gnc_params.looprate_hz = 1000.0;
   gnc_params.max_rate_degps = 100.0;
+  gnc_params.allocator_type = 0.0; // Default is VTVL (0.0), Quad is 1.0
   
   gnc_params.spacey_config.pid_x_cfg = {.kp = 0.0022, .ki = 0.0, .kd = 0.0, .i_lim = 20.0, .looprate_hz = 1000.0};
   gnc_params.spacey_config.pid_y_cfg = {.kp = 0.0022, .ki = 0.0, .kd = 0.0, .i_lim = 20.0, .looprate_hz = 1000.0};
@@ -71,6 +73,12 @@ void gnc_config_load_defaults() {
 void gnc_config_sync_legacy() {
   looprate_hz = gnc_params.looprate_hz;
   max_rate_degps = gnc_params.max_rate_degps;
+  
+  if (gnc_params.allocator_type < 0.5) {
+    gnc_params.spacey_config.allocator_type = AllocatorType::VTVL;
+  } else {
+    gnc_params.spacey_config.allocator_type = AllocatorType::QUAD;
+  }
   
   // Update the nested looprate_hz variables inside components config
   gnc_params.spacey_config.pid_x_cfg.looprate_hz = gnc_params.looprate_hz;

@@ -11,32 +11,24 @@ struct alloc_cfg {
 };
 
 struct act_cmd {
-  double theta_1_deg;
-  double theta_2_deg;
-  double th_frac;
-  double tl_frac;
+  // Motor throttle fractions (from 0.0 to 1.0)
+  double motors[4];
+  
+  // Servo angles in degrees (from 0.0 to 180.0)
+  double servos[4];
 };
 
-class alloc {
-public:
-  alloc(alloc_cfg config); // Default Constructor
-  ~alloc();                // Destructor
-  act_cmd query(double alpha_x, double alpha_y, double alpha_z,
-                double t_frac); // Query member function
-
-private:
-  // throttle limits
-  double t_min_frac;
-  double max_delta_throttle;
-
-  // theta limits
-  double theta_min_rad;
-  double theta_max_rad;
-
-  // servo gearing
-  double gear_ratio;
-
-  // servo offsets
-  double servo1_offset_deg;
-  double servo2_offset_deg;
+enum class AllocatorType {
+  VTVL = 0,
+  QUAD = 1
 };
+
+typedef act_cmd (*allocator_fn)(double alpha_x, double alpha_y, double alpha_z,
+                               double t_frac, const alloc_cfg& config);
+
+// Allocator function declarations
+act_cmd VTVL_allocator(double alpha_x, double alpha_y, double alpha_z,
+                       double t_frac, const alloc_cfg& config);
+
+act_cmd quad_allocator(double alpha_x, double alpha_y, double alpha_z,
+                       double t_frac, const alloc_cfg& config);

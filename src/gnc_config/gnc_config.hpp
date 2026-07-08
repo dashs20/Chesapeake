@@ -4,6 +4,7 @@
 struct gnc_params_t {
   double looprate_hz;
   double max_rate_degps;
+  double allocator_type;
   gnc_cfg spacey_config;
 };
 
