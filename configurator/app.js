@@ -11,6 +11,8 @@ let writer = null;
 let keepReading = false;
 let readPromise = null;
 let serialBuffer = '';
+let isReconnecting = false;
+let lastUsbInfo = null;
 
 // Active values tracker (maps param names to numeric values)
 const activeConfig = {};
@@ -97,13 +99,20 @@ function setupUIHandlers() {
   btnConnect.addEventListener('click', toggleConnection);
   btnLoad.addEventListener('click', () => sendCommand('dump'));
   btnSave.addEventListener('click', saveConfigToBoard);
-  btnDefaults.addEventListener('click', () => sendCommand('defaults'));
+  btnDefaults.addEventListener('click', async () => {
+    isReconnecting = true;
+    await sendCommand('defaults');
+  });
 
   // Terminal Input submit handler
   terminalInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const command = terminalInput.value.trim();
       if (command) {
+        const cmdLower = command.toLowerCase();
+        if (cmdLower === 'save' || cmdLower === 'defaults') {
+          isReconnecting = true;
+        }
         sendCommand(command);
         terminalInput.value = '';
       }
@@ -115,32 +124,48 @@ function setupUIHandlers() {
 // Web Serial Communication
 // ------------------------------
 
-async function toggleConnection() {
-  if (port) {
-    // Disconnect
-    logTerminal('Disconnecting...', 'recv');
-    keepReading = false;
-    if (reader) {
-      try {
-        await reader.cancel();
-      } catch (err) {
-        console.error('Error canceling reader:', err);
-      }
-    }
-    if (readPromise) {
-      await readPromise;
-    }
-    
+async function cleanupConnection() {
+  keepReading = false;
+  
+  if (reader) {
     try {
-      if (writer) await writer.close();
-      if (port) await port.close();
+      await reader.cancel();
+    } catch (err) {
+      console.error('Error canceling reader:', err);
+    }
+    try {
+      reader.releaseLock();
+    } catch (err) {
+      console.error('Error releasing reader lock:', err);
+    }
+    reader = null;
+  }
+  
+  if (writer) {
+    try {
+      writer.releaseLock();
+    } catch (err) {
+      console.error('Error releasing writer lock:', err);
+    }
+    writer = null;
+  }
+  
+  if (port) {
+    try {
+      await port.close();
     } catch (err) {
       console.error('Error closing port:', err);
     }
-    
     port = null;
-    reader = null;
-    writer = null;
+  }
+}
+
+async function toggleConnection() {
+  if (port || isReconnecting) {
+    // Disconnect or Cancel Reconnect
+    logTerminal(isReconnecting ? 'Reconnection cancelled.' : 'Disconnecting...', 'recv');
+    isReconnecting = false;
+    await cleanupConnection();
     setConnectionState(false);
     logTerminal('Device disconnected.', 'error');
   } else {
@@ -155,6 +180,18 @@ async function toggleConnection() {
       await port.open({ baudRate: 115200 });
       
       writer = port.writable.getWriter();
+      
+      // Store USB info for auto-reconnection
+      try {
+        const info = port.getInfo();
+        lastUsbInfo = {
+          usbVendorId: info.usbVendorId,
+          usbProductId: info.usbProductId
+        };
+      } catch (err) {
+        console.error('Error getting port info:', err);
+      }
+      
       setConnectionState(true);
       logTerminal('Device connected successfully!', 'sent');
       
@@ -174,6 +211,61 @@ async function toggleConnection() {
       setConnectionState(false);
     }
   }
+}
+
+// Global navigator.serial event handlers for hotplugging / rebooting
+if ('serial' in navigator) {
+  navigator.serial.addEventListener('disconnect', async (event) => {
+    if (port && event.target === port) {
+      logTerminal('Device connection lost.', 'error');
+      await cleanupConnection();
+      
+      if (isReconnecting) {
+        setConnectionState('reconnecting');
+        logTerminal('Waiting for device to reboot and reconnect...', 'sent');
+      } else {
+        setConnectionState(false);
+      }
+    }
+  });
+
+  navigator.serial.addEventListener('connect', async (event) => {
+    if (isReconnecting && lastUsbInfo) {
+      const info = event.target.getInfo();
+      if (info.usbVendorId === lastUsbInfo.usbVendorId && info.usbProductId === lastUsbInfo.usbProductId) {
+        logTerminal('Device detected! Attempting auto-reconnection...', 'sent');
+        // Wait a short delay for device to fully initialize its serial interface after reboot
+        await new Promise(r => setTimeout(r, 1500));
+        
+        try {
+          port = event.target;
+          await port.open({ baudRate: 115200 });
+          
+          writer = port.writable.getWriter();
+          setConnectionState(true);
+          logTerminal('Device reconnected successfully!', 'sent');
+          
+          // Reset reconnecting flag
+          isReconnecting = false;
+          
+          // Start reading loop
+          keepReading = true;
+          readPromise = readSerialLoop();
+          
+          // Query parameters to restore UI to latest board state
+          setTimeout(() => {
+            sendCommand('dump');
+          }, 500);
+        } catch (err) {
+          console.error('Auto-reconnection failed:', err);
+          logTerminal(`Auto-reconnection failed: ${err.message}`, 'error');
+          port = null;
+          isReconnecting = false;
+          setConnectionState(false);
+        }
+      }
+    }
+  });
 }
 
 async function readSerialLoop() {
@@ -199,6 +291,17 @@ async function readSerialLoop() {
         reader.releaseLock();
         reader = null;
       }
+    }
+  }
+
+  // If we exited the loop unexpectedly (not initiated by manual disconnect)
+  if (keepReading && port) {
+    await cleanupConnection();
+    if (isReconnecting) {
+      setConnectionState('reconnecting');
+      logTerminal('Waiting for device to reboot and reconnect...', 'sent');
+    } else {
+      setConnectionState(false);
     }
   }
 }
@@ -301,23 +404,39 @@ async function saveConfigToBoard() {
     await new Promise(r => setTimeout(r, 15));
   }
   
+  // Set reconnecting flag before save
+  isReconnecting = true;
   // Commit to Flash & Reboot
   await sendCommand('save');
 }
 
-function setConnectionState(isConnected) {
+function setConnectionState(state) {
+  const isConnected = state === true || state === 'connected';
+  const isReconnecting = state === 'reconnecting';
+  
   if (isConnected) {
     statusDot.className = 'status-dot connected';
     statusText.textContent = 'Connected';
     btnConnect.innerHTML = '<i data-lucide="log-out"></i> Disconnect';
+    btnConnect.removeAttribute('disabled');
     btnLoad.removeAttribute('disabled');
     btnSave.removeAttribute('disabled');
     btnDefaults.removeAttribute('disabled');
     terminalInput.removeAttribute('disabled');
+  } else if (isReconnecting) {
+    statusDot.className = 'status-dot reconnecting';
+    statusText.textContent = 'Rebooting...';
+    btnConnect.innerHTML = '<i data-lucide="x-circle"></i> Cancel';
+    btnConnect.removeAttribute('disabled');
+    btnLoad.setAttribute('disabled', 'true');
+    btnSave.setAttribute('disabled', 'true');
+    btnDefaults.setAttribute('disabled', 'true');
+    terminalInput.setAttribute('disabled', 'true');
   } else {
     statusDot.className = 'status-dot disconnected';
     statusText.textContent = 'Disconnected';
     btnConnect.innerHTML = '<i data-lucide="usb"></i> Connect Device';
+    btnConnect.removeAttribute('disabled');
     btnLoad.setAttribute('disabled', 'true');
     btnSave.setAttribute('disabled', 'true');
     btnDefaults.setAttribute('disabled', 'true');

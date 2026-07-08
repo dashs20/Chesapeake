@@ -123,19 +123,6 @@ void loop() {
   imu_raw_degps.y = gyro_raw[1] / 1000.0;
   imu_raw_degps.z = gyro_raw[2] / 1000.0;
 
-  // Debug: Print rotated IMU rate
-  static uint32_t last_print = 0;
-  if (millis() - last_print >= 100) {
-    last_print = millis();
-    gnc_util::vec imu_rotated = gnc_util::euler_xyz_rotate_deg(
-        imu_raw_degps, chesapeake_config.imu_euler_xyz_deg);
-    Serial.print("Rot_X: ");
-    Serial.print(imu_rotated.x);
-    Serial.print(" | Rot_Y: ");
-    Serial.print(imu_rotated.y);
-    Serial.print(" | Rot_Z: ");
-    Serial.println(imu_rotated.z);
-  }
 
   if (!elrs.isLinkUp()) {
     arm_state = STATE::NOTHING;

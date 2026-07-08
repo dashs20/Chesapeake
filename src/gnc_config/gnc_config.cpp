@@ -1,5 +1,6 @@
 #include "gnc_config.hpp"
 #include <string.h>
+#include <Arduino.h>
 
 gnc_params_t gnc_params;
 
