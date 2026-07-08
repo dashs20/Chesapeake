@@ -60,8 +60,13 @@ function setupUIHandlers() {
         // Clamp bounds
         if (val < min) val = min;
         if (val > max) val = max;
-        e.target.value = val;
         
+        // Snap to nearest 45 for IMU euler inputs
+        if (id.startsWith('imu_euler_')) {
+          val = Math.round(val / 45) * 45;
+        }
+        
+        e.target.value = val;
         slider.value = val;
         activeConfig[id] = val;
         if (id.startsWith('imu_euler_')) {
@@ -353,7 +358,8 @@ function init3DVisualizer() {
   
   // Camera
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-  camera.position.set(0, 0, 10);
+  camera.position.set(3, 2.5, 5.5);
+  camera.lookAt(0, 0, 0);
   
   // Renderer
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
@@ -377,69 +383,77 @@ function init3DVisualizer() {
   gridHelper.position.y = -2;
   scene.add(gridHelper);
 
-  // Build a custom Maryland-themed space rocket vehicle model
+  // Static reference coordinate system (axes helper)
+  const staticAxes = new THREE.AxesHelper(3.5);
+  staticAxes.material.transparent = true;
+  staticAxes.material.opacity = 0.4;
+  scene.add(staticAxes);
+
+  // Build a custom IMU sensor model (black rectangular prism)
   const vehicleGroup = new THREE.Group();
   
-  // 1. Rocket body (black cylinder with gold trim)
-  const bodyGeo = new THREE.CylinderGeometry(0.5, 0.6, 3, 16);
+  // 1. IMU Body: black rectangular prism (2.2 x 0.4 x 1.6)
+  const bodyGeo = new THREE.BoxGeometry(2.2, 0.4, 1.6);
   const bodyMat = new THREE.MeshStandardMaterial({ 
     color: 0x0c0c0d, 
-    roughness: 0.2, 
+    roughness: 0.4, 
     metalness: 0.8 
   });
   const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
   vehicleGroup.add(bodyMesh);
   
-  // 2. Gold nose cone
-  const noseGeo = new THREE.ConeGeometry(0.5, 1, 16);
-  const goldMat = new THREE.MeshStandardMaterial({ 
-    color: 0xffc72c, 
-    roughness: 0.1, 
-    metalness: 0.9 
-  });
-  const noseMesh = new THREE.Mesh(noseGeo, goldMat);
-  noseMesh.position.y = 2; // on top
-  vehicleGroup.add(noseMesh);
-
-  // 3. Engine nozzle (red cone at the base)
-  const engineGeo = new THREE.CylinderGeometry(0.4, 0.55, 0.4, 16);
-  const redMat = new THREE.MeshStandardMaterial({ 
-    color: 0xc8102e, 
-    roughness: 0.3, 
-    metalness: 0.7 
-  });
-  const engineMesh = new THREE.Mesh(engineGeo, redMat);
-  engineMesh.position.y = -1.7;
-  vehicleGroup.add(engineMesh);
-
-  // 4. White details & Maryland stripe (fins)
-  const finGeo = new THREE.BoxGeometry(0.1, 0.8, 0.6);
-  const whiteMat = new THREE.MeshStandardMaterial({ 
-    color: 0xffffff, 
-    roughness: 0.4 
+  // 2. Gold connector pins on sides to resemble a sensor module
+  const pinGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
+  const pinMat = new THREE.MeshStandardMaterial({
+    color: 0xffc72c,
+    roughness: 0.1,
+    metalness: 0.9
   });
   
-  const finLeft = new THREE.Mesh(finGeo, whiteMat);
-  finLeft.position.set(-0.7, -1.2, 0);
-  finLeft.rotation.z = 0.2;
-  vehicleGroup.add(finLeft);
+  // Add 4 pins along left side (-0.8 Z)
+  for (let i = 0; i < 4; i++) {
+    const pin = new THREE.Mesh(pinGeo, pinMat);
+    pin.position.set(-0.75 + i * 0.5, -0.21, -0.8);
+    vehicleGroup.add(pin);
+  }
+  // Add 4 pins along right side (0.8 Z)
+  for (let i = 0; i < 4; i++) {
+    const pin = new THREE.Mesh(pinGeo, pinMat);
+    pin.position.set(-0.75 + i * 0.5, -0.21, 0.8);
+    vehicleGroup.add(pin);
+  }
 
-  const finRight = new THREE.Mesh(finGeo, whiteMat);
-  finRight.position.set(0.7, -1.2, 0);
-  finRight.rotation.z = -0.2;
-  vehicleGroup.add(finRight);
+  // 3. Canvas texture for "IMU" label
+  function createTextTexture(text) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.font = 'bold 32px "Inter", "Fira Code", sans-serif';
+    ctx.fillStyle = '#ffc72c';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    
+    return new THREE.CanvasTexture(canvas);
+  }
 
-  // Add decorative gold bands
-  const bandGeo = new THREE.TorusGeometry(0.56, 0.04, 8, 24);
-  const band1 = new THREE.Mesh(bandGeo, goldMat);
-  band1.position.y = 0.5;
-  band1.rotation.x = Math.PI / 2;
-  vehicleGroup.add(band1);
-  
-  const band2 = new THREE.Mesh(bandGeo, goldMat);
-  band2.position.y = -0.5;
-  band2.rotation.x = Math.PI / 2;
-  vehicleGroup.add(band2);
+  const labelGeo = new THREE.PlaneGeometry(1.2, 0.6);
+  const labelMat = new THREE.MeshBasicMaterial({
+    map: createTextTexture('IMU'),
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+  labelMesh.position.set(0, 0.201, 0); // slightly above top face
+  labelMesh.rotation.x = -Math.PI / 2; // flat on top
+  vehicleGroup.add(labelMesh);
+
+  // 4. Little coordinate system attached directly to the IMU (local frame)
+  const localAxes = new THREE.AxesHelper(1.8);
+  vehicleGroup.add(localAxes);
 
   vehicleMesh = vehicleGroup;
   scene.add(vehicleMesh);
