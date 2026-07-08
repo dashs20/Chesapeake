@@ -26,7 +26,7 @@ act_cmd gnc::query(gnc_util::vec imu_raw_degps, gnc_util::vec rate_cmd_degps,
 
   // PID control
   double alpha_x = pid_x.query(imu_filt_x_degps, rate_cmd_degps.x);
-  double alpha_y = pid_y.query(imu_filt_y_degps, rate_cmd_degps.y);
+  double alpha_y = pid_y.query(-imu_filt_y_degps, rate_cmd_degps.y);
   double alpha_z = pid_z.query(imu_filt_z_degps, rate_cmd_degps.z);
 
   // Allocation
