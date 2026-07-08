@@ -12,12 +12,12 @@ For repository-wide context and developer guidelines, see **[LLM.md](file:///C:/
 
 ## Key Features
 
-* **Swappable Control Allocators**: Supports both Twin-Engine VTVL and traditional Quadcopter (QuadX) allocation schemes.
+* **Quadcopter Control Allocation**: Dedicated Quadcopter (QuadX) motor mixing with configurable minimum throttle settings.
 * **PID Attitude Rate Controllers**: Fully adjustable PID controllers for Roll, Pitch, and Yaw attitude rate control loops with integrated anti-windup clamping.
 * **First-Order Lowpass Filters**: Low-latency signal filtering on IMU gyro readings to reduce vibration and sensor noise.
 * **Dynamic Mounting Orientation**: Computes full 3D Euler coordinate rotations for the IMU to handle physical mounting offsets on the vehicle.
 * **EEPROM State Persistence**: Integrates a custom configuration manager that loads and saves calibration and control parameters across reboots.
-* **Interactive Web Configurator**: A Maryland Calvert/Crossland flag-themed web interface built with Web Serial API and Three.js 3D visualizer for live tuning and attitude monitoring.
+* **Interactive Web Configurator**: A Maryland Calvert/Crossland flag-themed web interface built with the Web Serial API and Three.js 3D visualizer for live tuning and attitude monitoring. Supports robust automatic reconnection and state recovery when the flight board reboots or commits settings.
 * **Built-in CLI Terminal**: Command-line interface accessible via standard Serial to query, set, or default GNC parameters on-the-fly.
 
 ---
@@ -27,7 +27,7 @@ For repository-wide context and developer guidelines, see **[LLM.md](file:///C:/
 * **`src/`**: Core flight software source code
   * **`gnc/`**: Guidance, Navigation, and Control algorithms
     * **`controllers/`**: Attitude PID controller modules ([src/gnc/controllers/pid.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/controllers/pid.hpp))
-    * **`allocation/`**: Swappable actuator mixers ([src/gnc/allocation/alloc.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/allocation/alloc.hpp))
+    * **`allocation/`**: Actuator mixers ([src/gnc/allocation/alloc.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/allocation/alloc.hpp))
     * **`filters/`**: Raw sensor low-pass filtering ([src/gnc/filters/lowpass_filter.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/filters/lowpass_filter.hpp))
     * **`gnc_util/`**: Math utilities and 3D coordinate transformations ([src/gnc/gnc_util/gnc_util.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/gnc_util/gnc_util.hpp))
   * **`gnc_config/`**: Config structures mapping CLI commands to memory variables ([src/gnc_config/gnc_config.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc_config/gnc_config.hpp))

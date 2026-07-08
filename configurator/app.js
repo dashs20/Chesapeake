@@ -11,6 +11,8 @@ let writer = null;
 let keepReading = false;
 let readPromise = null;
 let serialBuffer = '';
+let isReconnecting = false;
+let lastUsbInfo = null;
 
 // Active values tracker (maps param names to numeric values)
 const activeConfig = {};
@@ -60,8 +62,13 @@ function setupUIHandlers() {
         // Clamp bounds
         if (val < min) val = min;
         if (val > max) val = max;
-        e.target.value = val;
         
+        // Snap to nearest 45 for IMU euler inputs
+        if (id.startsWith('imu_euler_')) {
+          val = Math.round(val / 45) * 45;
+        }
+        
+        e.target.value = val;
         slider.value = val;
         activeConfig[id] = val;
         if (id.startsWith('imu_euler_')) {
@@ -71,14 +78,8 @@ function setupUIHandlers() {
     }
   });
 
-  // Allocator select changes
-  const selectAlloc = document.getElementById('select-allocator_type');
-  selectAlloc.addEventListener('change', (e) => {
-    activeConfig['allocator_type'] = parseFloat(e.target.value);
-  });
-
   // Standard inputs without sliders
-  const directInputs = ['looprate_hz', 'max_rate_degps', 'imu_lpf_fc_hz', 'servo1_offset_deg', 'servo2_offset_deg', 'theta_min_deg', 'theta_max_deg'];
+  const directInputs = ['looprate_hz', 'max_rate_degps', 'imu_lpf_fc_hz'];
   directInputs.forEach(id => {
     const input = document.getElementById(`num-${id}`);
     if (input) {
@@ -92,13 +93,20 @@ function setupUIHandlers() {
   btnConnect.addEventListener('click', toggleConnection);
   btnLoad.addEventListener('click', () => sendCommand('dump'));
   btnSave.addEventListener('click', saveConfigToBoard);
-  btnDefaults.addEventListener('click', () => sendCommand('defaults'));
+  btnDefaults.addEventListener('click', async () => {
+    isReconnecting = true;
+    await sendCommand('defaults');
+  });
 
   // Terminal Input submit handler
   terminalInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const command = terminalInput.value.trim();
       if (command) {
+        const cmdLower = command.toLowerCase();
+        if (cmdLower === 'save' || cmdLower === 'defaults') {
+          isReconnecting = true;
+        }
         sendCommand(command);
         terminalInput.value = '';
       }
@@ -110,32 +118,48 @@ function setupUIHandlers() {
 // Web Serial Communication
 // ------------------------------
 
-async function toggleConnection() {
-  if (port) {
-    // Disconnect
-    logTerminal('Disconnecting...', 'recv');
-    keepReading = false;
-    if (reader) {
-      try {
-        await reader.cancel();
-      } catch (err) {
-        console.error('Error canceling reader:', err);
-      }
-    }
-    if (readPromise) {
-      await readPromise;
-    }
-    
+async function cleanupConnection() {
+  keepReading = false;
+  
+  if (reader) {
     try {
-      if (writer) await writer.close();
-      if (port) await port.close();
+      await reader.cancel();
+    } catch (err) {
+      console.error('Error canceling reader:', err);
+    }
+    try {
+      reader.releaseLock();
+    } catch (err) {
+      console.error('Error releasing reader lock:', err);
+    }
+    reader = null;
+  }
+  
+  if (writer) {
+    try {
+      writer.releaseLock();
+    } catch (err) {
+      console.error('Error releasing writer lock:', err);
+    }
+    writer = null;
+  }
+  
+  if (port) {
+    try {
+      await port.close();
     } catch (err) {
       console.error('Error closing port:', err);
     }
-    
     port = null;
-    reader = null;
-    writer = null;
+  }
+}
+
+async function toggleConnection() {
+  if (port || isReconnecting) {
+    // Disconnect or Cancel Reconnect
+    logTerminal(isReconnecting ? 'Reconnection cancelled.' : 'Disconnecting...', 'recv');
+    isReconnecting = false;
+    await cleanupConnection();
     setConnectionState(false);
     logTerminal('Device disconnected.', 'error');
   } else {
@@ -150,6 +174,18 @@ async function toggleConnection() {
       await port.open({ baudRate: 115200 });
       
       writer = port.writable.getWriter();
+      
+      // Store USB info for auto-reconnection
+      try {
+        const info = port.getInfo();
+        lastUsbInfo = {
+          usbVendorId: info.usbVendorId,
+          usbProductId: info.usbProductId
+        };
+      } catch (err) {
+        console.error('Error getting port info:', err);
+      }
+      
       setConnectionState(true);
       logTerminal('Device connected successfully!', 'sent');
       
@@ -169,6 +205,61 @@ async function toggleConnection() {
       setConnectionState(false);
     }
   }
+}
+
+// Global navigator.serial event handlers for hotplugging / rebooting
+if ('serial' in navigator) {
+  navigator.serial.addEventListener('disconnect', async (event) => {
+    if (port && event.target === port) {
+      logTerminal('Device connection lost.', 'error');
+      await cleanupConnection();
+      
+      if (isReconnecting) {
+        setConnectionState('reconnecting');
+        logTerminal('Waiting for device to reboot and reconnect...', 'sent');
+      } else {
+        setConnectionState(false);
+      }
+    }
+  });
+
+  navigator.serial.addEventListener('connect', async (event) => {
+    if (isReconnecting && lastUsbInfo) {
+      const info = event.target.getInfo();
+      if (info.usbVendorId === lastUsbInfo.usbVendorId && info.usbProductId === lastUsbInfo.usbProductId) {
+        logTerminal('Device detected! Attempting auto-reconnection...', 'sent');
+        // Wait a short delay for device to fully initialize its serial interface after reboot
+        await new Promise(r => setTimeout(r, 1500));
+        
+        try {
+          port = event.target;
+          await port.open({ baudRate: 115200 });
+          
+          writer = port.writable.getWriter();
+          setConnectionState(true);
+          logTerminal('Device reconnected successfully!', 'sent');
+          
+          // Reset reconnecting flag
+          isReconnecting = false;
+          
+          // Start reading loop
+          keepReading = true;
+          readPromise = readSerialLoop();
+          
+          // Query parameters to restore UI to latest board state
+          setTimeout(() => {
+            sendCommand('dump');
+          }, 500);
+        } catch (err) {
+          console.error('Auto-reconnection failed:', err);
+          logTerminal(`Auto-reconnection failed: ${err.message}`, 'error');
+          port = null;
+          isReconnecting = false;
+          setConnectionState(false);
+        }
+      }
+    }
+  });
 }
 
 async function readSerialLoop() {
@@ -194,6 +285,17 @@ async function readSerialLoop() {
         reader.releaseLock();
         reader = null;
       }
+    }
+  }
+
+  // If we exited the loop unexpectedly (not initiated by manual disconnect)
+  if (keepReading && port) {
+    await cleanupConnection();
+    if (isReconnecting) {
+      setConnectionState('reconnecting');
+      logTerminal('Waiting for device to reboot and reconnect...', 'sent');
+    } else {
+      setConnectionState(false);
     }
   }
 }
@@ -250,11 +352,7 @@ function updateUIField(name, value, isPin) {
   if (slider) slider.value = value;
   if (numInput) numInput.value = value;
 
-  // Handles dropdown selects
-  if (name === 'allocator_type') {
-    const select = document.getElementById('select-allocator_type');
-    if (select) select.value = Math.round(value);
-  }
+
 
   // Update 3D visualizer rotation if Euler angles loaded
   if (name.startsWith('imu_euler_')) {
@@ -296,23 +394,39 @@ async function saveConfigToBoard() {
     await new Promise(r => setTimeout(r, 15));
   }
   
+  // Set reconnecting flag before save
+  isReconnecting = true;
   // Commit to Flash & Reboot
   await sendCommand('save');
 }
 
-function setConnectionState(isConnected) {
+function setConnectionState(state) {
+  const isConnected = state === true || state === 'connected';
+  const isReconnecting = state === 'reconnecting';
+  
   if (isConnected) {
     statusDot.className = 'status-dot connected';
     statusText.textContent = 'Connected';
     btnConnect.innerHTML = '<i data-lucide="log-out"></i> Disconnect';
+    btnConnect.removeAttribute('disabled');
     btnLoad.removeAttribute('disabled');
     btnSave.removeAttribute('disabled');
     btnDefaults.removeAttribute('disabled');
     terminalInput.removeAttribute('disabled');
+  } else if (isReconnecting) {
+    statusDot.className = 'status-dot reconnecting';
+    statusText.textContent = 'Rebooting...';
+    btnConnect.innerHTML = '<i data-lucide="x-circle"></i> Cancel';
+    btnConnect.removeAttribute('disabled');
+    btnLoad.setAttribute('disabled', 'true');
+    btnSave.setAttribute('disabled', 'true');
+    btnDefaults.setAttribute('disabled', 'true');
+    terminalInput.setAttribute('disabled', 'true');
   } else {
     statusDot.className = 'status-dot disconnected';
     statusText.textContent = 'Disconnected';
     btnConnect.innerHTML = '<i data-lucide="usb"></i> Connect Device';
+    btnConnect.removeAttribute('disabled');
     btnLoad.setAttribute('disabled', 'true');
     btnSave.setAttribute('disabled', 'true');
     btnDefaults.setAttribute('disabled', 'true');
@@ -353,7 +467,8 @@ function init3DVisualizer() {
   
   // Camera
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
-  camera.position.set(0, 0, 10);
+  camera.position.set(3, 2.5, 5.5);
+  camera.lookAt(0, 0, 0);
   
   // Renderer
   renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
@@ -377,69 +492,75 @@ function init3DVisualizer() {
   gridHelper.position.y = -2;
   scene.add(gridHelper);
 
-  // Build a custom Maryland-themed space rocket vehicle model
+  // Static reference coordinate system (custom thick 3D arrows)
+  const staticAxes = createCoordinateSystem(new THREE.Vector3(0, 0, 0), 3.5, 0.05, 0.4, 0.15, 0.4);
+  scene.add(staticAxes);
+
+  // Build a custom IMU sensor model (black rectangular prism)
   const vehicleGroup = new THREE.Group();
   
-  // 1. Rocket body (black cylinder with gold trim)
-  const bodyGeo = new THREE.CylinderGeometry(0.5, 0.6, 3, 16);
+  // 1. IMU Body: black rectangular prism (2.2 x 0.4 x 1.6)
+  const bodyGeo = new THREE.BoxGeometry(2.2, 0.4, 1.6);
   const bodyMat = new THREE.MeshStandardMaterial({ 
     color: 0x0c0c0d, 
-    roughness: 0.2, 
+    roughness: 0.4, 
     metalness: 0.8 
   });
   const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
   vehicleGroup.add(bodyMesh);
   
-  // 2. Gold nose cone
-  const noseGeo = new THREE.ConeGeometry(0.5, 1, 16);
-  const goldMat = new THREE.MeshStandardMaterial({ 
-    color: 0xffc72c, 
-    roughness: 0.1, 
-    metalness: 0.9 
-  });
-  const noseMesh = new THREE.Mesh(noseGeo, goldMat);
-  noseMesh.position.y = 2; // on top
-  vehicleGroup.add(noseMesh);
-
-  // 3. Engine nozzle (red cone at the base)
-  const engineGeo = new THREE.CylinderGeometry(0.4, 0.55, 0.4, 16);
-  const redMat = new THREE.MeshStandardMaterial({ 
-    color: 0xc8102e, 
-    roughness: 0.3, 
-    metalness: 0.7 
-  });
-  const engineMesh = new THREE.Mesh(engineGeo, redMat);
-  engineMesh.position.y = -1.7;
-  vehicleGroup.add(engineMesh);
-
-  // 4. White details & Maryland stripe (fins)
-  const finGeo = new THREE.BoxGeometry(0.1, 0.8, 0.6);
-  const whiteMat = new THREE.MeshStandardMaterial({ 
-    color: 0xffffff, 
-    roughness: 0.4 
+  // 2. Gold connector pins on sides to resemble a sensor module
+  const pinGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.2, 8);
+  const pinMat = new THREE.MeshStandardMaterial({
+    color: 0xffc72c,
+    roughness: 0.1,
+    metalness: 0.9
   });
   
-  const finLeft = new THREE.Mesh(finGeo, whiteMat);
-  finLeft.position.set(-0.7, -1.2, 0);
-  finLeft.rotation.z = 0.2;
-  vehicleGroup.add(finLeft);
+  // Add 4 pins along left side (-0.8 Z)
+  for (let i = 0; i < 4; i++) {
+    const pin = new THREE.Mesh(pinGeo, pinMat);
+    pin.position.set(-0.75 + i * 0.5, -0.21, -0.8);
+    vehicleGroup.add(pin);
+  }
+  // Add 4 pins along right side (0.8 Z)
+  for (let i = 0; i < 4; i++) {
+    const pin = new THREE.Mesh(pinGeo, pinMat);
+    pin.position.set(-0.75 + i * 0.5, -0.21, 0.8);
+    vehicleGroup.add(pin);
+  }
 
-  const finRight = new THREE.Mesh(finGeo, whiteMat);
-  finRight.position.set(0.7, -1.2, 0);
-  finRight.rotation.z = -0.2;
-  vehicleGroup.add(finRight);
+  // 3. Canvas texture for "IMU" label
+  function createTextTexture(text) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.font = 'bold 32px "Inter", "Fira Code", sans-serif';
+    ctx.fillStyle = '#ffc72c';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, canvas.width / 2, canvas.height / 2);
+    
+    return new THREE.CanvasTexture(canvas);
+  }
 
-  // Add decorative gold bands
-  const bandGeo = new THREE.TorusGeometry(0.56, 0.04, 8, 24);
-  const band1 = new THREE.Mesh(bandGeo, goldMat);
-  band1.position.y = 0.5;
-  band1.rotation.x = Math.PI / 2;
-  vehicleGroup.add(band1);
-  
-  const band2 = new THREE.Mesh(bandGeo, goldMat);
-  band2.position.y = -0.5;
-  band2.rotation.x = Math.PI / 2;
-  vehicleGroup.add(band2);
+  const labelGeo = new THREE.PlaneGeometry(1.2, 0.6);
+  const labelMat = new THREE.MeshBasicMaterial({
+    map: createTextTexture('IMU'),
+    transparent: true,
+    side: THREE.DoubleSide
+  });
+  const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+  labelMesh.position.set(0, 0.201, 0); // slightly above top face
+  labelMesh.rotation.x = -Math.PI / 2; // flat on top
+  vehicleGroup.add(labelMesh);
+
+  // 4. Little coordinate system attached directly to the IMU (local frame - smaller custom arrows)
+  const localAxes = createCoordinateSystem(new THREE.Vector3(0, 0, 0), 1.6, 0.025, 0.25, 0.09, 1.0);
+  vehicleGroup.add(localAxes);
 
   vehicleMesh = vehicleGroup;
   scene.add(vehicleMesh);
@@ -447,13 +568,33 @@ function init3DVisualizer() {
   // Set default rotation
   update3DRotation();
   
+  // Mouse tracking for interactive pan/tilt view
+  let mouseX = 0;
+  let mouseY = 0;
+  
+  container.addEventListener('mousemove', (event) => {
+    const rect = container.getBoundingClientRect();
+    // Normalized coordinates from -1 to 1
+    mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  });
+  
+  container.addEventListener('mouseleave', () => {
+    mouseX = 0;
+    mouseY = 0;
+  });
+  
   // Render Loop
   function animate() {
     requestAnimationFrame(animate);
     
-    // Add subtle idle wobble to make it feel alive
-    const time = Date.now() * 0.001;
-    vehicleMesh.position.y = Math.sin(time) * 0.15;
+    // Smoothly interpolate camera position based on mouse coordinates (pan/tilt)
+    const targetX = 3 + mouseX * 2.0;
+    const targetY = 2.5 + mouseY * 1.5;
+    
+    camera.position.x += (targetX - camera.position.x) * 0.05;
+    camera.position.y += (targetY - camera.position.y) * 0.05;
+    camera.lookAt(0, 0, 0);
     
     renderer.render(scene, camera);
   }
@@ -474,7 +615,7 @@ function update3DRotation() {
   
   // Read euler alignment inputs (in degrees)
   const roll = activeConfig['imu_euler_x'] || 0;
-  const pitch = activeConfig['imu_euler_y'] || 270; // 270 is typical default mounting
+  const pitch = activeConfig['imu_euler_y'] || 0;
   const yaw = activeConfig['imu_euler_z'] || 0;
   
   // Convert to radians
@@ -484,4 +625,75 @@ function update3DRotation() {
   
   // Set rotation order equivalent to flight controller parsing (XYZ sequential)
   vehicleMesh.rotation.set(rRad, pRad, yRad, 'XYZ');
+}
+
+// ------------------------------
+// Custom 3D Coordinate Arrows
+// ------------------------------
+
+function create3DArrow(dir, origin, length, radius, headLength, headWidth, color) {
+  const group = new THREE.Group();
+  
+  const shaftLength = length - headLength;
+  const shaftGeo = new THREE.CylinderGeometry(radius, radius, shaftLength, 8);
+  const mat = new THREE.MeshStandardMaterial({
+    color: color,
+    roughness: 0.3,
+    metalness: 0.6
+  });
+  
+  const shaftMesh = new THREE.Mesh(shaftGeo, mat);
+  shaftMesh.position.y = shaftLength / 2;
+  group.add(shaftMesh);
+  
+  const headGeo = new THREE.ConeGeometry(headWidth, headLength, 8);
+  const headMesh = new THREE.Mesh(headGeo, mat);
+  headMesh.position.y = shaftLength + headLength / 2;
+  group.add(headMesh);
+  
+  dir.normalize();
+  const up = new THREE.Vector3(0, 1, 0);
+  if (dir.distanceTo(new THREE.Vector3(0, -1, 0)) < 0.0001) {
+    group.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
+  } else if (dir.distanceTo(up) > 0.0001) {
+    const axis = new THREE.Vector3().crossVectors(up, dir).normalize();
+    const angle = up.angleTo(dir);
+    group.quaternion.setFromAxisAngle(axis, angle);
+  }
+  
+  group.position.copy(origin);
+  return group;
+}
+
+function createCoordinateSystem(origin, length, radius, headLength, headWidth, opacity = 1.0) {
+  const group = new THREE.Group();
+  
+  const xDir = new THREE.Vector3(1, 0, 0);
+  const yDir = new THREE.Vector3(0, 1, 0);
+  const zDir = new THREE.Vector3(0, 0, 1);
+  
+  const xColor = 0xff3b30; // Bright Red (X)
+  const yColor = 0x34c759; // Bright Green (Y)
+  const zColor = 0x007aff; // Bright Blue (Z)
+  
+  const xArrow = create3DArrow(xDir, origin, length, radius, headLength, headWidth, xColor);
+  const yArrow = create3DArrow(yDir, origin, length, radius, headLength, headWidth, yColor);
+  const zArrow = create3DArrow(zDir, origin, length, radius, headLength, headWidth, zColor);
+  
+  if (opacity < 1.0) {
+    [xArrow, yArrow, zArrow].forEach(arrow => {
+      arrow.traverse(child => {
+        if (child.isMesh) {
+          child.material.transparent = true;
+          child.material.opacity = opacity;
+        }
+      });
+    });
+  }
+  
+  group.add(xArrow);
+  group.add(yArrow);
+  group.add(zArrow);
+  
+  return group;
 }
