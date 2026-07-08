@@ -1,6 +1,0 @@
-Component,Device Pad,XIAO RP2350 Pin,RP2350 Internal Mapping
-ELRS Receiver,TX/RX,D7/D6,UART 0 RX (GPIO 1)/UART 0 TX (GPIO 0)
-ESC 1 (DShot),Signal,D0,PWM Slice 5A (GPIO 26)
-ESC 2 (DShot),Signal,D1,PWM Slice 5B (GPIO 27)
-Servo 1,Signal,D4,PWM Slice 3A (GPIO 6)
-Servo 2,Signal,D5,PWM Slice 3B (GPIO 7)

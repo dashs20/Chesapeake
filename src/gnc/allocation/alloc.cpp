@@ -33,8 +33,8 @@ act_cmd alloc::query(double alpha_x, double alpha_y, double alpha_z,
   // compute th and tl
   double alpha_z_sat =
       gnc_util::double_clip(alpha_z, -max_delta_throttle, max_delta_throttle);
-  double th_frac = gnc_util::double_clip(t_frac + alpha_z_sat, t_min_frac, 1.0);
-  double tl_frac = gnc_util::double_clip(t_frac - alpha_z_sat, t_min_frac, 1.0);
+  double th_frac = gnc_util::double_clip(t_frac - alpha_z_sat, t_min_frac, 1.0);
+  double tl_frac = gnc_util::double_clip(t_frac + alpha_z_sat, t_min_frac, 1.0);
 
   act_cmd result;
   result.theta_1_deg = gnc_util::rad2deg(theta_1_rad) + servo1_offset_deg;
