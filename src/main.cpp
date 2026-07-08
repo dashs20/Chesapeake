@@ -62,7 +62,7 @@ void setup() {
   config_manager_init();
 
   // Instantiate fsw and loop regulator using loaded parameters
-  fsw = new gnc(spacey_config);
+  fsw = new gnc(chesapeake_config);
   loop_regulator = new hardware_util::enforce_looprate(looprate_hz);
 
   /*
@@ -97,7 +97,7 @@ void setup() {
 
   // DSHOT (last so we can immediately send 0 throttle until they arm)
   // Command zero throttle for 3 seconds
-  int num_motors = (spacey_config.allocator_type == AllocatorType::QUAD) ? 4 : 2;
+  int num_motors = (chesapeake_config.allocator_type == AllocatorType::QUAD) ? 4 : 2;
   esc = new DShotX4(ESC_1_PIN, num_motors, 300);
   uint32_t start = millis();
   while (millis() - start < 3000) {
@@ -128,7 +128,7 @@ void loop() {
   if (millis() - last_print >= 100) {
     last_print = millis();
     gnc_util::vec imu_rotated = gnc_util::euler_xyz_rotate_deg(
-        imu_raw_degps, spacey_config.imu_euler_xyz_deg);
+        imu_raw_degps, chesapeake_config.imu_euler_xyz_deg);
     Serial.print("Rot_X: ");
     Serial.print(imu_rotated.x);
     Serial.print(" | Rot_Y: ");
@@ -173,7 +173,7 @@ void loop() {
   Command outputs to hardware
   */
 
-  int active_motors = (spacey_config.allocator_type == AllocatorType::QUAD) ? 4 : 2;
+  int active_motors = (chesapeake_config.allocator_type == AllocatorType::QUAD) ? 4 : 2;
 
   switch (arm_state) {
   case STATE::NOTHING: // fully disarmed (switch all the way down)

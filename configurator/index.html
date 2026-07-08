@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chesapeake FSW Configurator</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Three.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+  <!-- Background Maryland Pattern Grid Overlay -->
+  <div class="md-pattern-bg"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-logo">
+      <div class="flag-accent">
+        <div class="calvert"></div>
+        <div class="crossland"></div>
+      </div>
+      <h1>CHESAPEAKE<span>FSW</span></h1>
+      <span class="sub-logo">CONFIGURATOR</span>
+    </div>
+    <div class="connection-bar">
+      <div class="port-status">
+        <span class="status-dot disconnected" id="status-dot"></span>
+        <span id="status-text">Disconnected</span>
+      </div>
+      <button class="btn btn-connect" id="btn-connect">
+        <i data-lucide="usb"></i> Connect Device
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container -->
+  <main class="dashboard-grid">
+
+    <!-- Column 1: Connection, Actions, CLI -->
+    <div class="dashboard-col">
+      <!-- Actions Panel -->
+      <section class="card border-gold">
+        <div class="card-header text-gold">
+          <i data-lucide="sliders-horizontal"></i>
+          <h2>Control Actions</h2>
+        </div>
+        <div class="card-body action-buttons">
+          <button class="btn btn-primary" id="btn-load" disabled>
+            <i data-lucide="download"></i> Load Config
+          </button>
+          <button class="btn btn-success" id="btn-save" disabled>
+            <i data-lucide="save"></i> Save to Flash
+          </button>
+          <button class="btn btn-danger" id="btn-defaults" disabled>
+            <i data-lucide="rotate-ccw"></i> Reset Defaults
+          </button>
+        </div>
+      </section>
+
+      <!-- Terminal / CLI Panel -->
+      <section class="card card-terminal border-black flex-grow">
+        <div class="card-header text-white">
+          <i data-lucide="terminal"></i>
+          <h2>CLI Terminal</h2>
+        </div>
+        <div class="card-body terminal-wrapper">
+          <div class="terminal-output" id="terminal-output">
+            <div class="terminal-line text-muted">Welcome to the Chesapeake FSW CLI Configurator.</div>
+            <div class="terminal-line text-muted">Please connect your flight board via USB.</div>
+          </div>
+          <div class="terminal-input-bar">
+            <span class="terminal-prompt">&gt;</span>
+            <input type="text" id="terminal-input" placeholder="Type command here (e.g. status, dump)..." disabled>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Column 2: PID Settings & Actuator Gearing -->
+    <div class="dashboard-col">
+      <!-- PID Settings Panel -->
+      <section class="card border-red">
+        <div class="card-header text-red">
+          <i data-lucide="settings-2"></i>
+          <h2>PID Loop Tuning</h2>
+        </div>
+        <div class="card-body tabbed-inputs">
+          <!-- Roll PID -->
+          <div class="input-group-header">Roll Controller (X)</div>
+          <div class="slider-row">
+            <label>Kp</label>
+            <input type="range" class="slider-gold" id="slider-pid_x_kp" min="0" max="0.01" step="0.0001" value="0.0022">
+            <input type="number" id="num-pid_x_kp" min="0" max="0.01" step="0.0001" value="0.0022">
+          </div>
+          <div class="slider-row">
+            <label>Ki</label>
+            <input type="range" class="slider-gold" id="slider-pid_x_ki" min="0" max="0.01" step="0.0001" value="0">
+            <input type="number" id="num-pid_x_ki" min="0" max="0.01" step="0.0001" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Kd</label>
+            <input type="range" class="slider-gold" id="slider-pid_x_kd" min="0" max="0.01" step="0.0001" value="0">
+            <input type="number" id="num-pid_x_kd" min="0" max="0.01" step="0.0001" value="0">
+          </div>
+          <div class="slider-row">
+            <label>I-Lim</label>
+            <input type="range" class="slider-gold" id="slider-pid_x_ilim" min="0" max="100" step="0.5" value="20.0">
+            <input type="number" id="num-pid_x_ilim" min="0" max="100" step="0.5" value="20.0">
+          </div>
+
+          <!-- Pitch PID -->
+          <div class="input-group-header line-red">Pitch Controller (Y)</div>
+          <div class="slider-row">
+            <label>Kp</label>
+            <input type="range" class="slider-red" id="slider-pid_y_kp" min="0" max="0.01" step="0.0001" value="0.0022">
+            <input type="number" id="num-pid_y_kp" min="0" max="0.01" step="0.0001" value="0.0022">
+          </div>
+          <div class="slider-row">
+            <label>Ki</label>
+            <input type="range" class="slider-red" id="slider-pid_y_ki" min="0" max="0.01" step="0.0001" value="0">
+            <input type="number" id="num-pid_y_ki" min="0" max="0.01" step="0.0001" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Kd</label>
+            <input type="range" class="slider-red" id="slider-pid_y_kd" min="0" max="0.01" step="0.0001" value="0">
+            <input type="number" id="num-pid_y_kd" min="0" max="0.01" step="0.0001" value="0">
+          </div>
+          <div class="slider-row">
+            <label>I-Lim</label>
+            <input type="range" class="slider-red" id="slider-pid_y_ilim" min="0" max="100" step="0.5" value="20.0">
+            <input type="number" id="num-pid_y_ilim" min="0" max="100" step="0.5" value="20.0">
+          </div>
+
+          <!-- Yaw PID -->
+          <div class="input-group-header">Yaw Controller (Z)</div>
+          <div class="slider-row">
+            <label>Kp</label>
+            <input type="range" class="slider-gold" id="slider-pid_z_kp" min="0" max="0.01" step="0.0001" value="0.0001">
+            <input type="number" id="num-pid_z_kp" min="0" max="0.01" step="0.0001" value="0.0001">
+          </div>
+          <div class="slider-row">
+            <label>Ki</label>
+            <input type="range" class="slider-gold" id="slider-pid_z_ki" min="0" max="0.01" step="0.0001" value="0">
+            <input type="number" id="num-pid_z_ki" min="0" max="0.01" step="0.0001" value="0">
+          </div>
+          <div class="slider-row">
+            <label>Kd</label>
+            <input type="range" class="slider-gold" id="slider-pid_z_kd" min="0" max="0.01" step="0.0001" value="0">
+            <input type="number" id="num-pid_z_kd" min="0" max="0.01" step="0.0001" value="0">
+          </div>
+          <div class="slider-row">
+            <label>I-Lim</label>
+            <input type="range" class="slider-gold" id="slider-pid_z_ilim" min="0" max="100" step="0.5" value="20.0">
+            <input type="number" id="num-pid_z_ilim" min="0" max="100" step="0.5" value="20.0">
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Column 3: IMU Alignment & Limits & Allocator -->
+    <div class="dashboard-col">
+      <!-- 3D IMU Alignment Visualizer -->
+      <section class="card border-gold">
+        <div class="card-header text-gold">
+          <i data-lucide="box"></i>
+          <h2>IMU 3D Orientation</h2>
+        </div>
+        <div class="card-body visualizer-card">
+          <!-- 3D Render Canvas -->
+          <div id="render-canvas-container">
+            <canvas id="imu-render-canvas"></canvas>
+          </div>
+          <!-- Mounting orientation controls -->
+          <div class="input-group-header">IMU Mounting Offsets (Euler Angles)</div>
+          <div class="slider-row compact">
+            <label>X-Roll</label>
+            <input type="range" class="slider-gold" id="slider-imu_euler_x" min="0" max="360" step="1" value="0">
+            <input type="number" id="num-imu_euler_x" min="0" max="360" step="1" value="0">
+          </div>
+          <div class="slider-row compact">
+            <label>Y-Pitch</label>
+            <input type="range" class="slider-gold" id="slider-imu_euler_y" min="0" max="360" step="1" value="270">
+            <input type="number" id="num-imu_euler_y" min="0" max="360" step="1" value="270">
+          </div>
+          <div class="slider-row compact">
+            <label>Z-Yaw</label>
+            <input type="range" class="slider-gold" id="slider-imu_euler_z" min="0" max="360" step="1" value="0">
+            <input type="number" id="num-imu_euler_z" min="0" max="360" step="1" value="0">
+          </div>
+        </div>
+      </section>
+
+      <!-- Allocator & Hardware Limits Panel -->
+      <section class="card border-red">
+        <div class="card-header text-red">
+          <i data-lucide="cpu"></i>
+          <h2>System Parameters</h2>
+        </div>
+        <div class="card-body system-parameters">
+          <div class="param-row-pair">
+            <div class="param-input">
+              <label>Allocator Type</label>
+              <select id="select-allocator_type">
+                <option value="0">Twin-Engine VTVL (0)</option>
+                <option value="1">Quadcopter (1)</option>
+              </select>
+            </div>
+            <div class="param-input">
+              <label>Looprate (Hz)</label>
+              <input type="number" id="num-looprate_hz" min="100" max="4000" step="10" value="1000">
+            </div>
+          </div>
+
+          <div class="param-row-pair">
+            <div class="param-input">
+              <label>Max Rate (deg/s)</label>
+              <input type="number" id="num-max_rate_degps" min="10" max="2000" step="5" value="100.0">
+            </div>
+            <div class="param-input">
+              <label>IMU LPF Fc (Hz)</label>
+              <input type="number" id="num-imu_lpf_fc_hz" min="5" max="500" step="1" value="50.0">
+            </div>
+          </div>
+
+          <!-- Gearing / Offsets -->
+          <div class="input-group-header">VTVL Allocator Limits</div>
+          <div class="slider-row compact">
+            <label>Min Thr</label>
+            <input type="range" class="slider-red" id="slider-t_min_frac" min="0" max="0.5" step="0.01" value="0.05">
+            <input type="number" id="num-t_min_frac" min="0" max="0.5" step="0.01" value="0.05">
+          </div>
+          <div class="slider-row compact">
+            <label>Max ΔThr</label>
+            <input type="range" class="slider-red" id="slider-max_delta_throttle" min="0" max="0.5" step="0.01" value="0.10">
+            <input type="number" id="num-max_delta_throttle" min="0" max="0.5" step="0.01" value="0.10">
+          </div>
+          <div class="slider-row compact">
+            <label>Gear Ratio</label>
+            <input type="range" class="slider-red" id="slider-gear_ratio" min="0.1" max="2.0" step="0.05" value="0.5">
+            <input type="number" id="num-gear_ratio" min="0.1" max="2.0" step="0.05" value="0.5">
+          </div>
+          
+          <div class="param-row-pair" style="margin-top: 10px;">
+            <div class="param-input">
+              <label>Servo 1 Offset</label>
+              <input type="number" id="num-servo1_offset_deg" min="-45" max="45" step="1" value="0">
+            </div>
+            <div class="param-input">
+              <label>Servo 2 Offset</label>
+              <input type="number" id="num-servo2_offset_deg" min="-45" max="45" step="1" value="0">
+            </div>
+          </div>
+          <div class="param-row-pair">
+            <div class="param-input">
+              <label>Servo Min Ang</label>
+              <input type="number" id="num-theta_min_deg" min="0" max="90" step="1" value="75">
+            </div>
+            <div class="param-input">
+              <label>Servo Max Ang</label>
+              <input type="number" id="num-theta_max_deg" min="90" max="180" step="1" value="105">
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- Lucide Icons Trigger -->
+  <script>
+    lucide.createIcons();
+  </script>
+  <!-- App JavaScript -->
+  <script src="app.js"></script>
+</body>
+</html>

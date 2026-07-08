@@ -22,7 +22,7 @@ static void parse_and_execute(char* line) {
   
   // 1. HELP
   if (strcasecmp(line, "help") == 0) {
-    Serial.println("--- Spacey FSW CLI Help ---");
+    Serial.println("--- Chesapeake FSW CLI Help ---");
     Serial.println("Commands:");
     Serial.println("  help               - Show this help menu");
     Serial.println("  status             - Show current vehicle status");
@@ -50,7 +50,7 @@ static void parse_and_execute(char* line) {
   
   // 3. DUMP / DIFF
   if (strcasecmp(line, "dump") == 0 || strcasecmp(line, "diff") == 0) {
-    Serial.println("# Spacey FSW Configuration Dump");
+    Serial.println("# Chesapeake FSW Configuration Dump");
     pin_config_print_all();
     gnc_config_print_all();
     return;
