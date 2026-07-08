@@ -383,10 +383,8 @@ function init3DVisualizer() {
   gridHelper.position.y = -2;
   scene.add(gridHelper);
 
-  // Static reference coordinate system (axes helper)
-  const staticAxes = new THREE.AxesHelper(3.5);
-  staticAxes.material.transparent = true;
-  staticAxes.material.opacity = 0.4;
+  // Static reference coordinate system (custom thick 3D arrows)
+  const staticAxes = createCoordinateSystem(new THREE.Vector3(0, 0, 0), 3.5, 0.05, 0.4, 0.15, 0.4);
   scene.add(staticAxes);
 
   // Build a custom IMU sensor model (black rectangular prism)
@@ -451,8 +449,8 @@ function init3DVisualizer() {
   labelMesh.rotation.x = -Math.PI / 2; // flat on top
   vehicleGroup.add(labelMesh);
 
-  // 4. Little coordinate system attached directly to the IMU (local frame)
-  const localAxes = new THREE.AxesHelper(1.8);
+  // 4. Little coordinate system attached directly to the IMU (local frame - smaller custom arrows)
+  const localAxes = createCoordinateSystem(new THREE.Vector3(0, 0, 0), 1.6, 0.025, 0.25, 0.09, 1.0);
   vehicleGroup.add(localAxes);
 
   vehicleMesh = vehicleGroup;
@@ -518,4 +516,75 @@ function update3DRotation() {
   
   // Set rotation order equivalent to flight controller parsing (XYZ sequential)
   vehicleMesh.rotation.set(rRad, pRad, yRad, 'XYZ');
+}
+
+// ------------------------------
+// Custom 3D Coordinate Arrows
+// ------------------------------
+
+function create3DArrow(dir, origin, length, radius, headLength, headWidth, color) {
+  const group = new THREE.Group();
+  
+  const shaftLength = length - headLength;
+  const shaftGeo = new THREE.CylinderGeometry(radius, radius, shaftLength, 8);
+  const mat = new THREE.MeshStandardMaterial({
+    color: color,
+    roughness: 0.3,
+    metalness: 0.6
+  });
+  
+  const shaftMesh = new THREE.Mesh(shaftGeo, mat);
+  shaftMesh.position.y = shaftLength / 2;
+  group.add(shaftMesh);
+  
+  const headGeo = new THREE.ConeGeometry(headWidth, headLength, 8);
+  const headMesh = new THREE.Mesh(headGeo, mat);
+  headMesh.position.y = shaftLength + headLength / 2;
+  group.add(headMesh);
+  
+  dir.normalize();
+  const up = new THREE.Vector3(0, 1, 0);
+  if (dir.distanceTo(new THREE.Vector3(0, -1, 0)) < 0.0001) {
+    group.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
+  } else if (dir.distanceTo(up) > 0.0001) {
+    const axis = new THREE.Vector3().crossVectors(up, dir).normalize();
+    const angle = up.angleTo(dir);
+    group.quaternion.setFromAxisAngle(axis, angle);
+  }
+  
+  group.position.copy(origin);
+  return group;
+}
+
+function createCoordinateSystem(origin, length, radius, headLength, headWidth, opacity = 1.0) {
+  const group = new THREE.Group();
+  
+  const xDir = new THREE.Vector3(1, 0, 0);
+  const yDir = new THREE.Vector3(0, 1, 0);
+  const zDir = new THREE.Vector3(0, 0, 1);
+  
+  const xColor = 0xff3b30; // Bright Red (X)
+  const yColor = 0x34c759; // Bright Green (Y)
+  const zColor = 0x007aff; // Bright Blue (Z)
+  
+  const xArrow = create3DArrow(xDir, origin, length, radius, headLength, headWidth, xColor);
+  const yArrow = create3DArrow(yDir, origin, length, radius, headLength, headWidth, yColor);
+  const zArrow = create3DArrow(zDir, origin, length, radius, headLength, headWidth, zColor);
+  
+  if (opacity < 1.0) {
+    [xArrow, yArrow, zArrow].forEach(arrow => {
+      arrow.traverse(child => {
+        if (child.isMesh) {
+          child.material.transparent = true;
+          child.material.opacity = opacity;
+        }
+      });
+    });
+  }
+  
+  group.add(xArrow);
+  group.add(yArrow);
+  group.add(zArrow);
+  
+  return group;
 }
