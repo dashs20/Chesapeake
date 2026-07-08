@@ -6,12 +6,12 @@
 
 #define EEPROM_SIZE 512
 #define EEPROM_MAGIC 0x50414359 // "SPCY" in hex
-#define EEPROM_VERSION 3
+#define EEPROM_VERSION 4
 
 #define ADDR_MAGIC 0
 #define ADDR_VERSION 4
 #define ADDR_PIN_CFG 8
-#define ADDR_GNC_CFG 48
+#define ADDR_GNC_CFG 64
 
 void config_manager_init() {
   EEPROM.begin(EEPROM_SIZE);

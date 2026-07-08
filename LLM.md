@@ -1,4 +1,4 @@
-# Chesapeake FSW (Flight Software) Repository Context
+# Chesapeake Repository Context
 
 This file serves as a comprehensive reference guide for LLM coding assistants to quickly bootstrap and understand the codebase layout, hardware architecture, APIs, data structures, and standard flows.
 

@@ -9,7 +9,6 @@ battery_monitor::battery_monitor(int pin, double multiplier)
 battery_monitor::~battery_monitor() {}
 
 void battery_monitor::begin() {
-  pinMode(adc_pin, INPUT);
   // Set ADC resolution to 12 bits (0-4095 range) for the RP2350
   analogReadResolution(12);
 }

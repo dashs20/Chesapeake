@@ -1,4 +1,4 @@
-# Chesapeake FSW (Flight Software)
+# Chesapeake
 
 <p align="center">
   <img src="configurator/chesapeake.png" alt="Chesapeake Logo" width="320" />

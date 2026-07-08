@@ -1,5 +1,5 @@
 /**
- * Chesapeake FSW Configurator - Application Logic
+ * Chesapeake Configurator - Application Logic
  * Integrates Web Serial communication, UI syncing, and a 3D Three.js rendering engine.
  * Theme: Maryland Calvert/Crossland Flag aesthetic (Black, Gold, Red, White)
  */
