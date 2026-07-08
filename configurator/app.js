@@ -506,7 +506,7 @@ function update3DRotation() {
   
   // Read euler alignment inputs (in degrees)
   const roll = activeConfig['imu_euler_x'] || 0;
-  const pitch = activeConfig['imu_euler_y'] || 270; // 270 is typical default mounting
+  const pitch = activeConfig['imu_euler_y'] || 0;
   const yaw = activeConfig['imu_euler_z'] || 0;
   
   // Convert to radians

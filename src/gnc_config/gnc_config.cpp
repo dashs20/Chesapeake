@@ -65,7 +65,7 @@ void gnc_config_load_defaults() {
   };
   
   gnc_params.chesapeake_config.imu_lpf_cfg = {.fc_hz = 50.0, .looprate_hz = 1000.0};
-  gnc_params.chesapeake_config.imu_euler_xyz_deg = {.x = 0.0, .y = 270.0, .z = 0.0};
+  gnc_params.chesapeake_config.imu_euler_xyz_deg = {.x = 0.0, .y = 0.0, .z = 0.0};
   
   gnc_config_sync_legacy();
 }
