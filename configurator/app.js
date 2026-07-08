@@ -461,13 +461,33 @@ function init3DVisualizer() {
   // Set default rotation
   update3DRotation();
   
+  // Mouse tracking for interactive pan/tilt view
+  let mouseX = 0;
+  let mouseY = 0;
+  
+  container.addEventListener('mousemove', (event) => {
+    const rect = container.getBoundingClientRect();
+    // Normalized coordinates from -1 to 1
+    mouseX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouseY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+  });
+  
+  container.addEventListener('mouseleave', () => {
+    mouseX = 0;
+    mouseY = 0;
+  });
+  
   // Render Loop
   function animate() {
     requestAnimationFrame(animate);
     
-    // Add subtle idle wobble to make it feel alive
-    const time = Date.now() * 0.001;
-    vehicleMesh.position.y = Math.sin(time) * 0.15;
+    // Smoothly interpolate camera position based on mouse coordinates (pan/tilt)
+    const targetX = 3 + mouseX * 2.0;
+    const targetY = 2.5 + mouseY * 1.5;
+    
+    camera.position.x += (targetX - camera.position.x) * 0.05;
+    camera.position.y += (targetY - camera.position.y) * 0.05;
+    camera.lookAt(0, 0, 0);
     
     renderer.render(scene, camera);
   }
