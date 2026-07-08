@@ -81,43 +81,18 @@ header {
   gap: 15px;
 }
 
-.flag-accent {
-  width: 44px;
-  height: 28px;
-  border: 1px solid rgba(255,255,255,0.1);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  overflow: hidden;
-  border-radius: 4px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+.header-logo-img {
+  height: 36px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Simulated Flag designs */
-.flag-accent .calvert {
-  background: repeating-linear-gradient(45deg, var(--md-gold) 0px, var(--md-gold) 6px, var(--md-black) 6px, var(--md-black) 12px);
-  grid-column: 1;
-  grid-row: 1;
+.header-logo-img:hover {
+  transform: scale(1.08);
 }
-.flag-accent::after {
-  content: '';
-  background: repeating-linear-gradient(-45deg, var(--md-gold) 0px, var(--md-gold) 6px, var(--md-black) 6px, var(--md-black) 12px);
-  grid-column: 2;
-  grid-row: 2;
-}
-.flag-accent::before {
-  content: '';
-  background: var(--md-white);
-  border: 2px solid var(--md-red);
-  grid-column: 2;
-  grid-row: 1;
-}
-.flag-accent .crossland {
-  background: var(--md-white);
-  border: 2px solid var(--md-red);
-  grid-column: 1;
-  grid-row: 2;
-}
+
 
 header h1 {
   font-size: 1.5rem;
