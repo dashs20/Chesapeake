@@ -97,7 +97,7 @@ void setup() {
 
   // DSHOT (last so we can immediately send 0 throttle until they arm)
   // Command zero throttle for 3 seconds
-  int num_motors = (chesapeake_config.allocator_type == AllocatorType::QUAD) ? 4 : 2;
+  int num_motors = 4;
   esc = new DShotX4(ESC_1_PIN, num_motors, 300);
   uint32_t start = millis();
   while (millis() - start < 3000) {
@@ -160,7 +160,7 @@ void loop() {
   Command outputs to hardware
   */
 
-  int active_motors = (chesapeake_config.allocator_type == AllocatorType::QUAD) ? 4 : 2;
+  int active_motors = 4;
 
   switch (arm_state) {
   case STATE::NOTHING: // fully disarmed (switch all the way down)

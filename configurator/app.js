@@ -78,14 +78,8 @@ function setupUIHandlers() {
     }
   });
 
-  // Allocator select changes
-  const selectAlloc = document.getElementById('select-allocator_type');
-  selectAlloc.addEventListener('change', (e) => {
-    activeConfig['allocator_type'] = parseFloat(e.target.value);
-  });
-
   // Standard inputs without sliders
-  const directInputs = ['looprate_hz', 'max_rate_degps', 'imu_lpf_fc_hz', 'servo1_offset_deg', 'servo2_offset_deg', 'theta_min_deg', 'theta_max_deg'];
+  const directInputs = ['looprate_hz', 'max_rate_degps', 'imu_lpf_fc_hz'];
   directInputs.forEach(id => {
     const input = document.getElementById(`num-${id}`);
     if (input) {
@@ -358,11 +352,7 @@ function updateUIField(name, value, isPin) {
   if (slider) slider.value = value;
   if (numInput) numInput.value = value;
 
-  // Handles dropdown selects
-  if (name === 'allocator_type') {
-    const select = document.getElementById('select-allocator_type');
-    if (select) select.value = Math.round(value);
-  }
+
 
   // Update 3D visualizer rotation if Euler angles loaded
   if (name.startsWith('imu_euler_')) {

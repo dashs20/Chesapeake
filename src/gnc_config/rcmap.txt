@@ -1,5 +1,0 @@
-ch4: yaw
-ch3: throttle
-ch1: roll
-ch2: pitch
-ch6/ch8: switch rhs

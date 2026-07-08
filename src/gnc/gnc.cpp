@@ -8,11 +8,7 @@ gnc::gnc(gnc_cfg config)
     : config(config), imu_x_lpf(config.imu_lpf_cfg),
       imu_y_lpf(config.imu_lpf_cfg), imu_z_lpf(config.imu_lpf_cfg),
       pid_x(config.pid_x_cfg), pid_y(config.pid_y_cfg), pid_z(config.pid_z_cfg) {
-  if (config.allocator_type == AllocatorType::VTVL) {
-    allocator_func = VTVL_allocator;
-  } else {
-    allocator_func = quad_allocator;
-  }
+  allocator_func = quad_allocator;
 }
 
 gnc::~gnc() {}

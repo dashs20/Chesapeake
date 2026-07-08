@@ -204,66 +204,28 @@
         <div class="card-body system-parameters">
           <div class="param-row-pair">
             <div class="param-input">
-              <label>Allocator Type</label>
-              <select id="select-allocator_type">
-                <option value="0">Twin-Engine VTVL (0)</option>
-                <option value="1">Quadcopter (1)</option>
-              </select>
-            </div>
-            <div class="param-input">
               <label>Looprate (Hz)</label>
               <input type="number" id="num-looprate_hz" min="100" max="4000" step="10" value="1000">
             </div>
-          </div>
-
-          <div class="param-row-pair">
             <div class="param-input">
               <label>Max Rate (deg/s)</label>
               <input type="number" id="num-max_rate_degps" min="10" max="2000" step="5" value="100.0">
             </div>
+          </div>
+
+          <div class="param-row-pair">
             <div class="param-input">
               <label>IMU LPF Fc (Hz)</label>
               <input type="number" id="num-imu_lpf_fc_hz" min="5" max="500" step="1" value="50.0">
             </div>
           </div>
 
-          <!-- Gearing / Offsets -->
-          <div class="input-group-header">VTVL Allocator Limits</div>
+          <!-- Actuator Limits -->
+          <div class="input-group-header">Actuator Limits</div>
           <div class="slider-row compact">
             <label>Min Thr</label>
             <input type="range" class="slider-red" id="slider-t_min_frac" min="0" max="0.5" step="0.01" value="0.05">
             <input type="number" id="num-t_min_frac" min="0" max="0.5" step="0.01" value="0.05">
-          </div>
-          <div class="slider-row compact">
-            <label>Max ΔThr</label>
-            <input type="range" class="slider-red" id="slider-max_delta_throttle" min="0" max="0.5" step="0.01" value="0.10">
-            <input type="number" id="num-max_delta_throttle" min="0" max="0.5" step="0.01" value="0.10">
-          </div>
-          <div class="slider-row compact">
-            <label>Gear Ratio</label>
-            <input type="range" class="slider-red" id="slider-gear_ratio" min="0.1" max="2.0" step="0.05" value="0.5">
-            <input type="number" id="num-gear_ratio" min="0.1" max="2.0" step="0.05" value="0.5">
-          </div>
-          
-          <div class="param-row-pair" style="margin-top: 10px;">
-            <div class="param-input">
-              <label>Servo 1 Offset</label>
-              <input type="number" id="num-servo1_offset_deg" min="-45" max="45" step="1" value="0">
-            </div>
-            <div class="param-input">
-              <label>Servo 2 Offset</label>
-              <input type="number" id="num-servo2_offset_deg" min="-45" max="45" step="1" value="0">
-            </div>
-          </div>
-          <div class="param-row-pair">
-            <div class="param-input">
-              <label>Servo Min Ang</label>
-              <input type="number" id="num-theta_min_deg" min="0" max="90" step="1" value="75">
-            </div>
-            <div class="param-input">
-              <label>Servo Max Ang</label>
-              <input type="number" id="num-theta_max_deg" min="90" max="180" step="1" value="105">
-            </div>
           </div>
         </div>
       </section>
