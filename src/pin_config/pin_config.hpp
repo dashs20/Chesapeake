@@ -8,6 +8,8 @@ struct pin_cfg_t {
   int esc_2_pin;
   int servo_1_pin;
   int servo_2_pin;
+  int servo_3_pin;
+  int servo_4_pin;
   int cs_pin;
   int imu_sck_pin;
   int imu_mosi_pin;
@@ -23,6 +25,8 @@ extern int ESC_1_PIN;
 extern int ESC_2_PIN;
 extern int SERVO_1_PIN;
 extern int SERVO_2_PIN;
+extern int SERVO_3_PIN;
+extern int SERVO_4_PIN;
 extern int CS_PIN;
 extern int IMU_SCK_PIN;
 extern int IMU_MOSI_PIN;

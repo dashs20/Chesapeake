@@ -47,6 +47,8 @@ uint16_t throttles[4] = {0};
 // SERVO
 Servo servo1;
 Servo servo2;
+Servo servo3;
+Servo servo4;
 
 // IMU pointer
 LSM6DSV16XSensor *imu = nullptr;
@@ -94,6 +96,8 @@ void setup() {
   // SERVO
   servo1.attach(SERVO_1_PIN, 500, 2500); // duty cycle range for my servos
   servo2.attach(SERVO_2_PIN, 500, 2500);
+  servo3.attach(SERVO_3_PIN, 500, 2500);
+  servo4.attach(SERVO_4_PIN, 500, 2500);
 
   // DSHOT (last so we can immediately send 0 throttle until they arm)
   // Command zero throttle for 3 seconds
@@ -169,6 +173,8 @@ void loop() {
   */
   servo1.write(filtered_cmd.servos[0]);
   servo2.write(filtered_cmd.servos[1]);
+  servo3.write(filtered_cmd.servos[2]);
+  servo4.write(filtered_cmd.servos[3]);
   
   for (int i = 0; i < 4; i++) {
     throttles[i] = hardware_util::thr_frac_2_DSHOT_int(filtered_cmd.motors[i]);

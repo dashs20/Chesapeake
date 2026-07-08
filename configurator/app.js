@@ -382,7 +382,7 @@ async function saveConfigToBoard() {
   // Compile list of settings
   for (const [key, value] of Object.entries(activeConfig)) {
     // If it's pin config (check mapping)
-    const isPin = ['elrs_rx', 'elrs_tx', 'esc_1', 'esc_2', 'servo_1', 'servo_2', 'cs', 'imu_sck', 'imu_mos', 'imu_miso'].includes(key);
+    const isPin = ['elrs_rx', 'elrs_tx', 'esc_1', 'esc_2', 'servo_1', 'servo_2', 'servo_3', 'servo_4', 'cs', 'imu_sck', 'imu_mos', 'imu_miso'].includes(key);
     const paramName = isPin ? `pin_${key}` : key;
     
     // Format precision

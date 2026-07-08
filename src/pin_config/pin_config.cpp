@@ -8,8 +8,10 @@ int ELRS_RX_PIN = D7;
 int ELRS_TX_PIN = D6;
 int ESC_1_PIN = D1;
 int ESC_2_PIN = D2;
-int SERVO_1_PIN = D8;
-int SERVO_2_PIN = D9;
+int SERVO_1_PIN = D5;
+int SERVO_2_PIN = D8;
+int SERVO_3_PIN = D9;
+int SERVO_4_PIN = D10;
 int CS_PIN = 9;
 int IMU_SCK_PIN = 10;
 int IMU_MOSI_PIN = 11;
@@ -28,6 +30,8 @@ static PinParam pin_params[] = {
   {"esc_2", &pin_config.esc_2_pin},
   {"servo_1", &pin_config.servo_1_pin},
   {"servo_2", &pin_config.servo_2_pin},
+  {"servo_3", &pin_config.servo_3_pin},
+  {"servo_4", &pin_config.servo_4_pin},
   {"cs", &pin_config.cs_pin},
   {"imu_sck", &pin_config.imu_sck_pin},
   {"imu_mosi", &pin_config.imu_mosi_pin},
@@ -41,8 +45,10 @@ void pin_config_load_defaults() {
   pin_config.elrs_tx_pin = D6;
   pin_config.esc_1_pin = D1;
   pin_config.esc_2_pin = D2;
-  pin_config.servo_1_pin = D8;
-  pin_config.servo_2_pin = D9;
+  pin_config.servo_1_pin = D5;
+  pin_config.servo_2_pin = D8;
+  pin_config.servo_3_pin = D9;
+  pin_config.servo_4_pin = D10;
   pin_config.cs_pin = 9;
   pin_config.imu_sck_pin = 10;
   pin_config.imu_mosi_pin = 11;
@@ -57,6 +63,8 @@ void pin_config_sync_legacy() {
   ESC_2_PIN = pin_config.esc_2_pin;
   SERVO_1_PIN = pin_config.servo_1_pin;
   SERVO_2_PIN = pin_config.servo_2_pin;
+  SERVO_3_PIN = pin_config.servo_3_pin;
+  SERVO_4_PIN = pin_config.servo_4_pin;
   CS_PIN = pin_config.cs_pin;
   IMU_SCK_PIN = pin_config.imu_sck_pin;
   IMU_MOSI_PIN = pin_config.imu_mosi_pin;
