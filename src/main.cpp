@@ -3,6 +3,7 @@
 #include "pin_config/pin_config.hpp"
 #include "config_manager.hpp"
 #include "cli_handler.hpp"
+#include "gnc/fsm.hpp"
 #include <AlfredoCrsf.h>
 #include <LSM6DSV16XSensor.h>
 #include <PIO_DShot.h>
@@ -17,7 +18,10 @@
 act_cmd act_cmd_struct;
 
 // build GNC object pointer
-gnc *fsw = nullptr;
+gnc *gnc_inst = nullptr;
+
+// build Flight State Machine
+FlightVsm fsm;
 
 // build loop regulator pointer
 hardware_util::enforce_looprate *loop_regulator = nullptr;
@@ -35,13 +39,6 @@ int yaw_raw;
 int arm_raw;
 gnc_util::vec rate_cmd_degps;
 double thr_frac;
-
-enum class STATE {
-  NOTHING = 0,
-  SERVOS = 1,
-  EVERYTHING = 2,
-};
-STATE arm_state;
 
 // DSHOT
 DShotX4 *esc;
@@ -61,8 +58,11 @@ void setup() {
   // Initialize and load configurations from EEPROM or defaults
   config_manager_init();
 
-  // Instantiate fsw and loop regulator using loaded parameters
-  fsw = new gnc(chesapeake_config);
+  // Initialize Flight State Machine
+  fsm.begin();
+
+  // Instantiate gnc_inst and loop regulator using loaded parameters
+  gnc_inst = new gnc(chesapeake_config);
   loop_regulator = new hardware_util::enforce_looprate(looprate_hz);
 
   /*
@@ -123,16 +123,18 @@ void loop() {
   imu_raw_degps.y = gyro_raw[1] / 1000.0;
   imu_raw_degps.z = gyro_raw[2] / 1000.0;
 
-
-  if (!elrs.isLinkUp()) {
-    arm_state = STATE::NOTHING;
-  } else {
+  // Build input for State Machine
+  VsmInput fsm_input = {};
+  fsm_input.is_link_up = elrs.isLinkUp();
+  
+  if (fsm_input.is_link_up) {
     // Get RC command and convert to rate/throttle fraction
     roll_raw = elrs.getChannel(1);
     pitch_raw = elrs.getChannel(2);
     thr_raw = elrs.getChannel(3);
     yaw_raw = elrs.getChannel(4);
     arm_raw = elrs.getChannel(6);
+    
     rate_cmd_degps.x =
         hardware_util::raw_rc_2_rate_degps(roll_raw, max_rate_degps);
     rate_cmd_degps.y =
@@ -140,54 +142,38 @@ void loop() {
     rate_cmd_degps.z =
         hardware_util::raw_rc_2_rate_degps(yaw_raw, max_rate_degps);
     thr_frac = hardware_util::raw_thr_2_thr_frac(thr_raw);
-    if (arm_raw > 900 && arm_raw < 1100) {
-      arm_state = STATE::NOTHING;
-    }
-    if (arm_raw > 1400 && arm_raw < 1600) {
-      arm_state = STATE::SERVOS;
-    }
-    if (arm_raw > 1900) {
-      arm_state = STATE::EVERYTHING;
-    }
+    
+    fsm_input.arm_channel_val = arm_raw;
+  } else {
+    // Default / safe rate/throttle values when link is lost
+    rate_cmd_degps.x = 0.0;
+    rate_cmd_degps.y = 0.0;
+    rate_cmd_degps.z = 0.0;
+    thr_frac = 0.0;
+    fsm_input.arm_channel_val = 1000.0; // Force disarm channel value
   }
+
+  // Update Flight State Machine
+  fsm.update(fsm_input);
 
   /*
   Execute GNC
   */
-  act_cmd_struct = fsw->query(imu_raw_degps, rate_cmd_degps, thr_frac);
+  act_cmd_struct = gnc_inst->query(imu_raw_degps, rate_cmd_degps, thr_frac);
+
+  // Filter actuator outputs through VSM safety constraints
+  act_cmd filtered_cmd = fsm.filter_commands(act_cmd_struct);
 
   /*
   Command outputs to hardware
   */
-
-  int active_motors = 4;
-
-  switch (arm_state) {
-  case STATE::NOTHING: // fully disarmed (switch all the way down)
-    servo1.write(90.0);
-    servo2.write(90.0);
-    for (int i = 0; i < 4; i++) throttles[i] = 0;
-    esc->sendThrottles(throttles);
-    break;
-  case STATE::SERVOS: // servos only
-    servo1.write(act_cmd_struct.servos[0]);
-    servo2.write(act_cmd_struct.servos[1]);
-    for (int i = 0; i < 4; i++) throttles[i] = 0;
-    esc->sendThrottles(throttles);
-    break;
-  case STATE::EVERYTHING: // servos + motors
-    servo1.write(act_cmd_struct.servos[0]);
-    servo2.write(act_cmd_struct.servos[1]);
-    for (int i = 0; i < active_motors; i++) {
-      throttles[i] = hardware_util::thr_frac_2_DSHOT_int(act_cmd_struct.motors[i]);
-    }
-    // Set inactive motors to 0
-    for (int i = active_motors; i < 4; i++) {
-      throttles[i] = 0;
-    }
-    esc->sendThrottles(throttles);
-    break;
+  servo1.write(filtered_cmd.servos[0]);
+  servo2.write(filtered_cmd.servos[1]);
+  
+  for (int i = 0; i < 4; i++) {
+    throttles[i] = hardware_util::thr_frac_2_DSHOT_int(filtered_cmd.motors[i]);
   }
+  esc->sendThrottles(throttles);
 
   // Update Serial CLI
   cli_handler_update();

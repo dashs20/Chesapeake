@@ -2,8 +2,11 @@
 #include "pin_config/pin_config.hpp"
 #include "gnc_config/gnc_config.hpp"
 #include "config_manager.hpp"
+#include "gnc/fsm.hpp"
 #include <Arduino.h>
 #include <string.h>
+
+extern FlightVsm fsm;
 
 #define BUFFER_SIZE 80
 static char cli_buffer[BUFFER_SIZE];
@@ -44,6 +47,8 @@ static void parse_and_execute(char* line) {
     Serial.print("Max rate: ");
     Serial.print(max_rate_degps);
     Serial.println(" deg/s");
+    Serial.print("Flight State: ");
+    Serial.println(fsm.get_state_string());
     Serial.println("----------------------");
     return;
   }
