@@ -1,25 +1,57 @@
 #include "NAV.hpp"
 
-NAV::NAV(GNCc cfg) {
+NAV::NAV(GNCc cfg) : cfg_data(cfg) {
     dt_s = cfg.navc.dt_s;
     x = cfg.navc.x0;
     ukf.initialize(x);
+    prev_omega_body_radps = Eigen::Vector3f::Zero();
 }
 
 NAVb NAV::update(const GNCb& gnc) {
-    Eigen::Vector3d accel = gnc.halb.imu.accel_body_mps2.cast<double>();
-    Eigen::Vector3d gyro = gnc.halb.imu.omega_body_radps.cast<double>();
+    // 1. Run calibration/rotation/offset compensation
+    IMU_Compensated sensor = compensate_imu(gnc);
 
-    x = ukf.update(x, dt_s, accel, gyro);
+    // 2. Run State Estimation (UKF accepts inputs at the vehicle CG)
+    Eigen::Vector3d accel_CG_double = sensor.accel_CG_mps2.cast<double>();
+    Eigen::Vector3d omega_body_double = sensor.omega_body_radps.cast<double>();
+    x = ukf.update(x, dt_s, accel_CG_double, omega_body_double);
 
+    // 3. Populate and return estimated GNC states
     NAVb navb;
     navb.omega_body_radps = x.tail<3>().cast<float>();
     navb.q_earth2body = ukf.getOrientation().cast<float>();
-    
     navb.up_body_hat = (navb.q_earth2body * Eigen::Vector3f::UnitZ()).normalized();
+
     float pitch_rad = std::asin(-navb.up_body_hat.x());
     float roll_rad = std::atan2(navb.up_body_hat.y(), navb.up_body_hat.z());
     navb.euler_bodyz2up_rad = Eigen::Vector2f(roll_rad, pitch_rad);
 
     return navb;
+}
+
+IMU_Compensated NAV::compensate_imu(const GNCb& gnc) {
+    // 1. Read raw measurements from IMU_RAW
+    Eigen::Vector3f accel_raw = gnc.halb.imu.accel_body_mps2;
+    Eigen::Vector3f omega_raw = gnc.halb.imu.omega_body_radps;
+
+    // 2. Rotate to vehicle body frame
+    Eigen::Vector3f accel_body_raw = cfg_data.navc.q_IMU2body * accel_raw;
+    Eigen::Vector3f omega_body = cfg_data.navc.q_IMU2body * omega_raw;
+
+    // 3. Compensate for off-CG offset
+    Eigen::Vector3f r_body_m = cfg_data.navc.r_IMU2CG_mm * 0.001f;
+    Eigen::Vector3f omega_dot_radps2 = Eigen::Vector3f::Zero();
+    if (dt_s > 0.0) {
+        omega_dot_radps2 = (omega_body - prev_omega_body_radps) / static_cast<float>(dt_s);
+    }
+    prev_omega_body_radps = omega_body;
+
+    Eigen::Vector3f centrifugal = omega_body.cross(omega_body.cross(r_body_m));
+    Eigen::Vector3f euler = omega_dot_radps2.cross(r_body_m);
+    Eigen::Vector3f accel_CG = accel_body_raw - centrifugal - euler;
+
+    IMU_Compensated output;
+    output.accel_CG_mps2 = accel_CG;
+    output.omega_body_radps = omega_body;
+    return output;
 }

@@ -155,3 +155,8 @@ To ensure continuous improvement and prevent repeating mistakes, the following r
     *   *Mistake*: The agent initially designed all submodule update signatures to accept and return the entire `GNCb` bus, allowing potential cross-bus write contamination.
     *   *Advised Solution*: Enforce encapsulation: pass `const GNCb&` as a read-only input to submodules, and have them return only their respective sub-buses (e.g. `NAVb`, `VSMb`, etc.), allowing the coordinator to perform swapping.
     *   *Action*: Updated the rule in `LLM.md`, refactored all submodules (`NAV`, `VSM`, `GUI`, `CTL`, `ALLOC`), and implemented the `GNC` master coordinator class.
+
+*   **Correction #18 (2026-07-08)**: Direct Field Suffix Violations on Bus Renaming.
+    *   *Mistake*: The agent proposed renaming raw sensor fields inside the bus struct to `omega_sensor_radps` and `accel_sensor_mps2` which violates the bus field naming standard (avoiding frame suffix naming inside bus structures).
+    *   *Advised Solution*: Instead of adding frame/source suffixes to individual fields, rename the entire sub-bus struct itself to `IMU_RAW`, preserving standard member variable names.
+    *   *Action*: Renamed the sub-bus struct to `IMU_RAW` in `bus.hpp`, added position and orientation configuration variables to `NAVc` in `cfg.hpp`, and implemented coordinate rotation and CG displacement offset compensation in `NAV::compensate_imu`.

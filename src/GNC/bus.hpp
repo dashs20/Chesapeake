@@ -2,7 +2,7 @@
 #include <Eigen/Dense>
 
 // HAL BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-struct IMU { // IMU sub bus
+struct IMU_RAW { // IMU sub bus
     Eigen::Vector3f omega_body_radps;
     Eigen::Vector3f accel_body_mps2;
 };
@@ -17,7 +17,7 @@ struct STICK { // STICK sub bus
 };
 
 struct HALb {
-    IMU imu;
+    IMU_RAW imu;
     STICK stick;
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
