@@ -68,18 +68,6 @@ void loop() {
         shifted = true;
     }
 
-    static uint32_t last_telemetry_ms = 0;
-    uint32_t now_ms = millis();
-    if (now_ms - last_telemetry_ms >= 50) {
-        last_telemetry_ms = now_ms;
-        Serial.printf("$TEL,%.2f,%.4f,%.4f,%.4f,%.4f\n",
-                      allb_km1.halb.vbat_volts,
-                      allb_km1.navb.q_earth2body.w(),
-                      allb_km1.navb.q_earth2body.x(),
-                      allb_km1.navb.q_earth2body.y(),
-                      allb_km1.navb.q_earth2body.z());
-    }
-
     shifted = false;
     gnc_done = false;
     yield();
