@@ -52,6 +52,7 @@ Configuration structures (typically suffixed with `c`, e.g., `NAVc`, `CTLc`, `PI
 *   **Descriptive Variable Naming**: Avoid creating short, cryptically named local helper variables (such as `def_s`, `min_m`, `min_s`, `max_s`, `T`, `R`, `P`, `Y`). If a local variable is needed, use a full, descriptive, self-documenting name (e.g. `throttle`, `roll_effort`, `minimum_motor_fraction`). Assign config variables directly to struct members when possible rather than using temporary short-name placeholders.
 *   **Enum Branching**: When branching based on `enum` or `enum class` values, use `if/else` if it is a binary choice (either a certain state or any other state) or a unary check. Use `switch` statements only when there are three or more distinct cases to handle. This ensures clean, concise branching for simple checks while maintaining compiler-assisted completeness warnings for complex state machines.
 *   **Compilation Checks**: Do not invoke compilation commands (e.g. `pio run` or PlatformIO builds) unless explicitly requested by the user, or after verifying that a valid, compile-worthy entrypoint (such as `main.cpp`) is present in the workspace.
+*   **Commit Attribution**: Any commit containing modifications written or assisted by an LLM must explicitly credit the LLM by name in the commit body (e.g., "Assisted by Gemini").
 *   **Headers**: Every header file must start with `#pragma once`.
 *   **Semicolons**: Struct definitions in C++ must end with a semicolon `;` (e.g., `struct IMU { ... };`).
 *   **Styling**: 

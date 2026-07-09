@@ -75,3 +75,6 @@ Manages high-level vehicle modes and inner attitude mode resolutions:
 ### 7. Utilities (`src/GNC/UTIL/`)
 Generic helper components used across modules:
 *   **[StateMachine.hpp](file:///src/GNC/UTIL/StateMachine.hpp)**: A generic, header-only C++ template mapping states to their transition conditions.
+
+---
+Assisted by Gemini.
