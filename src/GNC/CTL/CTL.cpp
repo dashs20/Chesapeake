@@ -8,15 +8,19 @@ CTL::CTL(GNCc cfg)
       target_rates(Eigen::Vector3f::Zero()) {}
 
 GNCb CTL::update(GNCb gnc) {
+    if (gnc.vsmb.state == STATE::DISARMED) {
+        rate_controller.reset();
+        angle_controller.reset();
+    }
+
     time_accumulator_s += cfg_data.dt_s;
 
-    if (gnc.vsmb.control_mode == CONTROL_MODE::RATE) {
+    if (gnc.vsmb.att_mode == ATT_MODE::RATE) {
         Eigen::Vector3f setpoint = gnc.guib.omega_body_radps;
         Eigen::Vector3f measurement = gnc.navb.omega_body_radps;
 
         gnc.ctlb.axes_effort_frac = rate_controller.update(setpoint, measurement);
-    } 
-    else if (gnc.vsmb.control_mode == CONTROL_MODE::ANGLE) {
+    } else if (gnc.vsmb.att_mode == ATT_MODE::ANGLE) {
         if (time_accumulator_s >= cfg_data.ctlc.angle_loop_dt_s) {
             time_accumulator_s = 0.0f;
 

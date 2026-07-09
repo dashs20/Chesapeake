@@ -29,20 +29,19 @@ GNCb ALLOC::update(GNCb gnc) {
 }
 
 GNCb ALLOC::run_allocator(GNCb gnc) {
-    switch (cfg_data.allocator) {
-        case ALLOCATOR::QUAD:
-            return allocate_quad(gnc);
-        default:
-            gnc.actb.m1_frac = 0.0f;
-            gnc.actb.m2_frac = 0.0f;
-            gnc.actb.m3_frac = 0.0f;
-            gnc.actb.m4_frac = 0.0f;
+    if (cfg_data.allocator == ALLOCATOR::QUAD) {
+        return allocate_quad(gnc);
+    } else {
+        gnc.actb.m1_frac = 0.0f;
+        gnc.actb.m2_frac = 0.0f;
+        gnc.actb.m3_frac = 0.0f;
+        gnc.actb.m4_frac = 0.0f;
 
-            gnc.actb.s1_deg = cfg_data.allocc.servo_default_ang_deg;
-            gnc.actb.s2_deg = cfg_data.allocc.servo_default_ang_deg;
-            gnc.actb.s3_deg = cfg_data.allocc.servo_default_ang_deg;
-            gnc.actb.s4_deg = cfg_data.allocc.servo_default_ang_deg;
-            return gnc;
+        gnc.actb.s1_deg = cfg_data.allocc.servo_default_ang_deg;
+        gnc.actb.s2_deg = cfg_data.allocc.servo_default_ang_deg;
+        gnc.actb.s3_deg = cfg_data.allocc.servo_default_ang_deg;
+        gnc.actb.s4_deg = cfg_data.allocc.servo_default_ang_deg;
+        return gnc;
     }
 }
 

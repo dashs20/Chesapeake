@@ -12,13 +12,12 @@ GNCb GUI::update(GNCb gnc) {
     float pitch_expo = apply_expo(gnc.halb.stick.pitch_frac, cfg_data.guic.expoc.pitch);
     float yaw_expo = apply_expo(gnc.halb.stick.yaw_frac, cfg_data.guic.expoc.yaw);
 
-    if (gnc.vsmb.control_mode == CONTROL_MODE::RATE) {
+    if (gnc.vsmb.att_mode == ATT_MODE::RATE) {
         gnc.guib.omega_body_radps.x() = roll_expo * cfg_data.guic.max_rate_radps;
         gnc.guib.omega_body_radps.y() = pitch_expo * cfg_data.guic.max_rate_radps;
         gnc.guib.omega_body_radps.z() = yaw_expo * cfg_data.guic.max_rate_radps;
         gnc.guib.euler_bodyz2up_rad = Eigen::Vector2f::Zero();
-    } 
-    else if (gnc.vsmb.control_mode == CONTROL_MODE::ANGLE) {
+    } else if (gnc.vsmb.att_mode == ATT_MODE::ANGLE) {
         gnc.guib.euler_bodyz2up_rad.x() = roll_expo * cfg_data.guic.max_angle_rad;
         gnc.guib.euler_bodyz2up_rad.y() = pitch_expo * cfg_data.guic.max_angle_rad;
         gnc.guib.omega_body_radps.z() = yaw_expo * cfg_data.guic.max_rate_radps;

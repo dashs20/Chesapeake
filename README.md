@@ -32,9 +32,14 @@ src/
     ├── GUI/               # Guidance Submodule (RC Expo & stick to target mappings)
     │   ├── GUI.hpp        # GUI class declaration
     │   └── GUI.cpp        # GUI class implementation
-    └── ALLOC/             # Actuator Allocation Sub-module (mixer & safety clamps)
-        ├── ALLOC.hpp      # ALLOC class declaration
-        └── ALLOC.cpp      # ALLOC class implementation
+    ├── ALLOC/             # Actuator Allocation Sub-module (mixer & safety clamps)
+    │   ├── ALLOC.hpp      # ALLOC class declaration
+    │   └── ALLOC.cpp      # ALLOC class implementation
+    ├── VSM/               # Vehicle State Machine Submodule (high-level modes & transitions)
+    │   ├── VSM.hpp        # VSM class declaration
+    │   └── VSM.cpp        # VSM class implementation
+    └── UTIL/              # Utilities
+        └── StateMachine.hpp # Generic C++ State Machine template
 ```
 
 ---
@@ -43,7 +48,7 @@ src/
 
 ### 1. Data Buses & Configurations (`src/GNC/`)
 *   **[bus.hpp](file:///src/GNC/bus.hpp)**: Defines the standard communication interfaces (buses) passing data between blocks (`HALb`, `NAVb`, `CTLb`, and the master `GNCb` struct).
-*   **[cfg.hpp](file:///src/GNC/cfg.hpp)**: Defines the master configuration structure `GNCc` which bundles `NAVc` (navigation constants), `CTLc` (control loop constants, enclosing rate and angle `PID_3DOFc` loop parameters), and `GUIc` (guidance expo and scale parameters).
+*   **[cfg.hpp](file:///src/GNC/cfg.hpp)**: Defines the master configuration structure `GNCc` which bundles `NAVc` (navigation constants), `CTLc` (control loop constants, enclosing rate and angle `PID_3DOFc` loop parameters), `GUIc` (guidance expo and scale parameters), `ALLOCc` (allocation and clamping limits), and `VSMc` (mode transition thresholds).
 
 ### 2. State Estimation (`src/GNC/NAV/`)
 The Navigation module handles attitude and state estimation:
@@ -51,14 +56,22 @@ The Navigation module handles attitude and state estimation:
 
 ### 3. Flight Control (`src/GNC/CTL/`)
 The Control module processes state estimations and pilot inputs to calculate motor and servo command signals:
-*   **[CTL.hpp](file:///src/GNC/CTL/CTL.hpp)** & **[CTL.cpp](file:///src/GNC/CTL/CTL.cpp)**: Declares and implements the control loop coordinator. It handles both standard Rate Control and multi-rate cascaded Attitude Control (Angle Loop -> Rate Loop).
+*   **[CTL.hpp](file:///src/GNC/CTL/CTL.hpp)** & **[CTL.cpp](file:///src/GNC/CTL/CTL.cpp)**: Declares and implements the control loop coordinator. It handles both standard Rate Control and multi-rate cascaded Attitude Control (Angle Loop -> Rate Loop), and continuously resets PIDs when the vehicle is disarmed.
 *   **PID Sub-module (`src/GNC/CTL/PID/`)**:
     *   **[PID_3DOF.hpp](file:///src/GNC/CTL/PID/PID_3DOF.hpp)** & **[PID_3DOF.cpp](file:///src/GNC/CTL/PID/PID_3DOF.cpp)**: Implements the single-axis scalar controller `PID_scalar` and the 3-axis vector controller `PID_3DOF` (using three `PID_scalar` instances for roll, pitch, and yaw) with integral anti-windup and output constraint limiting, configured using `PID_3DOFc` and `PID_SCALARc` structs.
 
 ### 4. Guidance (`src/GNC/GUI/`)
-Handles pilot stick expo calculations and maps outputs to control/rate commands based on VSM state:
+Handles pilot stick expo calculations and maps outputs to control/rate commands based on attitude mode:
 *   **[GUI.hpp](file:///src/GNC/GUI/GUI.hpp)** & **[GUI.cpp](file:///src/GNC/GUI/GUI.cpp)**: Implements the Guidance class.
 
 ### 5. Actuator Allocation (`src/GNC/ALLOC/`)
 Translates throttle and raw multi-axis control efforts into motor and servo commands:
 *   **[ALLOC.hpp](file:///src/GNC/ALLOC/ALLOC.hpp)** & **[ALLOC.cpp](file:///src/GNC/ALLOC/ALLOC.cpp)**: Implements standard mixing algorithms (e.g. QUAD X) and applies standardized safety limits (e.g., disarmed motor shutdowns and servo centering) using `ALLOCc` constraints.
+
+### 6. Vehicle State Machine (`src/GNC/VSM/`)
+Manages high-level vehicle modes and inner attitude mode resolutions:
+*   **[VSM.hpp](file:///src/GNC/VSM/VSM.hpp)** & **[VSM.cpp](file:///src/GNC/VSM/VSM.cpp)**: Uses the generic state machine template to evaluate mode transitions based on pilot switches.
+
+### 7. Utilities (`src/GNC/UTIL/`)
+Generic helper components used across modules:
+*   **[StateMachine.hpp](file:///src/GNC/UTIL/StateMachine.hpp)**: A generic, header-only C++ template mapping states to their transition conditions.

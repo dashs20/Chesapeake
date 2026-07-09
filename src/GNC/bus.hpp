@@ -24,11 +24,11 @@ struct HALb {
 
 // VSM BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 enum class STATE{DISARMED, RATE, ANGLE, GPS_HOLD};
-enum class CONTROL_MODE{RATE, ANGLE};
+enum class ATT_MODE{RATE, ANGLE};
 
 struct VSMb{
     STATE state;
-    CONTROL_MODE control_mode;
+    ATT_MODE att_mode;
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

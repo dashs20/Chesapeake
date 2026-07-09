@@ -50,7 +50,7 @@ Configuration structures (typically suffixed with `c`, e.g., `NAVc`, `CTLc`, `PI
 *   **Quaternion Naming Convention**: Quaternions must always be named using the explicit format `q_<FRAMEA>2<FRAMEB>` representing the rotation from Frame A to Frame B (e.g., `q_earth2body` for estimated attitude, `q_earth2body_des` for desired attitude, and `q_body2body_des` for the attitude error rotation).
 *   **Physical Units in Variable Names**: Every variable representing a physical quantity with units must explicitly append the unit as a suffix in lowercase (e.g. `_s` for seconds, `_radps` for radians per second, `_mps2` for meters per second squared, `_deg` for degrees, `_frac` for unitless fractions/ratios). No exceptions. For example, use `dt_s` instead of `dt`.
 *   **Descriptive Variable Naming**: Avoid creating short, cryptically named local helper variables (such as `def_s`, `min_m`, `min_s`, `max_s`, `T`, `R`, `P`, `Y`). If a local variable is needed, use a full, descriptive, self-documenting name (e.g. `throttle`, `roll_effort`, `minimum_motor_fraction`). Assign config variables directly to struct members when possible rather than using temporary short-name placeholders.
-*   **Enum Branching**: When branching based on `enum` or `enum class` values (such as `STATE` or `CONTROL_MODE`), always use `switch` statements instead of `if-else` blocks repo-wide. This ensures that the compiler can warn if any enum case is unhandled, making the state machine logic robust and maintainable.
+*   **Enum Branching**: When branching based on `enum` or `enum class` values, use `if/else` if it is a binary choice (either a certain state or any other state) or a unary check. Use `switch` statements only when there are three or more distinct cases to handle. This ensures clean, concise branching for simple checks while maintaining compiler-assisted completeness warnings for complex state machines.
 *   **Compilation Checks**: Do not invoke compilation commands (e.g. `pio run` or PlatformIO builds) unless explicitly requested by the user, or after verifying that a valid, compile-worthy entrypoint (such as `main.cpp`) is present in the workspace.
 *   **Headers**: Every header file must start with `#pragma once`.
 *   **Semicolons**: Struct definitions in C++ must end with a semicolon `;` (e.g., `struct IMU { ... };`).
@@ -115,8 +115,8 @@ To ensure continuous improvement and prevent repeating mistakes, the following r
     *   *Action*: Replaced manual cubic multiplication with `std::pow(input, 3.0f)` inside `GUI.cpp` and included `<cmath>`.
 
 *   **Correction #10 (2026-07-08)**: Enum Branching using Switch Statements.
-    *   *Mistake*: The agent used `if-else` statements to branch based on `STATE` and `CONTROL_MODE` enums.
-    *   *Advised Solution*: Always use `switch` statements when branching based on enum values to enforce compiler-time checks for unhandled cases.
+    *   *Mistake*: The agent used `if-else` statements to branch based on `STATE` and `ATT_MODE` (formerly `CONTROL_MODE`) enums when it should have used `switch` statements for complex states.
+    *   *Advised Solution*: Always use `switch` statements when branching based on enum values with three or more cases to enforce compiler-time checks for unhandled cases.
     *   *Action*: Added the rule to LLM.md and updated the plan to use `switch` statements for enum branching.
 
 *   **Correction #11 (2026-07-08)**: Premature Compilation Invocation.
@@ -138,3 +138,13 @@ To ensure continuous improvement and prevent repeating mistakes, the following r
     *   *Mistake*: The agent created cryptic local helper variables (like `def_s`, `min_m`, `T`, `R`, `P`, `Y`) inside `ALLOC.cpp` instead of assigning fields directly or naming variables descriptively.
     *   *Advised Solution*: Short, cryptic variable names do not make code cleaner. Assign config variables directly to destination struct fields where possible, or use fully descriptive, self-documenting local variable names when local variables are necessary.
     *   *Action*: Updated `LLM.md` with the descriptive variable naming standard, and refactored `ALLOC.cpp` to use direct assignments and fully written variable names.
+
+*   **Correction #15 (2026-07-08)**: Attitude Mode Enum Naming.
+    *   *Mistake*: The agent used the generic name `CONTROL_MODE` and bus field name `control_mode` instead of the attitude-specific names `ATT_MODE` and `att_mode`.
+    *   *Advised Solution*: Use specific names: rename `CONTROL_MODE` to `ATT_MODE` and `control_mode` to `att_mode` to clarify inner-loop attitude states and distinguish them from high-level flight states (`STATE`).
+    *   *Action*: Renamed the enum and bus field repo-wide, updated `GUI.cpp` and `CTL.cpp` to use `switch` statements for `ATT_MODE` branching, and updated `LLM.md`.
+
+*   **Correction #16 (2026-07-08)**: Redundant Switch-Case on Binary/Unary Enums.
+    *   *Mistake*: The agent used `switch` statements to branch on `ATT_MODE` (only two states) and `ALLOCATOR` (only one state for now).
+    *   *Advised Solution*: Do not use `switch` statements for binary or unary enum checks. Use simple `if-else` blocks for binary/unary choices to keep code clean and readable, and reserve `switch` blocks for enums with three or more cases.
+    *   *Action*: Updated the rule in `LLM.md` and refactored `GUI.cpp`, `CTL.cpp`, and `ALLOC.cpp` to use `if-else` blocks.
