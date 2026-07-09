@@ -6,12 +6,12 @@
 
 class MOT {
 public:
-    MOT(MOTc motc);
+    MOT(MOTc cfg);
     ~MOT();
 
-    void update(const ACTb& actb);
+    MOTb update(const ACTb& actb);
 
 private:
     MOTc motc;
-    DShotX4* dshot = nullptr;
+    BidirDShotX1* motors[4];
 };
