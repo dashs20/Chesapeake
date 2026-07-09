@@ -40,7 +40,7 @@ All communication between high-level blocks is handled via defined structures in
 ## 3. Configuration Conventions (`cfg.hpp`)
 
 Configuration structures (typically suffixed with `c`, e.g., `NAVc`, `CTLc`, `PID_SCALARc`, `PID_3DOFc`, `GNCc`) specify constants like gains, time-steps, and initial states. They are organized as follows:
-*   **Master Config**: All configurations are consolidated into a single centralized configuration file [src/GNC/cfg.hpp](file:///src/GNC/cfg.hpp). This file contains the master configuration struct `GNCc`, which bundles `NAVc` (instance name `navc`), `CTLc` (instance name `ctlc`), and `PID_3DOFc` (consisting of three `PID_SCALARc` structures for roll, pitch, and yaw control, instantiated as `rate` and `angle` per the Instance Naming Rule exceptions).
+*   **Master Config**: All configurations are consolidated into a single centralized configuration file [src/GNC/cfg.hpp](file:///src/GNC/cfg.hpp). This file contains the master configuration struct `GNCc`, which bundles `NAVc` (instance name `navc`), `CTLc` (instance name `ctlc`, containing nested `PID_3DOFc` configs for rate and angle loops), and `GUIc` (instance name `guic`).
 
 ---
 
@@ -49,6 +49,9 @@ Configuration structures (typically suffixed with `c`, e.g., `NAVc`, `CTLc`, `PI
 *   **Precision**: Use single-precision floats (`float`, `Eigen::Vector3f`, `Eigen::Quaternionf`) for all physical control-loop quantities to maximize performance on microcontroller hardware. Cast double-precision library types (e.g., from UKF) explicitly using `.cast<float>()`.
 *   **Quaternion Naming Convention**: Quaternions must always be named using the explicit format `q_<FRAMEA>2<FRAMEB>` representing the rotation from Frame A to Frame B (e.g., `q_earth2body` for estimated attitude, `q_earth2body_des` for desired attitude, and `q_body2body_des` for the attitude error rotation).
 *   **Physical Units in Variable Names**: Every variable representing a physical quantity with units must explicitly append the unit as a suffix in lowercase (e.g. `_s` for seconds, `_radps` for radians per second, `_mps2` for meters per second squared, `_deg` for degrees, `_frac` for unitless fractions/ratios). No exceptions. For example, use `dt_s` instead of `dt`.
+*   **Descriptive Variable Naming**: Avoid creating short, cryptically named local helper variables (such as `def_s`, `min_m`, `min_s`, `max_s`, `T`, `R`, `P`, `Y`). If a local variable is needed, use a full, descriptive, self-documenting name (e.g. `throttle`, `roll_effort`, `minimum_motor_fraction`). Assign config variables directly to struct members when possible rather than using temporary short-name placeholders.
+*   **Enum Branching**: When branching based on `enum` or `enum class` values (such as `STATE` or `CONTROL_MODE`), always use `switch` statements instead of `if-else` blocks repo-wide. This ensures that the compiler can warn if any enum case is unhandled, making the state machine logic robust and maintainable.
+*   **Compilation Checks**: Do not invoke compilation commands (e.g. `pio run` or PlatformIO builds) unless explicitly requested by the user, or after verifying that a valid, compile-worthy entrypoint (such as `main.cpp`) is present in the workspace.
 *   **Headers**: Every header file must start with `#pragma once`.
 *   **Semicolons**: Struct definitions in C++ must end with a semicolon `;` (e.g., `struct IMU { ... };`).
 *   **Styling**: 
@@ -100,3 +103,38 @@ To ensure continuous improvement and prevent repeating mistakes, the following r
     *   *Mistake*: The agent used `cfg_data.angle.pitch.dt_s` (a sub-component PID configuration parameter) to determine the loop rate downsampling condition for the outer attitude loop inside `CTL::update`.
     *   *Advised Solution*: Always define loop rate configurations in a dedicated configuration struct for the parent module (e.g., `CTLc` configuration struct containing `angle_loop_dt_s` for the `CTL` class), rather than borrowing or extracting them from sub-component configurations (like `PID_SCALARc` values).
     *   *Action*: Created `CTLc` configuration struct containing `angle_loop_dt_s`, integrated it into `GNCc`, and updated `CTL.cpp` and `LLM.md`.
+
+*   **Correction #8 (2026-07-08)**: Nested Component Configurations inside Parent Module Configs.
+    *   *Mistake*: The agent defined `rate` and `angle` PID configurations directly inside the global `GNCc` structure instead of nesting them inside the control-module-specific `CTLc` configuration structure.
+    *   *Advised Solution*: Component configurations (like `PID_3DOFc` rate and angle configs) must be nested within their respective parent module configurations (like `CTLc`) to maintain a modular and hierarchical structure.
+    *   *Action*: Nested `rate` and `angle` inside `CTLc` in `cfg.hpp`, and updated `CTL.cpp` and `LLM.md`.
+
+*   **Correction #9 (2026-07-08)**: Use Standard Library for Mathematical Powers.
+    *   *Mistake*: The agent used manual variable multiplication (e.g. `input * input * input`) instead of the standard library function (`std::pow`).
+    *   *Advised Solution*: Always use C++ standard library functions (like `std::pow` from `<cmath>`) to compute mathematical powers, for clarity and standards compliance.
+    *   *Action*: Replaced manual cubic multiplication with `std::pow(input, 3.0f)` inside `GUI.cpp` and included `<cmath>`.
+
+*   **Correction #10 (2026-07-08)**: Enum Branching using Switch Statements.
+    *   *Mistake*: The agent used `if-else` statements to branch based on `STATE` and `CONTROL_MODE` enums.
+    *   *Advised Solution*: Always use `switch` statements when branching based on enum values to enforce compiler-time checks for unhandled cases.
+    *   *Action*: Added the rule to LLM.md and updated the plan to use `switch` statements for enum branching.
+
+*   **Correction #11 (2026-07-08)**: Premature Compilation Invocation.
+    *   *Mistake*: The agent ran PlatformIO build checks (`pio run`) before verifying that a valid, compile-worthy entrypoint (`main.cpp`) was present in the workspace.
+    *   *Advised Solution*: Do not invoke build commands unless explicitly asked by the user or after confirming a compile-worthy entrypoint is present.
+    *   *Action*: Added the rule to LLM.md.
+
+*   **Correction #12 (2026-07-08)**: Mismatched Enum Values.
+    *   *Mistake*: The agent used a placeholder enum value `STATE::ACTIVE` instead of the actual `STATE` enum class values defined in `bus.hpp` (`STATE::IDLE`, `STATE::RATE`, `STATE::ANGLE`, `STATE::GPS_HOLD`).
+    *   *Advised Solution*: Always view and double check actual definitions of enum values in the codebase before implementing branches that check them.
+    *   *Action*: Fixed `ALLOC.cpp` to use the correct `STATE` enum values and recorded the correction in `LLM.md`.
+
+*   **Correction #13 (2026-07-08)**: Pragmatic Ternary Checks vs Switch-Case.
+    *   *Mistake*: The agent used a verbose switch statement inside `clamp_actuators` to branch on all states, when a simple ternary check for a single state (disarmed) was much cleaner.
+    *   *Advised Solution*: Use switch-case blocks for full state machines, but use simple `if-else` or ternary checks when only querying a specific boolean state (e.g. `state == STATE::DISARMED`). Also, renamed `STATE::IDLE` to `STATE::DISARMED` for safety naming clarity.
+    *   *Action*: Renamed `STATE::IDLE` to `STATE::DISARMED` in `bus.hpp` and `ALLOC.cpp`, updated `clamp_actuators` to use a ternary condition, and logged the update in `LLM.md`.
+
+*   **Correction #14 (2026-07-08)**: Useless Short Local Variables.
+    *   *Mistake*: The agent created cryptic local helper variables (like `def_s`, `min_m`, `T`, `R`, `P`, `Y`) inside `ALLOC.cpp` instead of assigning fields directly or naming variables descriptively.
+    *   *Advised Solution*: Short, cryptic variable names do not make code cleaner. Assign config variables directly to destination struct fields where possible, or use fully descriptive, self-documenting local variable names when local variables are necessary.
+    *   *Action*: Updated `LLM.md` with the descriptive variable naming standard, and refactored `ALLOC.cpp` to use direct assignments and fully written variable names.

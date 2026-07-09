@@ -29,9 +29,12 @@ src/
     │   └── PID/           # PID Controller Sub-module
     │       ├── PID_3DOF.hpp # PID_3DOF & PID_scalar class declarations
     │       └── PID_3DOF.cpp # PID_3DOF & PID_scalar class implementations
-    └── UTIL/              # Math Utilities
-        ├── quat_util.hpp  # Quaternion math utility declarations
-        └── quat_util.cpp  # Quaternion math utility implementations
+    ├── GUI/               # Guidance Submodule (RC Expo & stick to target mappings)
+    │   ├── GUI.hpp        # GUI class declaration
+    │   └── GUI.cpp        # GUI class implementation
+    └── ALLOC/             # Actuator Allocation Sub-module (mixer & safety clamps)
+        ├── ALLOC.hpp      # ALLOC class declaration
+        └── ALLOC.cpp      # ALLOC class implementation
 ```
 
 ---
@@ -40,14 +43,11 @@ src/
 
 ### 1. Data Buses & Configurations (`src/GNC/`)
 *   **[bus.hpp](file:///src/GNC/bus.hpp)**: Defines the standard communication interfaces (buses) passing data between blocks (`HALb`, `NAVb`, `CTLb`, and the master `GNCb` struct).
-*   **[cfg.hpp](file:///src/GNC/cfg.hpp)**: Defines the master configuration structure `GNCc` which bundles `NAVc` (navigation constants), `CTLc` (control loop constants), and `PID_3DOFc` (consisting of three `PID_SCALARc` structures for roll, pitch, and yaw control, configured for rate and angle control loops).
+*   **[cfg.hpp](file:///src/GNC/cfg.hpp)**: Defines the master configuration structure `GNCc` which bundles `NAVc` (navigation constants), `CTLc` (control loop constants, enclosing rate and angle `PID_3DOFc` loop parameters), and `GUIc` (guidance expo and scale parameters).
 
 ### 2. State Estimation (`src/GNC/NAV/`)
 The Navigation module handles attitude and state estimation:
-*   **[NAV.hpp](file:///src/GNC/NAV/NAV.hpp)** & **[NAV.cpp](file:///src/GNC/NAV/NAV.cpp)**: Declares and implements the `NAV` class, which uses an Unscented Kalman Filter (`UKF` library) to estimate the vehicle's orientation and body rates. It implements the standard interface:
-    ```cpp
-    GNCb update(GNCb gnc);
-    ```
+*   **[NAV.hpp](file:///src/GNC/NAV/NAV.hpp)** & **[NAV.cpp](file:///src/GNC/NAV/NAV.cpp)**: Interfaces with the double-precision UKF sensor fusion library to update estimations and extract the body up-vector and roll/pitch Euler angles onto the bus.
 
 ### 3. Flight Control (`src/GNC/CTL/`)
 The Control module processes state estimations and pilot inputs to calculate motor and servo command signals:
@@ -55,6 +55,10 @@ The Control module processes state estimations and pilot inputs to calculate mot
 *   **PID Sub-module (`src/GNC/CTL/PID/`)**:
     *   **[PID_3DOF.hpp](file:///src/GNC/CTL/PID/PID_3DOF.hpp)** & **[PID_3DOF.cpp](file:///src/GNC/CTL/PID/PID_3DOF.cpp)**: Implements the single-axis scalar controller `PID_scalar` and the 3-axis vector controller `PID_3DOF` (using three `PID_scalar` instances for roll, pitch, and yaw) with integral anti-windup and output constraint limiting, configured using `PID_3DOFc` and `PID_SCALARc` structs.
 
-### 4. Utilities (`src/GNC/UTIL/`)
-Shared mathematical operations used across multiple modules:
-*   **[quat_util.hpp](file:///src/GNC/UTIL/quat_util.hpp)** & **[quat_util.cpp](file:///src/GNC/UTIL/quat_util.cpp)**: Custom quaternion-to-Euler conversion function (`quat_to_euler`) that handles singularities and outputs angles in the full $[-\pi, \pi]$ range.
+### 4. Guidance (`src/GNC/GUI/`)
+Handles pilot stick expo calculations and maps outputs to control/rate commands based on VSM state:
+*   **[GUI.hpp](file:///src/GNC/GUI/GUI.hpp)** & **[GUI.cpp](file:///src/GNC/GUI/GUI.cpp)**: Implements the Guidance class.
+
+### 5. Actuator Allocation (`src/GNC/ALLOC/`)
+Translates throttle and raw multi-axis control efforts into motor and servo commands:
+*   **[ALLOC.hpp](file:///src/GNC/ALLOC/ALLOC.hpp)** & **[ALLOC.cpp](file:///src/GNC/ALLOC/ALLOC.cpp)**: Implements standard mixing algorithms (e.g. QUAD X) and applies standardized safety limits (e.g., disarmed motor shutdowns and servo centering) using `ALLOCc` constraints.

@@ -1,9 +1,10 @@
 #include "GUI.hpp"
+#include <cmath>
 
 GUI::GUI(GNCc cfg) : cfg_data(cfg) {}
 
 float GUI::apply_expo(float input, float expo) {
-    return expo * input * input * input + (1.0f - expo) * input;
+    return expo * std::pow(input, 3.0f) + (1.0f - expo) * input;
 }
 
 GNCb GUI::update(GNCb gnc) {

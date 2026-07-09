@@ -1,0 +1,13 @@
+{
+  "name": "Eigen",
+  "version": "3.4.99",
+  "description": "C++ template library for linear algebra: matrices, vectors, numerical solvers, and related algorithms (Header-only override).",
+  "build": {
+    "flags": [
+      "-Isrc"
+    ],
+    "srcFilter": [
+      "-<*>"
+    ]
+  }
+}

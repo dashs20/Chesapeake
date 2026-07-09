@@ -1,8 +1,8 @@
 #include "CTL.hpp"
 
 CTL::CTL(GNCc cfg) 
-    : rate_controller(cfg.rate), 
-      angle_controller(cfg.angle), 
+    : rate_controller(cfg.ctlc.rate), 
+      angle_controller(cfg.ctlc.angle), 
       cfg_data(cfg), 
       time_accumulator_s(0.0f), 
       target_rates(Eigen::Vector3f::Zero()) {}
