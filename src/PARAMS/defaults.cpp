@@ -81,9 +81,8 @@ void load_default_config(MASTERc& config) {
     config.gncc.allocc.servo_max_ang_deg = 30.0f;
     config.gncc.allocc.servo_default_ang_deg = 0.0f;
     config.gncc.allocc.blink_hz_disarmed = 1.0f;
-    config.gncc.allocc.blink_hz_rate = 2.0f;
-    config.gncc.allocc.blink_hz_angle = 3.0f;
-    config.gncc.allocc.blink_hz_gps_hold = 4.0f;
+    config.gncc.allocc.blink_hz_rate = 5.0f;
+    config.gncc.allocc.blink_hz_angle = 10.0f;
 
     config.halc.ledc.pin = 17;
 

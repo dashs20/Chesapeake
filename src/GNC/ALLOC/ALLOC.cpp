@@ -87,8 +87,6 @@ float ALLOC::determine_blink_hz(STATE state) {
             return cfg_data.allocc.blink_hz_rate;
         case STATE::ANGLE:
             return cfg_data.allocc.blink_hz_angle;
-        case STATE::GPS_HOLD:
-            return cfg_data.allocc.blink_hz_gps_hold;
         default:
             return 0.0f;
     }

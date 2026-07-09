@@ -117,7 +117,6 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("blink_hz_disarmed = "); Serial.println(config.gncc.allocc.blink_hz_disarmed);
     Serial.print("blink_hz_rate = "); Serial.println(config.gncc.allocc.blink_hz_rate);
     Serial.print("blink_hz_angle = "); Serial.println(config.gncc.allocc.blink_hz_angle);
-    Serial.print("blink_hz_gps_hold = "); Serial.println(config.gncc.allocc.blink_hz_gps_hold);
 }
 
 void PARAMS::get_parameter(const MASTERc& config, const char* name) {
@@ -173,8 +172,6 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.gncc.allocc.blink_hz_rate);
     } else if (std::strcmp(name, "blink_hz_angle") == 0) {
         Serial.println(config.gncc.allocc.blink_hz_angle);
-    } else if (std::strcmp(name, "blink_hz_gps_hold") == 0) {
-        Serial.println(config.gncc.allocc.blink_hz_gps_hold);
     } else if (std::strcmp(name, "gnc_looprate_hz") == 0) {
         Serial.println(config.gncc.looprate_hz);
     } else if (std::strcmp(name, "angle_loop_hz") == 0) {
@@ -297,8 +294,6 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.gncc.allocc.blink_hz_rate = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "blink_hz_angle") == 0) {
         config.gncc.allocc.blink_hz_angle = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "blink_hz_gps_hold") == 0) {
-        config.gncc.allocc.blink_hz_gps_hold = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "gnc_looprate_hz") == 0) {
         config.gncc.looprate_hz = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "angle_loop_hz") == 0) {

@@ -3,7 +3,7 @@
 #include "../HAL/bus.hpp"
 
 // VSM BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-enum class STATE{DISARMED, RATE, ANGLE, GPS_HOLD};
+enum class STATE{DISARMED, RATE, ANGLE};
 enum class ATT_MODE{RATE, ANGLE};
 
 struct VSMb{

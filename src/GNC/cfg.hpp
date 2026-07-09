@@ -42,7 +42,6 @@ struct ALLOCc {
     float blink_hz_disarmed;
     float blink_hz_rate;
     float blink_hz_angle;
-    float blink_hz_gps_hold;
 };
 
 struct EXPOc {

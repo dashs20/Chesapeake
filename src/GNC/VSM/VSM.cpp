@@ -15,7 +15,6 @@ VSMb VSM::update(const GNCb& gnc) {
 void VSM::setup_vehicle_mode_machine() {
     float arm_threshold_frac = cfg_data.vsmc.arm_threshold_frac;
     float rate_threshold_frac = cfg_data.vsmc.mode_rate_threshold_frac;
-    float angle_threshold_frac = cfg_data.vsmc.mode_angle_threshold_frac;
 
     State<STATE, GNCb> disarmed_state;
     disarmed_state.id = STATE::DISARMED;
@@ -23,11 +22,8 @@ void VSM::setup_vehicle_mode_machine() {
         { STATE::RATE, [arm_threshold_frac, rate_threshold_frac](const GNCb& g) {
             return g.halb.rcrxb.arm_frac > arm_threshold_frac && g.halb.rcrxb.mode_frac < rate_threshold_frac;
         }},
-        { STATE::ANGLE, [arm_threshold_frac, rate_threshold_frac, angle_threshold_frac](const GNCb& g) {
-            return g.halb.rcrxb.arm_frac > arm_threshold_frac && g.halb.rcrxb.mode_frac >= rate_threshold_frac && g.halb.rcrxb.mode_frac < angle_threshold_frac;
-        }},
-        { STATE::GPS_HOLD, [arm_threshold_frac, angle_threshold_frac](const GNCb& g) {
-            return g.halb.rcrxb.arm_frac > arm_threshold_frac && g.halb.rcrxb.mode_frac >= angle_threshold_frac;
+        { STATE::ANGLE, [arm_threshold_frac, rate_threshold_frac](const GNCb& g) {
+            return g.halb.rcrxb.arm_frac > arm_threshold_frac && g.halb.rcrxb.mode_frac >= rate_threshold_frac;
         }}
     };
 
@@ -37,11 +33,8 @@ void VSM::setup_vehicle_mode_machine() {
         { STATE::DISARMED, [arm_threshold_frac](const GNCb& g) {
             return g.halb.rcrxb.arm_frac <= arm_threshold_frac;
         }},
-        { STATE::ANGLE, [rate_threshold_frac, angle_threshold_frac](const GNCb& g) {
-            return g.halb.rcrxb.mode_frac >= rate_threshold_frac && g.halb.rcrxb.mode_frac < angle_threshold_frac;
-        }},
-        { STATE::GPS_HOLD, [angle_threshold_frac](const GNCb& g) {
-            return g.halb.rcrxb.mode_frac >= angle_threshold_frac;
+        { STATE::ANGLE, [rate_threshold_frac](const GNCb& g) {
+            return g.halb.rcrxb.mode_frac >= rate_threshold_frac;
         }}
     };
 
@@ -53,30 +46,12 @@ void VSM::setup_vehicle_mode_machine() {
         }},
         { STATE::RATE, [rate_threshold_frac](const GNCb& g) {
             return g.halb.rcrxb.mode_frac < rate_threshold_frac;
-        }},
-        { STATE::GPS_HOLD, [angle_threshold_frac](const GNCb& g) {
-            return g.halb.rcrxb.mode_frac >= angle_threshold_frac;
-        }}
-    };
-
-    State<STATE, GNCb> gps_hold_state;
-    gps_hold_state.id = STATE::GPS_HOLD;
-    gps_hold_state.exit_paths = {
-        { STATE::DISARMED, [arm_threshold_frac](const GNCb& g) {
-            return g.halb.rcrxb.arm_frac <= arm_threshold_frac;
-        }},
-        { STATE::RATE, [rate_threshold_frac](const GNCb& g) {
-            return g.halb.rcrxb.mode_frac < rate_threshold_frac;
-        }},
-        { STATE::ANGLE, [rate_threshold_frac, angle_threshold_frac](const GNCb& g) {
-            return g.halb.rcrxb.mode_frac >= rate_threshold_frac && g.halb.rcrxb.mode_frac < angle_threshold_frac;
         }}
     };
 
     vehicle_mode_machine.add_state(disarmed_state);
     vehicle_mode_machine.add_state(rate_state);
     vehicle_mode_machine.add_state(angle_state);
-    vehicle_mode_machine.add_state(gps_hold_state);
 }
 
 void VSM::setup_attitude_mode_machine() {
@@ -84,7 +59,7 @@ void VSM::setup_attitude_mode_machine() {
     rate_state.id = ATT_MODE::RATE;
     rate_state.exit_paths = {
         { ATT_MODE::ANGLE, [](const GNCb& g) {
-            return g.vsmb.state == STATE::ANGLE || g.vsmb.state == STATE::GPS_HOLD;
+            return g.vsmb.state == STATE::ANGLE;
         }}
     };
 
