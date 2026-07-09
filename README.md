@@ -87,11 +87,11 @@ Generic helper components used across modules:
 
 Chesapeake builds upon several open-source libraries to communicate with hardware peripherals and optimize mathematical operations:
 
-*   **[Eigen](https://eigen.tuxfamily.org/)**: A high-performance template library for linear algebra, matrices, vectors, and numerical solvers.
-*   **[UKF (Unscented Kalman Filter)](https://github.com/mbed-member/UKF)**: A double-precision sensor fusion library for state estimation and attitude determination.
+*   **[Eigen](https://libeigen.gitlab.io/)**: A high-performance template library for linear algebra, matrices, vectors, and numerical solvers.
+*   **[UKF (Unscented Kalman Filter)](https://github.com/NovelMobileRobotsLab/UKF)**: A double-precision sensor fusion library for state estimation and attitude determination.
 *   **[AlfredoCRSF](https://github.com/AlfredoSystems/AlfredoCRSF)**: A communication library implementing the CRSF (Crossfire) receiver protocol for ELRS pilot RC stick interface.
 *   **[LSM6DSV16X](https://github.com/stm32duino/LSM6DSV16X)**: Hardware driver for the STMicroelectronics LSM6DSV16X 6-axis Inertial Measurement Unit (IMU).
-*   **[pico-bidir-dshot](https://github.com/j-selby/pico-bidir-dshot)**: A hardware-targeted driver utilizing PIO/DMA to support Bidirectional DShot motor signals on RP2040 and RP2350 microcontrollers.
+*   **[pico-bidir-dshot](https://github.com/bastian2001/pico-bidir-dshot)**: A hardware-targeted driver utilizing PIO/DMA to support Bidirectional DShot motor signals on RP2040 and RP2350 microcontrollers.
 
 ---
 Assisted by Gemini.
