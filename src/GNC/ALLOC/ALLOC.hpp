@@ -13,4 +13,5 @@ private:
     ACTb run_allocator(const GNCb& gnc);
     ACTb clamp_actuators(const GNCb& gnc, ACTb actb);
     ACTb allocate_quad(const GNCb& gnc);
+    float determine_blink_hz(STATE state);
 };

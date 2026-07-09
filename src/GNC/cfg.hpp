@@ -39,6 +39,10 @@ struct ALLOCc {
     float servo_min_ang_deg;
     float servo_max_ang_deg;
     float servo_default_ang_deg;
+    float blink_hz_disarmed;
+    float blink_hz_rate;
+    float blink_hz_angle;
+    float blink_hz_gps_hold;
 };
 
 struct EXPOc {

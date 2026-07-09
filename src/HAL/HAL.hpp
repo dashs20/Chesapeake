@@ -7,6 +7,7 @@
 #include "MOT/MOT.hpp"
 #include "BAT/BAT.hpp"
 #include "SERVO/SERVO.hpp"
+#include "LED/LED.hpp"
 
 class HAL {
 public:
@@ -23,4 +24,5 @@ private:
     MOT mot;
     BAT bat;
     SERVO servo;
+    LED led;
 };

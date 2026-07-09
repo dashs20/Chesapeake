@@ -22,6 +22,7 @@ struct ACTb{
     float s2_deg;
     float s3_deg;
     float s4_deg;
+    float LED_blink_Hz;
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

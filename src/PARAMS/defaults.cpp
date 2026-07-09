@@ -3,12 +3,14 @@
 void load_default_config(MASTERc& config) {
     config.magic = 0x43484553;
 
-    config.halc.motc.start_pin = 2;
-    config.halc.motc.num_pins = 4;
+    config.halc.motc.m1_pin = 27;
+    config.halc.motc.m2_pin = 28;
+    config.halc.motc.m3_pin = 5;
+    config.halc.motc.m4_pin = 6;
     config.halc.motc.speed_kbd = 600;
     config.halc.motc.pole_pairs = 14;
 
-    config.halc.rcrxc.uart_id = 1;
+    config.halc.rcrxc.uart_id = 0;
     config.halc.rcrxc.roll_ch = 0;
     config.halc.rcrxc.pitch_ch = 1;
     config.halc.rcrxc.thr_ch = 2;
@@ -17,19 +19,19 @@ void load_default_config(MASTERc& config) {
     config.halc.rcrxc.mode_ch = 5;
 
     config.halc.batc.pin = 26;
-    config.halc.batc.division_factor = 11.0f;
+    config.halc.batc.division_factor = 10.1f;
 
-    config.halc.imuc.spi_port = &SPI;
-    config.halc.imuc.cs_pin = 17;
+    config.halc.imuc.spi_port = &SPI1;
+    config.halc.imuc.cs_pin = 9;
     config.halc.imuc.accel_fs = LSM6DSV16X_ACC_FS::FS_8G;
-    config.halc.imuc.gyro_fs = LSM6DSV16X_GYRO_FS::FS_2000DPS;
+    config.halc.imuc.gyro_fs = LSM6DSV16X_GYRO_FS::FS_1000DPS;
     config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_480Hz;
     config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_480Hz;
 
-    config.halc.servoc.s1_pin = 255;
-    config.halc.servoc.s2_pin = 255;
-    config.halc.servoc.s3_pin = 255;
-    config.halc.servoc.s4_pin = 255;
+    config.halc.servoc.s1_pin = 7;
+    config.halc.servoc.s2_pin = 2;
+    config.halc.servoc.s3_pin = 4;
+    config.halc.servoc.s4_pin = 3;
     config.halc.servoc.min_us = 1000;
     config.halc.servoc.max_us = 2000;
 
@@ -78,6 +80,12 @@ void load_default_config(MASTERc& config) {
     config.gncc.allocc.servo_min_ang_deg = -30.0f;
     config.gncc.allocc.servo_max_ang_deg = 30.0f;
     config.gncc.allocc.servo_default_ang_deg = 0.0f;
+    config.gncc.allocc.blink_hz_disarmed = 1.0f;
+    config.gncc.allocc.blink_hz_rate = 2.0f;
+    config.gncc.allocc.blink_hz_angle = 3.0f;
+    config.gncc.allocc.blink_hz_gps_hold = 4.0f;
+
+    config.halc.ledc.pin = 17;
 
     config.gncc.vsmc.arm_threshold_frac = 0.8f;
     config.gncc.vsmc.mode_rate_threshold_frac = 0.3f;

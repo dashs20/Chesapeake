@@ -5,9 +5,10 @@ MOT::MOT(MOTc cfg) : motc(cfg) {
     for (uint8_t i = 0; i < 4; ++i) {
         motors[i] = nullptr;
     }
-    for (uint8_t i = 0; i < motc.num_pins && i < 4; ++i) {
-        motors[i] = new BidirDShotX1(motc.start_pin + i, motc.speed_kbd);
-    }
+    if (motc.m1_pin != 255) motors[0] = new BidirDShotX1(motc.m1_pin, motc.speed_kbd);
+    if (motc.m2_pin != 255) motors[1] = new BidirDShotX1(motc.m2_pin, motc.speed_kbd);
+    if (motc.m3_pin != 255) motors[2] = new BidirDShotX1(motc.m3_pin, motc.speed_kbd);
+    if (motc.m4_pin != 255) motors[3] = new BidirDShotX1(motc.m4_pin, motc.speed_kbd);
 }
 
 MOT::~MOT() {

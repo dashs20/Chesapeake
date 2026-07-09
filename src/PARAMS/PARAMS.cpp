@@ -36,8 +36,10 @@ void PARAMS::print_help() {
 }
 
 void PARAMS::print_all(const MASTERc& config) {
-    Serial.print("mot_start_pin = "); Serial.println(config.halc.motc.start_pin);
-    Serial.print("mot_num_pins = "); Serial.println(config.halc.motc.num_pins);
+    Serial.print("mot_m1_pin = "); Serial.println(config.halc.motc.m1_pin);
+    Serial.print("mot_m2_pin = "); Serial.println(config.halc.motc.m2_pin);
+    Serial.print("mot_m3_pin = "); Serial.println(config.halc.motc.m3_pin);
+    Serial.print("mot_m4_pin = "); Serial.println(config.halc.motc.m4_pin);
     Serial.print("mot_speed_kbd = "); Serial.println(config.halc.motc.speed_kbd);
     Serial.print("mot_pole_pairs = "); Serial.println(config.halc.motc.pole_pairs);
 
@@ -92,6 +94,7 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("servo_s4_pin = "); Serial.println(config.halc.servoc.s4_pin);
     Serial.print("servo_min_us = "); Serial.println(config.halc.servoc.min_us);
     Serial.print("servo_max_us = "); Serial.println(config.halc.servoc.max_us);
+    Serial.print("led_pin = "); Serial.println(config.halc.ledc.pin);
 
     Serial.print("gnc_looprate_hz = "); Serial.println(config.gncc.looprate_hz);
     Serial.print("angle_loop_hz = "); Serial.println(config.gncc.ctlc.angle_loop_hz);
@@ -111,13 +114,21 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("roll_ang_kp = "); Serial.println(config.gncc.ctlc.angle.roll.kp);
     Serial.print("pitch_ang_kp = "); Serial.println(config.gncc.ctlc.angle.pitch.kp);
     Serial.print("yaw_ang_kp = "); Serial.println(config.gncc.ctlc.angle.yaw.kp);
+    Serial.print("blink_hz_disarmed = "); Serial.println(config.gncc.allocc.blink_hz_disarmed);
+    Serial.print("blink_hz_rate = "); Serial.println(config.gncc.allocc.blink_hz_rate);
+    Serial.print("blink_hz_angle = "); Serial.println(config.gncc.allocc.blink_hz_angle);
+    Serial.print("blink_hz_gps_hold = "); Serial.println(config.gncc.allocc.blink_hz_gps_hold);
 }
 
 void PARAMS::get_parameter(const MASTERc& config, const char* name) {
-    if (std::strcmp(name, "mot_start_pin") == 0) {
-        Serial.println(config.halc.motc.start_pin);
-    } else if (std::strcmp(name, "mot_num_pins") == 0) {
-        Serial.println(config.halc.motc.num_pins);
+    if (std::strcmp(name, "mot_m1_pin") == 0) {
+        Serial.println(config.halc.motc.m1_pin);
+    } else if (std::strcmp(name, "mot_m2_pin") == 0) {
+        Serial.println(config.halc.motc.m2_pin);
+    } else if (std::strcmp(name, "mot_m3_pin") == 0) {
+        Serial.println(config.halc.motc.m3_pin);
+    } else if (std::strcmp(name, "mot_m4_pin") == 0) {
+        Serial.println(config.halc.motc.m4_pin);
     } else if (std::strcmp(name, "mot_speed_kbd") == 0) {
         Serial.println(config.halc.motc.speed_kbd);
     } else if (std::strcmp(name, "mot_pole_pairs") == 0) {
@@ -154,6 +165,16 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.halc.servoc.min_us);
     } else if (std::strcmp(name, "servo_max_us") == 0) {
         Serial.println(config.halc.servoc.max_us);
+    } else if (std::strcmp(name, "led_pin") == 0) {
+        Serial.println(config.halc.ledc.pin);
+    } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
+        Serial.println(config.gncc.allocc.blink_hz_disarmed);
+    } else if (std::strcmp(name, "blink_hz_rate") == 0) {
+        Serial.println(config.gncc.allocc.blink_hz_rate);
+    } else if (std::strcmp(name, "blink_hz_angle") == 0) {
+        Serial.println(config.gncc.allocc.blink_hz_angle);
+    } else if (std::strcmp(name, "blink_hz_gps_hold") == 0) {
+        Serial.println(config.gncc.allocc.blink_hz_gps_hold);
     } else if (std::strcmp(name, "gnc_looprate_hz") == 0) {
         Serial.println(config.gncc.looprate_hz);
     } else if (std::strcmp(name, "angle_loop_hz") == 0) {
@@ -194,10 +215,14 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
 }
 
 void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value) {
-    if (std::strcmp(name, "mot_start_pin") == 0) {
-        config.halc.motc.start_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "mot_num_pins") == 0) {
-        config.halc.motc.num_pins = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    if (std::strcmp(name, "mot_m1_pin") == 0) {
+        config.halc.motc.m1_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "mot_m2_pin") == 0) {
+        config.halc.motc.m2_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "mot_m3_pin") == 0) {
+        config.halc.motc.m3_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "mot_m4_pin") == 0) {
+        config.halc.motc.m4_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "mot_speed_kbd") == 0) {
         config.halc.motc.speed_kbd = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "mot_pole_pairs") == 0) {
@@ -264,6 +289,16 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.halc.servoc.min_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "servo_max_us") == 0) {
         config.halc.servoc.max_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "led_pin") == 0) {
+        config.halc.ledc.pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
+        config.gncc.allocc.blink_hz_disarmed = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "blink_hz_rate") == 0) {
+        config.gncc.allocc.blink_hz_rate = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "blink_hz_angle") == 0) {
+        config.gncc.allocc.blink_hz_angle = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "blink_hz_gps_hold") == 0) {
+        config.gncc.allocc.blink_hz_gps_hold = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "gnc_looprate_hz") == 0) {
         config.gncc.looprate_hz = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "angle_loop_hz") == 0) {
