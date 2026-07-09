@@ -24,7 +24,7 @@ void PARAMS::save(const MASTERc& config) {
 }
 
 void PARAMS::print_help() {
-    Serial.println("Chesapeake Autopilot CLI Help");
+    Serial.println("Chesapeake CLI Help (For Chesapeake supported boards, like Bluecrab)");
     Serial.println("Commands:");
     Serial.println("  help                       - Show this help list");
     Serial.println("  dump                       - Dump all parameter settings and current values");

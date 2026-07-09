@@ -127,7 +127,7 @@ The following commands are available:
 *   `reboot` - Perform a system reboot (`rp2040.reboot()`).
 
 ### Tunable Parameters include:
-*   `gnc_looprate_hz` - Autopilot core rate frequency (default: 500Hz).
+*   `gnc_looprate_hz` - Core rate frequency of a Chesapeake supported board, like Bluecrab (default: 500Hz).
 *   `angle_loop_hz` - Attitude loop cascade PID execution rate (default: 100Hz).
 *   `led_pin` - Blink indicator pin (default: 17).
 *   `blink_hz_disarmed` / `blink_hz_rate` / `blink_hz_angle` - LED blinking rates depending on VSM flight mode.
