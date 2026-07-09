@@ -8,13 +8,14 @@
 #include "BAT/BAT.hpp"
 #include "SER/SER.hpp"
 #include "LED/LED.hpp"
+#include "RPI/RPI.hpp"
 
 class HAL {
 public:
     HAL(HALc cfg);
     ~HAL();
 
-    HALb update(const ACTb& actb);
+    HALb update(const ALLb& allb_km1);
 
 private:
     HALc cfg_data;
@@ -25,4 +26,5 @@ private:
     BAT bat;
     SER ser;
     LED led;
+    RPI rpi;
 };

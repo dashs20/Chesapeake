@@ -80,6 +80,15 @@ struct LEDc {
     uint8_t pin;
 };
 
+struct RPIc {
+    bool enabled;
+    uint8_t uart_id;
+    uint32_t baudrate;
+    uint8_t tx_pin;
+    uint8_t rx_pin;
+    uint8_t rate_divisor;
+};
+
 struct HALc {
     MOTc motc;
     RCRXc rcrxc;
@@ -87,4 +96,5 @@ struct HALc {
     IMUc imuc;
     SERc serc;
     LEDc ledc;
+    RPIc rpic;
 };

@@ -88,6 +88,13 @@ void load_default_config(MASTERc& config) {
 
     config.halc.ledc.pin = 17;
 
+    config.halc.rpic.enabled = true;
+    config.halc.rpic.uart_id = 2;
+    config.halc.rpic.baudrate = 460800;
+    config.halc.rpic.tx_pin = 20;
+    config.halc.rpic.rx_pin = 21;
+    config.halc.rpic.rate_divisor = 5;
+
     config.gncc.vsmc.arm_threshold_frac = 0.8f;
     config.gncc.vsmc.mode_rate_threshold_frac = 0.3f;
     config.gncc.vsmc.mode_angle_threshold_frac = 0.7f;

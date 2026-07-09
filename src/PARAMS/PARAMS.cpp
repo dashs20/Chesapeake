@@ -118,6 +118,12 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("ser_min_us = "); Serial.println(config.halc.serc.min_us);
     Serial.print("ser_max_us = "); Serial.println(config.halc.serc.max_us);
     Serial.print("led_pin = "); Serial.println(config.halc.ledc.pin);
+    Serial.print("rpi_enabled = "); Serial.println(config.halc.rpic.enabled);
+    Serial.print("rpi_uart_id = "); Serial.println(config.halc.rpic.uart_id);
+    Serial.print("rpi_baudrate = "); Serial.println(config.halc.rpic.baudrate);
+    Serial.print("rpi_tx_pin = "); Serial.println(config.halc.rpic.tx_pin);
+    Serial.print("rpi_rx_pin = "); Serial.println(config.halc.rpic.rx_pin);
+    Serial.print("rpi_rate_divisor = "); Serial.println(config.halc.rpic.rate_divisor);
 
     Serial.print("gnc_looprate_hz = "); Serial.println(config.gncc.looprate_hz);
     Serial.print("angle_loop_hz = "); Serial.println(config.gncc.ctlc.angle_loop_hz);
@@ -244,6 +250,18 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.halc.serc.max_us);
     } else if (std::strcmp(name, "led_pin") == 0) {
         Serial.println(config.halc.ledc.pin);
+    } else if (std::strcmp(name, "rpi_enabled") == 0) {
+        Serial.println(config.halc.rpic.enabled);
+    } else if (std::strcmp(name, "rpi_uart_id") == 0) {
+        Serial.println(config.halc.rpic.uart_id);
+    } else if (std::strcmp(name, "rpi_baudrate") == 0) {
+        Serial.println(config.halc.rpic.baudrate);
+    } else if (std::strcmp(name, "rpi_tx_pin") == 0) {
+        Serial.println(config.halc.rpic.tx_pin);
+    } else if (std::strcmp(name, "rpi_rx_pin") == 0) {
+        Serial.println(config.halc.rpic.rx_pin);
+    } else if (std::strcmp(name, "rpi_rate_divisor") == 0) {
+        Serial.println(config.halc.rpic.rate_divisor);
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
         Serial.println(config.gncc.allocc.blink_hz_disarmed);
     } else if (std::strcmp(name, "blink_hz_rate") == 0) {
@@ -408,6 +426,18 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.halc.serc.max_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "led_pin") == 0) {
         config.halc.ledc.pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "rpi_enabled") == 0) {
+        config.halc.rpic.enabled = (std::strtol(value, nullptr, 10) != 0);
+    } else if (std::strcmp(name, "rpi_uart_id") == 0) {
+        config.halc.rpic.uart_id = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "rpi_baudrate") == 0) {
+        config.halc.rpic.baudrate = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "rpi_tx_pin") == 0) {
+        config.halc.rpic.tx_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "rpi_rx_pin") == 0) {
+        config.halc.rpic.rx_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "rpi_rate_divisor") == 0) {
+        config.halc.rpic.rate_divisor = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
         config.gncc.allocc.blink_hz_disarmed = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "blink_hz_rate") == 0) {

@@ -8,17 +8,19 @@ HAL::HAL(HALc cfg)
       mot(cfg.motc),
       bat(cfg.batc),
       ser(cfg.serc),
-      led(cfg.ledc.pin) {}
+      led(cfg.ledc.pin),
+      rpi(cfg.rpic) {}
 
 HAL::~HAL() {}
 
-HALb HAL::update(const ACTb& actb) {
+HALb HAL::update(const ALLb& allb_km1) {
     hal_bus.imub = imu.update(hal_bus);
     hal_bus.rcrxb = rcrx.update(hal_bus);
-    hal_bus.motb = mot.update(actb);
+    hal_bus.motb = mot.update(allb_km1.actb);
     hal_bus.vbat_volts = bat.update(hal_bus);
-    ser.update(actb);
-    led.update(actb);
+    ser.update(allb_km1.actb);
+    led.update(allb_km1.actb);
+    rpi.update(allb_km1);
 
     return hal_bus;
 }

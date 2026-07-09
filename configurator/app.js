@@ -21,6 +21,7 @@ let animationAngle = 0;
 const groupMappings = {
     "mot_": "Motors",
     "ser_": "Servos",
+    "rpi_": "Raspberry Pi",
     "rcrx_": "RC Receiver",
     "bat_": "Battery & ADC",
     "imu_": "IMU Sensor",

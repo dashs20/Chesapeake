@@ -30,7 +30,7 @@ void setup() {
     hal_ptr = new HAL(config_data.halc);
     gnc_ptr = new GNC(config_data.gncc);
 
-    allb_km1.halb = hal_ptr->update(allb_km1.actb);
+    allb_km1.halb = hal_ptr->update(allb_km1);
     allb_k.halb = allb_km1.halb;
 
     gnc_done = false;
@@ -43,7 +43,7 @@ void loop() {
 
     params_ptr->run_cli(config_data);
 
-    allb_k.halb = hal_ptr->update(allb_km1.actb);
+    allb_k.halb = hal_ptr->update(allb_km1);
 
     uint32_t looprate_us = 1000000UL / config_data.gncc.looprate_hz;
 
