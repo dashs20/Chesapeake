@@ -67,7 +67,7 @@ struct IMUc {
     LSM6DSV16X_ODR gyro_odr;
 };
 
-struct SERVOc {
+struct SERc {
     uint8_t s1_pin;
     uint8_t s2_pin;
     uint8_t s3_pin;
@@ -85,6 +85,6 @@ struct HALc {
     RCRXc rcrxc;
     BATc batc;
     IMUc imuc;
-    SERVOc servoc;
+    SERc serc;
     LEDc ledc;
 };

@@ -28,12 +28,12 @@ void load_default_config(MASTERc& config) {
     config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_480Hz;
     config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_480Hz;
 
-    config.halc.servoc.s1_pin = 7;
-    config.halc.servoc.s2_pin = 2;
-    config.halc.servoc.s3_pin = 4;
-    config.halc.servoc.s4_pin = 3;
-    config.halc.servoc.min_us = 1000;
-    config.halc.servoc.max_us = 2000;
+    config.halc.serc.s1_pin = 7;
+    config.halc.serc.s2_pin = 2;
+    config.halc.serc.s3_pin = 4;
+    config.halc.serc.s4_pin = 3;
+    config.halc.serc.min_us = 1000;
+    config.halc.serc.max_us = 2000;
 
     config.gncc.looprate_hz = 500;
     config.gncc.allocator = ALLOCATOR::QUAD;
@@ -79,9 +79,9 @@ void load_default_config(MASTERc& config) {
     config.gncc.guic.expoc.yaw = 0.3f;
 
     config.gncc.allocc.min_motor_frac = 0.15f;
-    config.gncc.allocc.servo_min_ang_deg = -30.0f;
-    config.gncc.allocc.servo_max_ang_deg = 30.0f;
-    config.gncc.allocc.servo_default_ang_deg = 0.0f;
+    config.gncc.allocc.ser_min_ang_deg = -30.0f;
+    config.gncc.allocc.ser_max_ang_deg = 30.0f;
+    config.gncc.allocc.ser_default_ang_deg = 0.0f;
     config.gncc.allocc.blink_hz_disarmed = 1.0f;
     config.gncc.allocc.blink_hz_rate = 5.0f;
     config.gncc.allocc.blink_hz_angle = 10.0f;

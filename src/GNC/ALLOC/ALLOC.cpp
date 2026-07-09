@@ -11,10 +11,10 @@ ACTb ALLOC::update(const GNCb& gnc) {
         actb.m3_frac = 0.0f;
         actb.m4_frac = 0.0f;
 
-        actb.s1_deg = cfg_data.allocc.servo_default_ang_deg;
-        actb.s2_deg = cfg_data.allocc.servo_default_ang_deg;
-        actb.s3_deg = cfg_data.allocc.servo_default_ang_deg;
-        actb.s4_deg = cfg_data.allocc.servo_default_ang_deg;
+        actb.s1_deg = cfg_data.allocc.ser_default_ang_deg;
+        actb.s2_deg = cfg_data.allocc.ser_default_ang_deg;
+        actb.s3_deg = cfg_data.allocc.ser_default_ang_deg;
+        actb.s4_deg = cfg_data.allocc.ser_default_ang_deg;
 
         actb = clamp_actuators(gnc, actb);
     } else {
@@ -35,10 +35,10 @@ ACTb ALLOC::run_allocator(const GNCb& gnc) {
         actb.m3_frac = 0.0f;
         actb.m4_frac = 0.0f;
 
-        actb.s1_deg = cfg_data.allocc.servo_default_ang_deg;
-        actb.s2_deg = cfg_data.allocc.servo_default_ang_deg;
-        actb.s3_deg = cfg_data.allocc.servo_default_ang_deg;
-        actb.s4_deg = cfg_data.allocc.servo_default_ang_deg;
+        actb.s1_deg = cfg_data.allocc.ser_default_ang_deg;
+        actb.s2_deg = cfg_data.allocc.ser_default_ang_deg;
+        actb.s3_deg = cfg_data.allocc.ser_default_ang_deg;
+        actb.s4_deg = cfg_data.allocc.ser_default_ang_deg;
         return actb;
     }
 }
@@ -55,10 +55,10 @@ ACTb ALLOC::allocate_quad(const GNCb& gnc) {
     actb.m3_frac = throttle_frac + roll_effort_frac + pitch_effort_frac + yaw_effort_frac;
     actb.m4_frac = throttle_frac + roll_effort_frac - pitch_effort_frac - yaw_effort_frac;
 
-    actb.s1_deg = cfg_data.allocc.servo_default_ang_deg;
-    actb.s2_deg = cfg_data.allocc.servo_default_ang_deg;
-    actb.s3_deg = cfg_data.allocc.servo_default_ang_deg;
-    actb.s4_deg = cfg_data.allocc.servo_default_ang_deg;
+    actb.s1_deg = cfg_data.allocc.ser_default_ang_deg;
+    actb.s2_deg = cfg_data.allocc.ser_default_ang_deg;
+    actb.s3_deg = cfg_data.allocc.ser_default_ang_deg;
+    actb.s4_deg = cfg_data.allocc.ser_default_ang_deg;
 
     return actb;
 }
@@ -71,10 +71,10 @@ ACTb ALLOC::clamp_actuators(const GNCb& gnc, ACTb actb) {
     actb.m3_frac = std::max(minimum_motor_fraction_frac, std::min(1.0f, actb.m3_frac));
     actb.m4_frac = std::max(minimum_motor_fraction_frac, std::min(1.0f, actb.m4_frac));
 
-    actb.s1_deg = std::max(cfg_data.allocc.servo_min_ang_deg, std::min(cfg_data.allocc.servo_max_ang_deg, actb.s1_deg));
-    actb.s2_deg = std::max(cfg_data.allocc.servo_min_ang_deg, std::min(cfg_data.allocc.servo_max_ang_deg, actb.s2_deg));
-    actb.s3_deg = std::max(cfg_data.allocc.servo_min_ang_deg, std::min(cfg_data.allocc.servo_max_ang_deg, actb.s3_deg));
-    actb.s4_deg = std::max(cfg_data.allocc.servo_min_ang_deg, std::min(cfg_data.allocc.servo_max_ang_deg, actb.s4_deg));
+    actb.s1_deg = std::max(cfg_data.allocc.ser_min_ang_deg, std::min(cfg_data.allocc.ser_max_ang_deg, actb.s1_deg));
+    actb.s2_deg = std::max(cfg_data.allocc.ser_min_ang_deg, std::min(cfg_data.allocc.ser_max_ang_deg, actb.s2_deg));
+    actb.s3_deg = std::max(cfg_data.allocc.ser_min_ang_deg, std::min(cfg_data.allocc.ser_max_ang_deg, actb.s3_deg));
+    actb.s4_deg = std::max(cfg_data.allocc.ser_min_ang_deg, std::min(cfg_data.allocc.ser_max_ang_deg, actb.s4_deg));
 
     return actb;
 }

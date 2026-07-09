@@ -6,7 +6,7 @@
 #include "RCRX/RCRX.hpp"
 #include "MOT/MOT.hpp"
 #include "BAT/BAT.hpp"
-#include "SERVO/SERVO.hpp"
+#include "SER/SER.hpp"
 #include "LED/LED.hpp"
 
 class HAL {
@@ -23,6 +23,6 @@ private:
     RCRX rcrx;
     MOT mot;
     BAT bat;
-    SERVO servo;
+    SER ser;
     LED led;
 };

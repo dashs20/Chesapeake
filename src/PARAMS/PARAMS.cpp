@@ -111,12 +111,12 @@ void PARAMS::print_all(const MASTERc& config) {
         case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
     }
 
-    Serial.print("servo_s1_pin = "); Serial.println(config.halc.servoc.s1_pin);
-    Serial.print("servo_s2_pin = "); Serial.println(config.halc.servoc.s2_pin);
-    Serial.print("servo_s3_pin = "); Serial.println(config.halc.servoc.s3_pin);
-    Serial.print("servo_s4_pin = "); Serial.println(config.halc.servoc.s4_pin);
-    Serial.print("servo_min_us = "); Serial.println(config.halc.servoc.min_us);
-    Serial.print("servo_max_us = "); Serial.println(config.halc.servoc.max_us);
+    Serial.print("ser_s1_pin = "); Serial.println(config.halc.serc.s1_pin);
+    Serial.print("ser_s2_pin = "); Serial.println(config.halc.serc.s2_pin);
+    Serial.print("ser_s3_pin = "); Serial.println(config.halc.serc.s3_pin);
+    Serial.print("ser_s4_pin = "); Serial.println(config.halc.serc.s4_pin);
+    Serial.print("ser_min_us = "); Serial.println(config.halc.serc.min_us);
+    Serial.print("ser_max_us = "); Serial.println(config.halc.serc.max_us);
     Serial.print("led_pin = "); Serial.println(config.halc.ledc.pin);
 
     Serial.print("gnc_looprate_hz = "); Serial.println(config.gncc.looprate_hz);
@@ -230,18 +230,18 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
             case LSM6DSV16X_ODR::ODR_3840Hz: Serial.println("3840Hz"); break;
             case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
         }
-    } else if (std::strcmp(name, "servo_s1_pin") == 0) {
-        Serial.println(config.halc.servoc.s1_pin);
-    } else if (std::strcmp(name, "servo_s2_pin") == 0) {
-        Serial.println(config.halc.servoc.s2_pin);
-    } else if (std::strcmp(name, "servo_s3_pin") == 0) {
-        Serial.println(config.halc.servoc.s3_pin);
-    } else if (std::strcmp(name, "servo_s4_pin") == 0) {
-        Serial.println(config.halc.servoc.s4_pin);
-    } else if (std::strcmp(name, "servo_min_us") == 0) {
-        Serial.println(config.halc.servoc.min_us);
-    } else if (std::strcmp(name, "servo_max_us") == 0) {
-        Serial.println(config.halc.servoc.max_us);
+    } else if (std::strcmp(name, "ser_s1_pin") == 0) {
+        Serial.println(config.halc.serc.s1_pin);
+    } else if (std::strcmp(name, "ser_s2_pin") == 0) {
+        Serial.println(config.halc.serc.s2_pin);
+    } else if (std::strcmp(name, "ser_s3_pin") == 0) {
+        Serial.println(config.halc.serc.s3_pin);
+    } else if (std::strcmp(name, "ser_s4_pin") == 0) {
+        Serial.println(config.halc.serc.s4_pin);
+    } else if (std::strcmp(name, "ser_min_us") == 0) {
+        Serial.println(config.halc.serc.min_us);
+    } else if (std::strcmp(name, "ser_max_us") == 0) {
+        Serial.println(config.halc.serc.max_us);
     } else if (std::strcmp(name, "led_pin") == 0) {
         Serial.println(config.halc.ledc.pin);
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
@@ -394,18 +394,18 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         else if (std::strcmp(value, "3840Hz") == 0 || std::strcmp(value, "3840") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_3840Hz;
         else if (std::strcmp(value, "7680Hz") == 0 || std::strcmp(value, "7680") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_7680Hz;
         else { Serial.println("Error: Invalid gyro ODR"); return; }
-    } else if (std::strcmp(name, "servo_s1_pin") == 0) {
-        config.halc.servoc.s1_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "servo_s2_pin") == 0) {
-        config.halc.servoc.s2_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "servo_s3_pin") == 0) {
-        config.halc.servoc.s3_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "servo_s4_pin") == 0) {
-        config.halc.servoc.s4_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "servo_min_us") == 0) {
-        config.halc.servoc.min_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "servo_max_us") == 0) {
-        config.halc.servoc.max_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "ser_s1_pin") == 0) {
+        config.halc.serc.s1_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "ser_s2_pin") == 0) {
+        config.halc.serc.s2_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "ser_s3_pin") == 0) {
+        config.halc.serc.s3_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "ser_s4_pin") == 0) {
+        config.halc.serc.s4_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "ser_min_us") == 0) {
+        config.halc.serc.min_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "ser_max_us") == 0) {
+        config.halc.serc.max_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "led_pin") == 0) {
         config.halc.ledc.pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
