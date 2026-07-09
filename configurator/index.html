@@ -29,6 +29,7 @@
             <div class="fc-info-box">
                 <div class="info-row"><span class="info-label">Board:</span> <span class="info-value">XIAO RP2350</span></div>
                 <div class="info-row"><span class="info-label">Firmware:</span> <span class="info-value">Chesapeake v1.0</span></div>
+                <div class="info-row"><span class="info-label">Battery:</span> <span id="info-battery" class="info-value">- V</span></div>
             </div>
         </div>
 
@@ -64,6 +65,27 @@
                                 <li>Loop Rate: <span id="sum-looprate" class="value-highlight">-</span></li>
                                 <li>Attitude Loop: <span id="sum-attitude" class="value-highlight">-</span></li>
                             </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3>Live Telemetry & UKF Visualizer</h3>
+                    <div class="grid-2">
+                        <div>
+                            <h4>Telemetry Values</h4>
+                            <ul class="summary-list" style="margin-bottom: 20px;">
+                                <li>Battery Voltage: <span id="tel-vbat" class="value-highlight">- V</span></li>
+                                <li>Quaternion W: <span id="tel-qw" class="value-highlight">-</span></li>
+                                <li>Quaternion X: <span id="tel-qx" class="value-highlight">-</span></li>
+                                <li>Quaternion Y: <span id="tel-qy" class="value-highlight">-</span></li>
+                                <li>Quaternion Z: <span id="tel-qz" class="value-highlight">-</span></li>
+                            </ul>
+                            <button id="btn-calibrate" class="btn btn-calibrate" disabled style="width: 100%; margin-top: 10px;">Calibrate UKF (Flat)</button>
+                        </div>
+                        <div class="visualizer-container">
+                            <canvas id="ukf-canvas" width="200" height="200"></canvas>
+                            <span class="visualizer-label">UKF Orientation (3D Block)</span>
                         </div>
                     </div>
                 </div>

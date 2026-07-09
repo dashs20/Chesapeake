@@ -3,9 +3,11 @@
 #include <cstdint>
 
 struct NAVc {
-    Eigen::VectorXd x0;
+    Eigen::Matrix<double, 7, 1> x0;
     Eigen::Vector3f r_IMU2CG_mm;       // IMU position relative to CG in millimeters
     Eigen::Quaternionf q_IMU2body;      // Rotation from IMU sensor frame to vehicle body frame
+    Eigen::Vector3f accel_bias;        // Accelerometer calibration biases
+    Eigen::Vector3f gyro_bias;         // Gyroscope calibration biases
 };
 
 struct PID_SCALARc {

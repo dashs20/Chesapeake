@@ -13,6 +13,9 @@ IMU::IMU(IMUc cfg) : imuc(cfg), sensor(nullptr) {
             sensor->Set_G_ODR(convert_odr_to_float(imuc.gyro_odr), LSM6DSV16X_GYRO_HIGH_PERFORMANCE_MODE);
             sensor->Set_X_Filter_Mode(0, LSM6DSV16X_XL_ULTRA_LIGHT);
             sensor->Set_G_Filter_Mode(0, LSM6DSV16X_GY_ULTRA_LIGHT);
+        } else {
+            delete sensor;
+            sensor = nullptr;
         }
     }
 }

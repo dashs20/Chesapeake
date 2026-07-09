@@ -2,10 +2,21 @@ let port = null;
 let reader = null;
 let writer = null;
 let isConnected = false;
+let isConnecting = false;
+let readLoopPromise = null;
+let reloadTimeout = null;
 let paramsCache = {};
 let modifiedParams = {};
 let serialBuffer = "";
 let pendingCommandType = null; // 'dump', 'save', 'defaults', 'reboot'
+
+// UKF Visualizer & Telemetry globals
+let canvas = null;
+let ctx = null;
+let currentQuaternion = [1, 0, 0, 0]; // [w, x, y, z]
+let isTelemetryActive = false;
+let lastTelemetryTime = 0;
+let animationAngle = 0;
 
 const groupMappings = {
     "mot_": "Motors",
@@ -29,14 +40,23 @@ const dropdownOptions = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("btn-connect").addEventListener("click", toggleConnection);
-    document.getElementById("btn-refresh").addEventListener("click", reloadParams);
-    document.getElementById("btn-save").addEventListener("click", saveParamsToBoard);
-    document.getElementById("btn-reboot").addEventListener("click", rebootBoard);
-    document.getElementById("btn-defaults").addEventListener("click", resetToDefaults);
-    document.getElementById("param-search").addEventListener("input", filterParameters);
-    document.getElementById("cli-input").addEventListener("keypress", handleCliKeyPress);
-    document.getElementById("btn-send-cli").addEventListener("click", sendCliCommand);
+    const safeAddListener = (id, event, handler) => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener(event, handler);
+    };
+
+    safeAddListener("btn-connect", "click", toggleConnection);
+    safeAddListener("btn-refresh", "click", reloadParams);
+    safeAddListener("btn-save", "click", saveParamsToBoard);
+    safeAddListener("btn-reboot", "click", rebootBoard);
+    safeAddListener("btn-defaults", "click", resetToDefaults);
+    safeAddListener("param-search", "input", filterParameters);
+    safeAddListener("cli-input", "keypress", handleCliKeyPress);
+    safeAddListener("btn-send-cli", "click", sendCliCommand);
+    safeAddListener("btn-calibrate", "click", calibrateUKF);
+    
+    // Initialize UKF 3D Visualizer
+    initVisualizer();
 });
 
 function switchTab(tabId) {
@@ -57,10 +77,22 @@ function switchTab(tabId) {
 }
 
 async function toggleConnection() {
-    if (isConnected) {
-        await disconnect();
-    } else {
-        await connect();
+    if (isConnecting) return;
+    const btn = document.getElementById("btn-connect");
+    if (btn) btn.disabled = true;
+    
+    isConnecting = true;
+    try {
+        if (isConnected) {
+            await disconnect();
+        } else {
+            await connect();
+        }
+    } catch (err) {
+        console.error("Toggle connection failed:", err);
+    } finally {
+        isConnecting = false;
+        if (btn) btn.disabled = false;
     }
 }
 
@@ -74,17 +106,23 @@ async function connect() {
         reader = port.readable.getReader();
 
         updateConnectionUI(true);
-        readLoop();
+        readLoopPromise = readLoop();
 
         setTimeout(async () => {
-            await writeRaw("\n");
-            await reloadParams();
+            try {
+                await writeRaw("\n");
+                await reloadParams();
+            } catch (err) {
+                console.error("Initialization failed:", err);
+                await disconnect();
+            }
         }, 500);
 
     } catch (err) {
         console.error("Connection failed:", err);
         alert("Failed to connect: " + err.message);
         updateConnectionUI(false);
+        await disconnect();
     }
 }
 
@@ -95,12 +133,22 @@ async function disconnect() {
         try {
             await reader.cancel();
         } catch (e) {}
-        reader.releaseLock();
+        if (readLoopPromise) {
+            try {
+                await readLoopPromise;
+            } catch (e) {}
+            readLoopPromise = null;
+        }
+        try {
+            reader.releaseLock();
+        } catch (e) {}
         reader = null;
     }
     
     if (writer) {
-        writer.releaseLock();
+        try {
+            writer.releaseLock();
+        } catch (e) {}
         writer = null;
     }
 
@@ -118,32 +166,57 @@ async function disconnect() {
 function updateConnectionUI(connected) {
     const btn = document.getElementById("btn-connect");
     const status = document.getElementById("connection-status");
-    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "cli-input", "btn-send-cli"];
+    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "cli-input", "btn-send-cli", "btn-calibrate"];
 
-    if (connected) {
-        btn.textContent = "Disconnect";
-        btn.classList.add("connected");
-        status.textContent = "Connected";
-        status.className = "status-indicator connected";
-        controls.forEach(id => document.getElementById(id).disabled = false);
-    } else {
-        btn.textContent = "Connect";
-        btn.classList.remove("connected");
-        status.textContent = "Disconnected";
-        status.className = "status-indicator disconnected";
-        controls.forEach(id => document.getElementById(id).disabled = true);
+    if (btn) {
+        if (connected) {
+            btn.textContent = "Disconnect";
+            btn.classList.add("connected");
+        } else {
+            btn.textContent = "Connect";
+            btn.classList.remove("connected");
+        }
     }
+    
+    if (status) {
+        if (connected) {
+            status.textContent = "Connected";
+            status.className = "status-indicator connected";
+        } else {
+            status.textContent = "Disconnected";
+            status.className = "status-indicator disconnected";
+        }
+    }
+
+    controls.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.disabled = !connected;
+        }
+    });
 }
 
 function clearBoardUI() {
     paramsCache = {};
     modifiedParams = {};
-    document.getElementById("params-loading").style.display = "block";
-    document.getElementById("params-grid").style.display = "none";
-    document.getElementById("params-grid").innerHTML = "";
+    
+    const loading = document.getElementById("params-loading");
+    if (loading) loading.style.display = "block";
+    
+    const grid = document.getElementById("params-grid");
+    if (grid) {
+        grid.style.display = "none";
+        grid.innerHTML = "";
+    }
     
     const summaryIds = ["sum-m1", "sum-m2", "sum-m3", "sum-m4", "sum-looprate", "sum-attitude"];
-    summaryIds.forEach(id => document.getElementById(id).textContent = "-");
+    summaryIds.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = "-";
+    });
+
+    // Clear telemetry display
+    updateTelemetryUI(NaN, NaN, NaN, NaN, NaN);
 }
 
 async function writeRaw(text) {
@@ -165,22 +238,62 @@ async function readLoop() {
         }
     } catch (err) {
         console.error("Read loop encountered error:", err);
-        disconnect();
+        await disconnect();
     }
 }
 
 function handleIncomingChunk(chunk) {
     serialBuffer += chunk;
-    appendCliOutput(chunk);
     
     let lineEndIdx;
+    let cliOutputAccumulator = "";
+    let telemetryUpdated = false;
+    let latestTelemetry = null;
+
     while ((lineEndIdx = serialBuffer.indexOf("\n")) !== -1) {
-        const line = serialBuffer.substring(0, lineEndIdx).trim();
+        const line = serialBuffer.substring(0, lineEndIdx);
         serialBuffer = serialBuffer.substring(lineEndIdx + 1);
         
-        if (pendingCommandType === "dump") {
-            parseDumpLine(line);
+        const trimmed = line.trim();
+        if (trimmed.startsWith("$TEL,")) {
+            const parts = trimmed.split(",");
+            if (parts.length >= 6) {
+                const vbat = parseFloat(parts[1]);
+                const qw = parseFloat(parts[2]);
+                const qx = parseFloat(parts[3]);
+                const qy = parseFloat(parts[4]);
+                const qz = parseFloat(parts[5]);
+                
+                latestTelemetry = { vbat, qw, qx, qy, qz };
+                telemetryUpdated = true;
+            }
+        } else {
+            // Batch CLI output lines
+            cliOutputAccumulator += line + "\n";
+            
+            if (pendingCommandType === "dump") {
+                if (trimmed === "--- END OF DUMP ---") {
+                    pendingCommandType = null;
+                    if (reloadTimeout) {
+                        clearTimeout(reloadTimeout);
+                        reloadTimeout = null;
+                    }
+                    buildParametersUI();
+                    updateSummaryUI();
+                } else {
+                    parseDumpLine(trimmed);
+                }
+            }
         }
+    }
+
+    if (telemetryUpdated && latestTelemetry) {
+        updateTelemetryUI(latestTelemetry.vbat, latestTelemetry.qw, latestTelemetry.qx, latestTelemetry.qy, latestTelemetry.qz);
+    }
+
+    // Perform a single, fast DOM update for the entire chunk
+    if (cliOutputAccumulator) {
+        appendCliOutput(cliOutputAccumulator);
     }
 }
 
@@ -198,29 +311,42 @@ async function reloadParams() {
     modifiedParams = {};
     pendingCommandType = "dump";
     
-    document.getElementById("params-loading").textContent = "Loading parameters from flight controller...";
-    document.getElementById("params-loading").style.display = "block";
-    document.getElementById("params-grid").style.display = "none";
+    const loading = document.getElementById("params-loading");
+    if (loading) {
+        loading.textContent = "Loading parameters from flight controller...";
+        loading.style.display = "block";
+    }
+    const grid = document.getElementById("params-grid");
+    if (grid) grid.style.display = "none";
+
+    if (reloadTimeout) {
+        clearTimeout(reloadTimeout);
+    }
 
     await writeRaw("dump\n");
 
-    setTimeout(() => {
-        pendingCommandType = null;
-        buildParametersUI();
-        updateSummaryUI();
-    }, 1500);
+    reloadTimeout = setTimeout(() => {
+        if (pendingCommandType === "dump") {
+            pendingCommandType = null;
+            buildParametersUI();
+            updateSummaryUI();
+        }
+    }, 2000);
 }
 
 function buildParametersUI() {
     const grid = document.getElementById("params-grid");
+    if (!grid) return;
     grid.innerHTML = "";
     
     if (Object.keys(paramsCache).length === 0) {
-        document.getElementById("params-loading").textContent = "Failed to load parameters. Try refreshing.";
+        const loading = document.getElementById("params-loading");
+        if (loading) loading.textContent = "Failed to load parameters. Try refreshing.";
         return;
     }
     
-    document.getElementById("params-loading").style.display = "none";
+    const loading = document.getElementById("params-loading");
+    if (loading) loading.style.display = "none";
     grid.style.display = "grid";
 
     const groups = {};
@@ -297,12 +423,16 @@ function handleParamChange(key, val) {
 }
 
 function updateSummaryUI() {
-    document.getElementById("sum-m1").textContent = paramsCache["mot_m1_pin"] || "-";
-    document.getElementById("sum-m2").textContent = paramsCache["mot_m2_pin"] || "-";
-    document.getElementById("sum-m3").textContent = paramsCache["mot_m3_pin"] || "-";
-    document.getElementById("sum-m4").textContent = paramsCache["mot_m4_pin"] || "-";
-    document.getElementById("sum-looprate").textContent = paramsCache["gnc_looprate_hz"] ? `${paramsCache["gnc_looprate_hz"]} Hz` : "-";
-    document.getElementById("sum-attitude").textContent = paramsCache["angle_loop_hz"] ? `${paramsCache["angle_loop_hz"]} Hz` : "-";
+    const safeSetText = (id, text) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+    };
+    safeSetText("sum-m1", paramsCache["mot_m1_pin"] || "-");
+    safeSetText("sum-m2", paramsCache["mot_m2_pin"] || "-");
+    safeSetText("sum-m3", paramsCache["mot_m3_pin"] || "-");
+    safeSetText("sum-m4", paramsCache["mot_m4_pin"] || "-");
+    safeSetText("sum-looprate", paramsCache["gnc_looprate_hz"] ? `${paramsCache["gnc_looprate_hz"]} Hz` : "-");
+    safeSetText("sum-attitude", paramsCache["angle_loop_hz"] ? `${paramsCache["angle_loop_hz"]} Hz` : "-");
 }
 
 function filterParameters(e) {
@@ -375,3 +505,241 @@ function appendCliOutput(text) {
     output.textContent += text;
     output.scrollTop = output.scrollHeight;
 }
+
+// Telemetry & UKF 3D Visualizer functions
+function updateTelemetryUI(vbat, qw, qx, qy, qz) {
+    const vbatStr = isNaN(vbat) ? "- V" : `${vbat.toFixed(2)} V`;
+    const infoBat = document.getElementById("info-battery");
+    const telBat = document.getElementById("tel-vbat");
+    if (infoBat) infoBat.textContent = vbatStr;
+    if (telBat) telBat.textContent = vbatStr;
+    
+    const telQw = document.getElementById("tel-qw");
+    const telQx = document.getElementById("tel-qx");
+    const telQy = document.getElementById("tel-qy");
+    const telQz = document.getElementById("tel-qz");
+    
+    if (telQw) telQw.textContent = isNaN(qw) ? "-" : qw.toFixed(4);
+    if (telQx) telQx.textContent = isNaN(qx) ? "-" : qx.toFixed(4);
+    if (telQy) telQy.textContent = isNaN(qy) ? "-" : qy.toFixed(4);
+    if (telQz) telQz.textContent = isNaN(qz) ? "-" : qz.toFixed(4);
+    
+    if (!isNaN(qw) && !isNaN(qx) && !isNaN(qy) && !isNaN(qz)) {
+        currentQuaternion = [qw, qx, qy, qz];
+        isTelemetryActive = true;
+        lastTelemetryTime = Date.now();
+    } else {
+        isTelemetryActive = false;
+    }
+}
+
+function initVisualizer() {
+    canvas = document.getElementById("ukf-canvas");
+    if (canvas) {
+        ctx = canvas.getContext("2d");
+        requestAnimationFrame(drawScene);
+    }
+}
+
+function rotateVectorByQuaternion(v, q) {
+    const w = q[0], qx = q[1], qy = q[2], qz = q[3];
+    const vx = v[0], vy = v[1], vz = v[2];
+
+    const tx = 2 * (qy * vz - qz * vy);
+    const ty = 2 * (qz * vx - qx * vz);
+    const tz = 2 * (qx * vy - qy * vx);
+
+    const vpx = vx + w * tx + (qy * tz - qz * ty);
+    const vpy = vy + w * ty + (qz * tx - qx * tz);
+    const vpz = vz + w * tz + (qx * ty - qy * tx);
+
+    return [vpx, vpy, vpz];
+}
+
+function eulerToQuaternion(roll, pitch, yaw) {
+    const cr = Math.cos(roll * 0.5);
+    const sr = Math.sin(roll * 0.5);
+    const cp = Math.cos(pitch * 0.5);
+    const sp = Math.sin(pitch * 0.5);
+    const cy = Math.cos(yaw * 0.5);
+    const sy = Math.sin(yaw * 0.5);
+
+    const w = cr * cp * cy + sr * sp * sy;
+    const x = sr * cp * cy - cr * sp * sy;
+    const y = cr * sp * cy + sr * cp * sy;
+    const z = cr * cp * sy - sr * sp * cy;
+
+    return [w, x, y, z];
+}
+
+function rotateCamera(v) {
+    // Elevate and turn slightly for nice 3D perspective
+    const yaw = -35 * Math.PI / 180;
+    const pitch = -20 * Math.PI / 180;
+    
+    // Rotate around Z (Yaw)
+    const x1 = v[0] * Math.cos(yaw) - v[1] * Math.sin(yaw);
+    const y1 = v[0] * Math.sin(yaw) + v[1] * Math.cos(yaw);
+    const z1 = v[2];
+    
+    // Rotate around X (Pitch)
+    const x2 = x1;
+    const y2 = y1 * Math.cos(pitch) - z1 * Math.sin(pitch);
+    const z2 = y1 * Math.sin(pitch) + z1 * Math.cos(pitch);
+    
+    return [x2, y2, z2];
+}
+
+function drawScene() {
+    if (!ctx) return;
+    
+    const setupTab = document.getElementById("tab-setup");
+    if (setupTab && !setupTab.classList.contains("active")) {
+        setTimeout(() => {
+            requestAnimationFrame(drawScene);
+        }, 200);
+        return;
+    }
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    let q = [1, 0, 0, 0];
+    if (isConnected && isTelemetryActive && (Date.now() - lastTelemetryTime < 2000)) {
+        // Use active telemetry quaternion. We take the conjugate (w, -x, -y, -z)
+        // because the estimated quaternion q_earth2body rotates earth coordinates to body,
+        // while we want to orient the body relative to the earth/screen.
+        q = [currentQuaternion[0], -currentQuaternion[1], -currentQuaternion[2], -currentQuaternion[3]];
+    } else {
+        // Idle animation
+        animationAngle += 0.008;
+        q = eulerToQuaternion(animationAngle * 0.4, animationAngle, animationAngle * 0.6);
+    }
+    
+    const width = canvas.width;
+    const height = canvas.height;
+    const scale = 55;
+    
+    // 3D block representing the drone body
+    const baseVertices = [
+        [-1.0, -0.6, -0.2], // 0: back-left-top
+        [ 1.0, -0.6, -0.2], // 1: front-left-top
+        [ 1.0,  0.6, -0.2], // 2: front-right-top
+        [-1.0,  0.6, -0.2], // 3: back-right-top
+        [-1.0, -0.6,  0.2], // 4: back-left-bottom
+        [ 1.0, -0.6,  0.2], // 5: front-left-bottom
+        [ 1.0,  0.6,  0.2], // 6: front-right-bottom
+        [-1.0,  0.6,  0.2]  // 7: back-right-bottom
+    ];
+    
+    const projected = [];
+    for (let i = 0; i < baseVertices.length; i++) {
+        let v = [baseVertices[i][0] * scale, baseVertices[i][1] * scale, baseVertices[i][2] * scale];
+        let r = rotateVectorByQuaternion(v, q);
+        let c = rotateCamera(r);
+        
+        // Project to 2D
+        const x2d = c[0] + width / 2;
+        const y2d = -c[1] + height / 2; // Negate Y so positive is up in 3D space
+        const depth = c[2];
+        projected.push({ x: x2d, y: y2d, z: depth });
+    }
+    
+    const faces = [
+        { indices: [1, 2, 6, 5], color: "rgba(234, 179, 8, 0.35)", borderColor: "#eab308", label: "FRONT" },
+        { indices: [0, 3, 7, 4], color: "rgba(71, 85, 105, 0.3)", borderColor: "#475569" },
+        { indices: [0, 1, 5, 4], color: "rgba(71, 85, 105, 0.3)", borderColor: "#475569" },
+        { indices: [2, 3, 7, 6], color: "rgba(71, 85, 105, 0.3)", borderColor: "#475569" },
+        { indices: [0, 1, 2, 3], color: "rgba(30, 41, 59, 0.4)", borderColor: "#334155" },
+        { indices: [4, 5, 6, 7], color: "rgba(30, 41, 59, 0.4)", borderColor: "#334155" }
+    ];
+    
+    faces.forEach(face => {
+        face.avgDepth = face.indices.reduce((sum, idx) => sum + projected[idx].z, 0) / 4;
+    });
+    faces.sort((a, b) => b.avgDepth - a.avgDepth);
+    
+    // Draw faces using painter's algorithm (furthest first)
+    faces.forEach(face => {
+        ctx.beginPath();
+        ctx.moveTo(projected[face.indices[0]].x, projected[face.indices[0]].y);
+        for (let i = 1; i < face.indices.length; i++) {
+            ctx.lineTo(projected[face.indices[i]].x, projected[face.indices[i]].y);
+        }
+        ctx.closePath();
+        
+        ctx.fillStyle = face.color;
+        ctx.fill();
+        ctx.strokeStyle = face.borderColor;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        
+        if (face.label) {
+            const cx = face.indices.reduce((sum, idx) => sum + projected[idx].x, 0) / 4;
+            const cy = face.indices.reduce((sum, idx) => sum + projected[idx].y, 0) / 4;
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 9px 'Outfit', sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(face.label, cx, cy);
+        }
+    });
+    
+    // Draw coordinate axes
+    const axes = [
+        { dir: [1.8, 0, 0], color: "#ef4444", label: "X" }, // Forward
+        { dir: [0, 1.8, 0], color: "#10b981", label: "Y" }, // Right
+        { dir: [0, 0, -1.8], color: "#3b82f6", label: "Z" } // Up (negative Z in NED)
+    ];
+    
+    axes.forEach(axis => {
+        const originBody = [0, 0, 0];
+        const tipBody = [axis.dir[0] * scale, axis.dir[1] * scale, axis.dir[2] * scale];
+        
+        const originRot = rotateVectorByQuaternion(originBody, q);
+        const tipRot = rotateVectorByQuaternion(tipBody, q);
+        
+        const originCam = rotateCamera(originRot);
+        const tipCam = rotateCamera(tipRot);
+        
+        const x1 = originCam[0] + width / 2;
+        const y1 = -originCam[1] + height / 2;
+        const x2 = tipCam[0] + width / 2;
+        const y2 = -tipCam[1] + height / 2;
+        
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = axis.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        
+        ctx.fillStyle = axis.color;
+        ctx.font = "bold 10px 'Outfit', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(axis.label, x2 + (x2 - x1) * 0.15, y2 + (y2 - y1) * 0.15);
+    });
+    
+    requestAnimationFrame(drawScene);
+}
+
+async function calibrateUKF() {
+    if (!isConnected) return;
+    const btn = document.getElementById("btn-calibrate");
+    btn.disabled = true;
+    btn.textContent = "Calibrating...";
+    
+    appendCliOutput("\n> calibrate\n");
+    await writeRaw("calibrate\n");
+    
+    // The board will output instructions, delay, and reboot.
+    // We will automatically restore the button text after a delay,
+    // although the board will disconnect shortly after anyway.
+    setTimeout(() => {
+        btn.textContent = "Calibrate UKF (Flat)";
+        if (isConnected) {
+            btn.disabled = false;
+        }
+    }, 4000);
+}
+

@@ -440,3 +440,44 @@ h4 {
     font-size: 14px;
     outline: none;
 }
+
+/* UKF Visualizer Styling */
+.visualizer-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background-color: #0b0f19;
+    border: 1px solid #2d2f3b;
+    border-radius: 12px;
+    padding: 16px;
+    height: 220px;
+    box-sizing: border-box;
+}
+
+#ukf-canvas {
+    background-color: transparent;
+}
+
+.visualizer-label {
+    font-size: 11px;
+    color: #64748b;
+    margin-top: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-calibrate {
+    background-color: rgba(234, 179, 8, 0.1);
+    border-color: rgba(234, 179, 8, 0.3);
+    color: #eab308;
+    transition: all 0.2s ease;
+}
+
+.btn-calibrate:hover:not(:disabled) {
+    background-color: rgba(234, 179, 8, 0.2) !important;
+    border-color: rgba(234, 179, 8, 0.5) !important;
+}
+
+

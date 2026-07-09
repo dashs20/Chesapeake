@@ -11,6 +11,7 @@ class GNC {
 public:
     GNC(GNCc cfg);
     ACTb update(const HALb& halb);
+    const GNCb& get_bus() const { return gnc_bus; }
 
 private:
     GNCc cfg_data;

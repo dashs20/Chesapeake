@@ -4,6 +4,9 @@
 #include <cstring>
 #include <cstdlib>
 #include <algorithm>
+#include "../HAL/HAL.hpp"
+
+extern HAL* hal_ptr;
 
 PARAMS::PARAMS() {
     EEPROM.begin(sizeof(MASTERc));
@@ -13,6 +16,7 @@ PARAMS::~PARAMS() {}
 
 bool PARAMS::load(MASTERc& config) {
     EEPROM.get(0, config);
+    config.halc.imuc.spi_port = &SPI1;
     return (config.magic == 0x43484553);
 }
 
@@ -32,6 +36,7 @@ void PARAMS::print_help() {
     Serial.println("  set <param> = <value>      - Set a parameter in RAM (no spaces around '=')");
     Serial.println("  save                       - Save RAM configuration to flash and reboot");
     Serial.println("  defaults                   - Load default settings into RAM (requires save)");
+    Serial.println("  calibrate                  - Calibrate IMU/UKF flat and save biases");
     Serial.println("  reboot                     - Reboot the flight controller");
 }
 
@@ -88,6 +93,23 @@ void PARAMS::print_all(const MASTERc& config) {
         case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
     }
 
+    Serial.print("imu_gyro_odr = ");
+    switch (config.halc.imuc.gyro_odr) {
+        case LSM6DSV16X_ODR::OFF: Serial.println("OFF"); break;
+        case LSM6DSV16X_ODR::ODR_1Hz875: Serial.println("1.875Hz"); break;
+        case LSM6DSV16X_ODR::ODR_7Hz5: Serial.println("7.5Hz"); break;
+        case LSM6DSV16X_ODR::ODR_15Hz: Serial.println("15Hz"); break;
+        case LSM6DSV16X_ODR::ODR_30Hz: Serial.println("30Hz"); break;
+        case LSM6DSV16X_ODR::ODR_60Hz: Serial.println("60Hz"); break;
+        case LSM6DSV16X_ODR::ODR_120Hz: Serial.println("120Hz"); break;
+        case LSM6DSV16X_ODR::ODR_240Hz: Serial.println("240Hz"); break;
+        case LSM6DSV16X_ODR::ODR_480Hz: Serial.println("480Hz"); break;
+        case LSM6DSV16X_ODR::ODR_960Hz: Serial.println("960Hz"); break;
+        case LSM6DSV16X_ODR::ODR_1920Hz: Serial.println("1920Hz"); break;
+        case LSM6DSV16X_ODR::ODR_3840Hz: Serial.println("3840Hz"); break;
+        case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
+    }
+
     Serial.print("servo_s1_pin = "); Serial.println(config.halc.servoc.s1_pin);
     Serial.print("servo_s2_pin = "); Serial.println(config.halc.servoc.s2_pin);
     Serial.print("servo_s3_pin = "); Serial.println(config.halc.servoc.s3_pin);
@@ -117,6 +139,13 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("blink_hz_disarmed = "); Serial.println(config.gncc.allocc.blink_hz_disarmed);
     Serial.print("blink_hz_rate = "); Serial.println(config.gncc.allocc.blink_hz_rate);
     Serial.print("blink_hz_angle = "); Serial.println(config.gncc.allocc.blink_hz_angle);
+    Serial.print("gnc_nav_accel_bias_x = "); Serial.println(config.gncc.navc.accel_bias.x(), 6);
+    Serial.print("gnc_nav_accel_bias_y = "); Serial.println(config.gncc.navc.accel_bias.y(), 6);
+    Serial.print("gnc_nav_accel_bias_z = "); Serial.println(config.gncc.navc.accel_bias.z(), 6);
+    Serial.print("gnc_nav_gyro_bias_x = "); Serial.println(config.gncc.navc.gyro_bias.x(), 6);
+    Serial.print("gnc_nav_gyro_bias_y = "); Serial.println(config.gncc.navc.gyro_bias.y(), 6);
+    Serial.print("gnc_nav_gyro_bias_z = "); Serial.println(config.gncc.navc.gyro_bias.z(), 6);
+    Serial.println("--- END OF DUMP ---");
 }
 
 void PARAMS::get_parameter(const MASTERc& config, const char* name) {
@@ -152,6 +181,54 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.halc.batc.division_factor);
     } else if (std::strcmp(name, "imu_cs_pin") == 0) {
         Serial.println(config.halc.imuc.cs_pin);
+    } else if (std::strcmp(name, "imu_accel_fs") == 0) {
+        switch (config.halc.imuc.accel_fs) {
+            case LSM6DSV16X_ACC_FS::FS_2G: Serial.println("2G"); break;
+            case LSM6DSV16X_ACC_FS::FS_4G: Serial.println("4G"); break;
+            case LSM6DSV16X_ACC_FS::FS_8G: Serial.println("8G"); break;
+            case LSM6DSV16X_ACC_FS::FS_16G: Serial.println("16G"); break;
+        }
+    } else if (std::strcmp(name, "imu_gyro_fs") == 0) {
+        switch (config.halc.imuc.gyro_fs) {
+            case LSM6DSV16X_GYRO_FS::FS_125DPS: Serial.println("125DPS"); break;
+            case LSM6DSV16X_GYRO_FS::FS_250DPS: Serial.println("250DPS"); break;
+            case LSM6DSV16X_GYRO_FS::FS_500DPS: Serial.println("500DPS"); break;
+            case LSM6DSV16X_GYRO_FS::FS_1000DPS: Serial.println("1000DPS"); break;
+            case LSM6DSV16X_GYRO_FS::FS_2000DPS: Serial.println("2000DPS"); break;
+            case LSM6DSV16X_GYRO_FS::FS_4000DPS: Serial.println("4000DPS"); break;
+        }
+    } else if (std::strcmp(name, "imu_accel_odr") == 0) {
+        switch (config.halc.imuc.accel_odr) {
+            case LSM6DSV16X_ODR::OFF: Serial.println("OFF"); break;
+            case LSM6DSV16X_ODR::ODR_1Hz875: Serial.println("1.875Hz"); break;
+            case LSM6DSV16X_ODR::ODR_7Hz5: Serial.println("7.5Hz"); break;
+            case LSM6DSV16X_ODR::ODR_15Hz: Serial.println("15Hz"); break;
+            case LSM6DSV16X_ODR::ODR_30Hz: Serial.println("30Hz"); break;
+            case LSM6DSV16X_ODR::ODR_60Hz: Serial.println("60Hz"); break;
+            case LSM6DSV16X_ODR::ODR_120Hz: Serial.println("120Hz"); break;
+            case LSM6DSV16X_ODR::ODR_240Hz: Serial.println("240Hz"); break;
+            case LSM6DSV16X_ODR::ODR_480Hz: Serial.println("480Hz"); break;
+            case LSM6DSV16X_ODR::ODR_960Hz: Serial.println("960Hz"); break;
+            case LSM6DSV16X_ODR::ODR_1920Hz: Serial.println("1920Hz"); break;
+            case LSM6DSV16X_ODR::ODR_3840Hz: Serial.println("3840Hz"); break;
+            case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
+        }
+    } else if (std::strcmp(name, "imu_gyro_odr") == 0) {
+        switch (config.halc.imuc.gyro_odr) {
+            case LSM6DSV16X_ODR::OFF: Serial.println("OFF"); break;
+            case LSM6DSV16X_ODR::ODR_1Hz875: Serial.println("1.875Hz"); break;
+            case LSM6DSV16X_ODR::ODR_7Hz5: Serial.println("7.5Hz"); break;
+            case LSM6DSV16X_ODR::ODR_15Hz: Serial.println("15Hz"); break;
+            case LSM6DSV16X_ODR::ODR_30Hz: Serial.println("30Hz"); break;
+            case LSM6DSV16X_ODR::ODR_60Hz: Serial.println("60Hz"); break;
+            case LSM6DSV16X_ODR::ODR_120Hz: Serial.println("120Hz"); break;
+            case LSM6DSV16X_ODR::ODR_240Hz: Serial.println("240Hz"); break;
+            case LSM6DSV16X_ODR::ODR_480Hz: Serial.println("480Hz"); break;
+            case LSM6DSV16X_ODR::ODR_960Hz: Serial.println("960Hz"); break;
+            case LSM6DSV16X_ODR::ODR_1920Hz: Serial.println("1920Hz"); break;
+            case LSM6DSV16X_ODR::ODR_3840Hz: Serial.println("3840Hz"); break;
+            case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
+        }
     } else if (std::strcmp(name, "servo_s1_pin") == 0) {
         Serial.println(config.halc.servoc.s1_pin);
     } else if (std::strcmp(name, "servo_s2_pin") == 0) {
@@ -206,6 +283,18 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.gncc.ctlc.angle.pitch.kp);
     } else if (std::strcmp(name, "yaw_ang_kp") == 0) {
         Serial.println(config.gncc.ctlc.angle.yaw.kp);
+    } else if (std::strcmp(name, "gnc_nav_accel_bias_x") == 0) {
+        Serial.println(config.gncc.navc.accel_bias.x(), 6);
+    } else if (std::strcmp(name, "gnc_nav_accel_bias_y") == 0) {
+        Serial.println(config.gncc.navc.accel_bias.y(), 6);
+    } else if (std::strcmp(name, "gnc_nav_accel_bias_z") == 0) {
+        Serial.println(config.gncc.navc.accel_bias.z(), 6);
+    } else if (std::strcmp(name, "gnc_nav_gyro_bias_x") == 0) {
+        Serial.println(config.gncc.navc.gyro_bias.x(), 6);
+    } else if (std::strcmp(name, "gnc_nav_gyro_bias_y") == 0) {
+        Serial.println(config.gncc.navc.gyro_bias.y(), 6);
+    } else if (std::strcmp(name, "gnc_nav_gyro_bias_z") == 0) {
+        Serial.println(config.gncc.navc.gyro_bias.z(), 6);
     } else {
         Serial.println("Error: Unknown parameter");
     }
@@ -274,6 +363,36 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
             Serial.println("Error: Invalid gyro range");
             return;
         }
+    } else if (std::strcmp(name, "imu_accel_odr") == 0) {
+        if (std::strcmp(value, "OFF") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::OFF;
+        else if (std::strcmp(value, "1.875Hz") == 0 || std::strcmp(value, "1.875") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_1Hz875;
+        else if (std::strcmp(value, "7.5Hz") == 0 || std::strcmp(value, "7.5") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_7Hz5;
+        else if (std::strcmp(value, "15Hz") == 0 || std::strcmp(value, "15") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_15Hz;
+        else if (std::strcmp(value, "30Hz") == 0 || std::strcmp(value, "30") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_30Hz;
+        else if (std::strcmp(value, "60Hz") == 0 || std::strcmp(value, "60") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_60Hz;
+        else if (std::strcmp(value, "120Hz") == 0 || std::strcmp(value, "120") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_120Hz;
+        else if (std::strcmp(value, "240Hz") == 0 || std::strcmp(value, "240") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_240Hz;
+        else if (std::strcmp(value, "480Hz") == 0 || std::strcmp(value, "480") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_480Hz;
+        else if (std::strcmp(value, "960Hz") == 0 || std::strcmp(value, "960") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_960Hz;
+        else if (std::strcmp(value, "1920Hz") == 0 || std::strcmp(value, "1920") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_1920Hz;
+        else if (std::strcmp(value, "3840Hz") == 0 || std::strcmp(value, "3840") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_3840Hz;
+        else if (std::strcmp(value, "7680Hz") == 0 || std::strcmp(value, "7680") == 0) config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_7680Hz;
+        else { Serial.println("Error: Invalid accel ODR"); return; }
+    } else if (std::strcmp(name, "imu_gyro_odr") == 0) {
+        if (std::strcmp(value, "OFF") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::OFF;
+        else if (std::strcmp(value, "1.875Hz") == 0 || std::strcmp(value, "1.875") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_1Hz875;
+        else if (std::strcmp(value, "7.5Hz") == 0 || std::strcmp(value, "7.5") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_7Hz5;
+        else if (std::strcmp(value, "15Hz") == 0 || std::strcmp(value, "15") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_15Hz;
+        else if (std::strcmp(value, "30Hz") == 0 || std::strcmp(value, "30") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_30Hz;
+        else if (std::strcmp(value, "60Hz") == 0 || std::strcmp(value, "60") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_60Hz;
+        else if (std::strcmp(value, "120Hz") == 0 || std::strcmp(value, "120") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_120Hz;
+        else if (std::strcmp(value, "240Hz") == 0 || std::strcmp(value, "240") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_240Hz;
+        else if (std::strcmp(value, "480Hz") == 0 || std::strcmp(value, "480") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_480Hz;
+        else if (std::strcmp(value, "960Hz") == 0 || std::strcmp(value, "960") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_960Hz;
+        else if (std::strcmp(value, "1920Hz") == 0 || std::strcmp(value, "1920") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_1920Hz;
+        else if (std::strcmp(value, "3840Hz") == 0 || std::strcmp(value, "3840") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_3840Hz;
+        else if (std::strcmp(value, "7680Hz") == 0 || std::strcmp(value, "7680") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_7680Hz;
+        else { Serial.println("Error: Invalid gyro ODR"); return; }
     } else if (std::strcmp(name, "servo_s1_pin") == 0) {
         config.halc.servoc.s1_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "servo_s2_pin") == 0) {
@@ -328,6 +447,18 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.gncc.ctlc.angle.pitch.kp = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "yaw_ang_kp") == 0) {
         config.gncc.ctlc.angle.yaw.kp = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_accel_bias_x") == 0) {
+        config.gncc.navc.accel_bias.x() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_accel_bias_y") == 0) {
+        config.gncc.navc.accel_bias.y() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_accel_bias_z") == 0) {
+        config.gncc.navc.accel_bias.z() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_gyro_bias_x") == 0) {
+        config.gncc.navc.gyro_bias.x() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_gyro_bias_y") == 0) {
+        config.gncc.navc.gyro_bias.y() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_gyro_bias_z") == 0) {
+        config.gncc.navc.gyro_bias.z() = static_cast<float>(std::strtod(value, nullptr));
     } else {
         Serial.println("Error: Unknown parameter");
         return;
@@ -354,6 +485,8 @@ void PARAMS::run_cli(MASTERc& config) {
                     } else if (std::strcmp(cmd, "defaults") == 0) {
                         load_default_config(config);
                         Serial.println("Loaded defaults in RAM. Write 'save' to commit to flash.");
+                    } else if (std::strcmp(cmd, "calibrate") == 0) {
+                        calibrate_imu(config);
                     } else if (std::strcmp(cmd, "reboot") == 0) {
                         Serial.println("Rebooting FC...");
                         delay(100);
@@ -387,5 +520,63 @@ void PARAMS::run_cli(MASTERc& config) {
         } else if (idx < sizeof(buf) - 1) {
             buf[idx++] = c;
         }
+    }
+}
+
+void PARAMS::calibrate_imu(MASTERc& config) {
+    if (hal_ptr == nullptr) {
+        Serial.println("Error: HAL not initialized");
+        return;
+    }
+    Serial.println("Starting IMU calibration... Keep vehicle flat and still.");
+    delay(500);
+
+    double sum_ax = 0, sum_ay = 0, sum_az = 0;
+    double sum_gx = 0, sum_gy = 0, sum_gz = 0;
+    const int samples = 500;
+    int valid_samples = 0;
+
+    for (int i = 0; i < samples; i++) {
+        ACTb dummy_act{};
+        HALb data = hal_ptr->update(dummy_act);
+
+        sum_ax += data.imub.accel_body_mps2.x();
+        sum_ay += data.imub.accel_body_mps2.y();
+        sum_az += data.imub.accel_body_mps2.z();
+
+        sum_gx += data.imub.omega_body_radps.x();
+        sum_gy += data.imub.omega_body_radps.y();
+        sum_gz += data.imub.omega_body_radps.z();
+
+        valid_samples++;
+        delay(4); // ~250Hz sampling rate
+    }
+
+    if (valid_samples > 0) {
+        config.gncc.navc.accel_bias.x() = static_cast<float>(sum_ax / valid_samples);
+        config.gncc.navc.accel_bias.y() = static_cast<float>(sum_ay / valid_samples);
+        config.gncc.navc.accel_bias.z() = static_cast<float>((sum_az / valid_samples) - 9.80665f);
+
+        config.gncc.navc.gyro_bias.x() = static_cast<float>(sum_gx / valid_samples);
+        config.gncc.navc.gyro_bias.y() = static_cast<float>(sum_gy / valid_samples);
+        config.gncc.navc.gyro_bias.z() = static_cast<float>(sum_gz / valid_samples);
+
+        save(config);
+
+        Serial.println("Calibration successful! Saved to flash.");
+        Serial.printf("Accel biases: %.4f, %.4f, %.4f\n", 
+                      config.gncc.navc.accel_bias.x(),
+                      config.gncc.navc.accel_bias.y(),
+                      config.gncc.navc.accel_bias.z());
+        Serial.printf("Gyro biases: %.4f, %.4f, %.4f\n", 
+                      config.gncc.navc.gyro_bias.x(),
+                      config.gncc.navc.gyro_bias.y(),
+                      config.gncc.navc.gyro_bias.z());
+
+        Serial.println("Rebooting flight controller to apply biases...");
+        delay(200);
+        rp2040.reboot();
+    } else {
+        Serial.println("Error: No samples collected.");
     }
 }

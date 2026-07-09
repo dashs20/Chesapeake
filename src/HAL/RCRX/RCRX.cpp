@@ -18,17 +18,21 @@ RCRX::RCRX(RCRXc rcrxc) : rcrxc(rcrxc) {
 RCRX::~RCRX() {}
 
 RCRXb RCRX::update(const HALb& halb) {
+    RCRXb rcrxb;
+    rcrxb.arm_frac = 0.0f;
+    rcrxb.mode_frac = 0.0f;
+    rcrxb.thr_frac = 0.0f;
+    rcrxb.roll_frac = 0.0f;
+    rcrxb.pitch_frac = 0.0f;
+    rcrxb.yaw_frac = 0.0f;
+
+    if (port == nullptr) {
+        return rcrxb;
+    }
+
     crsf.update();
 
-    RCRXb rcrxb;
-
     if (!crsf.isLinkUp()) {
-        rcrxb.arm_frac = 0.0f;
-        rcrxb.mode_frac = 0.0f;
-        rcrxb.thr_frac = 0.0f;
-        rcrxb.roll_frac = 0.0f;
-        rcrxb.pitch_frac = 0.0f;
-        rcrxb.yaw_frac = 0.0f;
         return rcrxb;
     }
 
