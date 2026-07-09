@@ -53,7 +53,6 @@ document.addEventListener("DOMContentLoaded", () => {
     safeAddListener("param-search", "input", filterParameters);
     safeAddListener("cli-input", "keypress", handleCliKeyPress);
     safeAddListener("btn-send-cli", "click", sendCliCommand);
-    safeAddListener("btn-calibrate", "click", calibrateUKF);
     
     // Initialize UKF 3D Visualizer
     initVisualizer();
@@ -166,7 +165,7 @@ async function disconnect() {
 function updateConnectionUI(connected) {
     const btn = document.getElementById("btn-connect");
     const status = document.getElementById("connection-status");
-    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "cli-input", "btn-send-cli", "btn-calibrate"];
+    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "cli-input", "btn-send-cli"];
 
     if (btn) {
         if (connected) {
@@ -723,23 +722,5 @@ function drawScene() {
     requestAnimationFrame(drawScene);
 }
 
-async function calibrateUKF() {
-    if (!isConnected) return;
-    const btn = document.getElementById("btn-calibrate");
-    btn.disabled = true;
-    btn.textContent = "Calibrating...";
-    
-    appendCliOutput("\n> calibrate\n");
-    await writeRaw("calibrate\n");
-    
-    // The board will output instructions, delay, and reboot.
-    // We will automatically restore the button text after a delay,
-    // although the board will disconnect shortly after anyway.
-    setTimeout(() => {
-        btn.textContent = "Calibrate UKF (Flat)";
-        if (isConnected) {
-            btn.disabled = false;
-        }
-    }, 4000);
 }
 

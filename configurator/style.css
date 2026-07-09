@@ -468,16 +468,4 @@ h4 {
     letter-spacing: 0.5px;
 }
 
-.btn-calibrate {
-    background-color: rgba(234, 179, 8, 0.1);
-    border-color: rgba(234, 179, 8, 0.3);
-    color: #eab308;
-    transition: all 0.2s ease;
-}
-
-.btn-calibrate:hover:not(:disabled) {
-    background-color: rgba(234, 179, 8, 0.2) !important;
-    border-color: rgba(234, 179, 8, 0.5) !important;
-}
-
 

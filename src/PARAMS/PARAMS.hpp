@@ -17,5 +17,4 @@ private:
     void print_all(const MASTERc& config);
     void get_parameter(const MASTERc& config, const char* name);
     void set_parameter(MASTERc& config, const char* name, const char* value);
-    void calibrate_imu(MASTERc& config);
 };

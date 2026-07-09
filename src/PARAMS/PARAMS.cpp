@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include "../HAL/HAL.hpp"
+#include "hardware/watchdog.h"
 
 extern HAL* hal_ptr;
 
@@ -17,12 +18,12 @@ PARAMS::~PARAMS() {}
 bool PARAMS::load(MASTERc& config) {
     EEPROM.get(0, config);
     config.halc.imuc.spi_port = &SPI1;
-    return (config.magic == 0x43484553);
+    return (config.magic == 0x43484555);
 }
 
 void PARAMS::save(const MASTERc& config) {
     MASTERc mutable_config = config;
-    mutable_config.magic = 0x43484553;
+    mutable_config.magic = 0x43484555;
     EEPROM.put(0, mutable_config);
     EEPROM.commit();
 }
@@ -485,17 +486,15 @@ void PARAMS::run_cli(MASTERc& config) {
                     } else if (std::strcmp(cmd, "defaults") == 0) {
                         load_default_config(config);
                         Serial.println("Loaded defaults in RAM. Write 'save' to commit to flash.");
-                    } else if (std::strcmp(cmd, "calibrate") == 0) {
-                        calibrate_imu(config);
                     } else if (std::strcmp(cmd, "reboot") == 0) {
                         Serial.println("Rebooting FC...");
                         delay(100);
-                        NVIC_SystemReset();
+                        watchdog_reboot(0, 0, 0);
                     } else if (std::strcmp(cmd, "save") == 0) {
                         save(config);
                         Serial.println("Saved config to flash! Rebooting FC...");
                         delay(100);
-                        NVIC_SystemReset();
+                        watchdog_reboot(0, 0, 0);
                     } else if (std::strcmp(cmd, "get") == 0) {
                         char* param_name = std::strtok(nullptr, " ");
                         if (param_name != nullptr) {
@@ -523,60 +522,3 @@ void PARAMS::run_cli(MASTERc& config) {
     }
 }
 
-void PARAMS::calibrate_imu(MASTERc& config) {
-    if (hal_ptr == nullptr) {
-        Serial.println("Error: HAL not initialized");
-        return;
-    }
-    Serial.println("Starting IMU calibration... Keep vehicle flat and still.");
-    delay(500);
-
-    double sum_ax = 0, sum_ay = 0, sum_az = 0;
-    double sum_gx = 0, sum_gy = 0, sum_gz = 0;
-    const int samples = 500;
-    int valid_samples = 0;
-
-    for (int i = 0; i < samples; i++) {
-        ACTb dummy_act{};
-        HALb data = hal_ptr->update(dummy_act);
-
-        sum_ax += data.imub.accel_body_mps2.x();
-        sum_ay += data.imub.accel_body_mps2.y();
-        sum_az += data.imub.accel_body_mps2.z();
-
-        sum_gx += data.imub.omega_body_radps.x();
-        sum_gy += data.imub.omega_body_radps.y();
-        sum_gz += data.imub.omega_body_radps.z();
-
-        valid_samples++;
-        delay(4); // ~250Hz sampling rate
-    }
-
-    if (valid_samples > 0) {
-        config.gncc.navc.accel_bias.x() = static_cast<float>(sum_ax / valid_samples);
-        config.gncc.navc.accel_bias.y() = static_cast<float>(sum_ay / valid_samples);
-        config.gncc.navc.accel_bias.z() = static_cast<float>((sum_az / valid_samples) - 9.80665f);
-
-        config.gncc.navc.gyro_bias.x() = static_cast<float>(sum_gx / valid_samples);
-        config.gncc.navc.gyro_bias.y() = static_cast<float>(sum_gy / valid_samples);
-        config.gncc.navc.gyro_bias.z() = static_cast<float>(sum_gz / valid_samples);
-
-        save(config);
-
-        Serial.println("Calibration successful! Saved to flash.");
-        Serial.printf("Accel biases: %.4f, %.4f, %.4f\n", 
-                      config.gncc.navc.accel_bias.x(),
-                      config.gncc.navc.accel_bias.y(),
-                      config.gncc.navc.accel_bias.z());
-        Serial.printf("Gyro biases: %.4f, %.4f, %.4f\n", 
-                      config.gncc.navc.gyro_bias.x(),
-                      config.gncc.navc.gyro_bias.y(),
-                      config.gncc.navc.gyro_bias.z());
-
-        Serial.println("Rebooting flight controller to apply biases...");
-        delay(200);
-        NVIC_SystemReset();
-    } else {
-        Serial.println("Error: No samples collected.");
-    }
-}

@@ -1,7 +1,7 @@
 #include "defaults.hpp"
 
 void load_default_config(MASTERc& config) {
-    config.magic = 0x43484553;
+    config.magic = 0x43484555;
 
     config.halc.motc.m1_pin = 27;
     config.halc.motc.m2_pin = 28;
