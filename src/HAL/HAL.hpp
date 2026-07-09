@@ -9,6 +9,7 @@
 #include "SER/SER.hpp"
 #include "LED/LED.hpp"
 #include "RPI/RPI.hpp"
+#include "DEBUG/DEBUG.hpp"
 
 class HAL {
 public:
@@ -27,4 +28,5 @@ private:
     SER ser;
     LED led;
     RPI rpi;
+    DEBUG debug;
 };

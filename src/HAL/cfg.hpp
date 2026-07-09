@@ -89,6 +89,10 @@ struct RPIc {
     uint8_t rate_divisor;
 };
 
+struct DEBUGc {
+    bool enabled;
+};
+
 struct HALc {
     MOTc motc;
     RCRXc rcrxc;
@@ -97,4 +101,5 @@ struct HALc {
     SERc serc;
     LEDc ledc;
     RPIc rpic;
+    DEBUGc debugc;
 };

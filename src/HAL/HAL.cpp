@@ -9,7 +9,8 @@ HAL::HAL(HALc cfg)
       bat(cfg.batc),
       ser(cfg.serc),
       led(cfg.ledc.pin),
-      rpi(cfg.rpic) {}
+      rpi(cfg.rpic),
+      debug(cfg.debugc) {}
 
 HAL::~HAL() {}
 
@@ -21,6 +22,7 @@ HALb HAL::update(const ALLb& allb_km1) {
     ser.update(allb_km1.actb);
     led.update(allb_km1.actb);
     rpi.update(allb_km1);
+    debug.update(allb_km1);
 
     return hal_bus;
 }
