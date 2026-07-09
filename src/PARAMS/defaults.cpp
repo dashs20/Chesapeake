@@ -35,7 +35,7 @@ void load_default_config(MASTERc& config) {
     config.halc.serc.min_us = 1000;
     config.halc.serc.max_us = 2000;
 
-    config.gncc.looprate_hz = 500;
+    config.gncc.looprate_hz = 250;
     config.gncc.allocator = ALLOCATOR::QUAD;
 
     Eigen::VectorXd state_x0(7);
@@ -64,7 +64,7 @@ void load_default_config(MASTERc& config) {
     angle_pid.out_max = 5.0f;
     angle_pid.dt_s = 0.0f;
 
-    config.gncc.ctlc.angle_loop_hz = 100;
+    config.gncc.ctlc.angle_loop_hz = 125;
     config.gncc.ctlc.rate.roll = rate_pid;
     config.gncc.ctlc.rate.pitch = rate_pid;
     config.gncc.ctlc.rate.yaw = rate_pid;
