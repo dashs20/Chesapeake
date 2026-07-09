@@ -160,3 +160,13 @@ To ensure continuous improvement and prevent repeating mistakes, the following r
     *   *Mistake*: The agent proposed renaming raw sensor fields inside the bus struct to `omega_sensor_radps` and `accel_sensor_mps2` which violates the bus field naming standard (avoiding frame suffix naming inside bus structures).
     *   *Advised Solution*: Instead of adding frame/source suffixes to individual fields, rename the entire sub-bus struct itself to `IMU_RAW`, preserving standard member variable names.
     *   *Action*: Renamed the sub-bus struct to `IMU_RAW` in `bus.hpp`, added position and orientation configuration variables to `NAVc` in `cfg.hpp`, and implemented coordinate rotation and CG displacement offset compensation in `NAV::compensate_imu`.
+
+*   **Correction #19 (2026-07-08)**: Unit Suffix Omission on NAV.cpp Variables.
+    *   *Mistake*: The agent created local physical variables in `NAV.cpp` (e.g. `accel_raw`, `omega_raw`, `accel_body_raw`, `omega_body`, `centrifugal`, `euler`, `accel_CG`) without appending their required unit suffixes, in violation of the physical units suffix rule.
+    *   *Advised Solution*: Always append lowercase unit suffixes (e.g. `_mps2`, `_radps`, `_radps2`, `_m`) to all variables representing physical quantities.
+    *   *Action*: Refactored `NAV.cpp` to rename all local physical variables to include their correct unit suffixes.
+
+*   **Correction #20 (2026-07-08)**: Unit Suffix Omission in GNC Submodules.
+    *   *Mistake*: The agent omitted unit suffixes (`_frac`, `_radps`, `_rad`) on local variables in `VSM.cpp`, `GUI.cpp`, `CTL.cpp`, and `ALLOC.cpp` (e.g. `arm_threshold`, `roll_expo`, `target_rates`, `throttle`, `roll_effort`), violating the physical units suffix rule.
+    *   *Advised Solution*: Ensure that every variable representing a physical quantity or unitless fraction/ratio explicitly appends its correct lowercase unit suffix.
+    *   *Action*: Conducted a comprehensive unit naming audit across all GNC submodules and refactored `VSM.cpp`, `GUI.hpp`, `GUI.cpp`, `CTL.hpp`, `CTL.cpp`, and `ALLOC.cpp` to rename variables for strict unit compliance.

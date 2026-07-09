@@ -5,7 +5,7 @@ CTL::CTL(GNCc cfg)
       angle_controller(cfg.ctlc.angle), 
       cfg_data(cfg), 
       time_accumulator_s(0.0f), 
-      target_rates(Eigen::Vector3f::Zero()) {}
+      target_rates_radps(Eigen::Vector3f::Zero()) {}
 
 CTLb CTL::update(const GNCb& gnc) {
     if (gnc.vsmb.state == STATE::DISARMED) {
@@ -18,27 +18,27 @@ CTLb CTL::update(const GNCb& gnc) {
     CTLb ctlb;
 
     if (gnc.vsmb.att_mode == ATT_MODE::RATE) {
-        Eigen::Vector3f setpoint = gnc.guib.omega_body_radps;
-        Eigen::Vector3f measurement = gnc.navb.omega_body_radps;
+        Eigen::Vector3f omega_body_setpoint_radps = gnc.guib.omega_body_radps;
+        Eigen::Vector3f omega_body_measurement_radps = gnc.navb.omega_body_radps;
 
-        ctlb.axes_effort_frac = rate_controller.update(setpoint, measurement);
+        ctlb.axes_effort_frac = rate_controller.update(omega_body_setpoint_radps, omega_body_measurement_radps);
     } else if (gnc.vsmb.att_mode == ATT_MODE::ANGLE) {
         if (time_accumulator_s >= cfg_data.ctlc.angle_loop_dt_s) {
             time_accumulator_s = 0.0f;
 
-            float roll_error = gnc.guib.euler_bodyz2up_rad.x() - gnc.navb.euler_bodyz2up_rad.x();
-            float pitch_error = gnc.guib.euler_bodyz2up_rad.y() - gnc.navb.euler_bodyz2up_rad.y();
+            float roll_error_rad = gnc.guib.euler_bodyz2up_rad.x() - gnc.navb.euler_bodyz2up_rad.x();
+            float pitch_error_rad = gnc.guib.euler_bodyz2up_rad.y() - gnc.navb.euler_bodyz2up_rad.y();
 
-            Eigen::Vector3f euler_error(roll_error, pitch_error, 0.0f);
-            Eigen::Vector3f target_rates_xy = angle_controller.update(euler_error, Eigen::Vector3f::Zero());
+            Eigen::Vector3f euler_error_rad(roll_error_rad, pitch_error_rad, 0.0f);
+            Eigen::Vector3f target_rates_xy_radps = angle_controller.update(euler_error_rad, Eigen::Vector3f::Zero());
 
-            target_rates.x() = target_rates_xy.x();
-            target_rates.y() = target_rates_xy.y();
-            target_rates.z() = gnc.guib.omega_body_radps.z();
+            target_rates_radps.x() = target_rates_xy_radps.x();
+            target_rates_radps.y() = target_rates_xy_radps.y();
+            target_rates_radps.z() = gnc.guib.omega_body_radps.z();
         }
 
-        Eigen::Vector3f measurement = gnc.navb.omega_body_radps;
-        ctlb.axes_effort_frac = rate_controller.update(target_rates, measurement);
+        Eigen::Vector3f omega_body_measurement_radps = gnc.navb.omega_body_radps;
+        ctlb.axes_effort_frac = rate_controller.update(target_rates_radps, omega_body_measurement_radps);
     }
 
     return ctlb;

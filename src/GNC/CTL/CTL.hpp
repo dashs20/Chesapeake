@@ -14,5 +14,5 @@ private:
     GNCc cfg_data;
 
     float time_accumulator_s;
-    Eigen::Vector3f target_rates;
+    Eigen::Vector3f target_rates_radps;
 };

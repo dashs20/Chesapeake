@@ -9,5 +9,5 @@ public:
 
 private:
     GNCc cfg_data;
-    float apply_expo(float input, float expo);
+    float apply_expo(float input_frac, float expo_frac);
 };

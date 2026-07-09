@@ -9,12 +9,12 @@ NAV::NAV(GNCc cfg) : cfg_data(cfg) {
 
 NAVb NAV::update(const GNCb& gnc) {
     // 1. Run calibration/rotation/offset compensation
-    IMU_Compensated sensor = compensate_imu(gnc);
+    IMU_Compensated compensated_imu = compensate_imu(gnc);
 
     // 2. Run State Estimation (UKF accepts inputs at the vehicle CG)
-    Eigen::Vector3d accel_CG_double = sensor.accel_CG_mps2.cast<double>();
-    Eigen::Vector3d omega_body_double = sensor.omega_body_radps.cast<double>();
-    x = ukf.update(x, dt_s, accel_CG_double, omega_body_double);
+    Eigen::Vector3d accel_CG_double_mps2 = compensated_imu.accel_CG_mps2.cast<double>();
+    Eigen::Vector3d omega_body_double_radps = compensated_imu.omega_body_radps.cast<double>();
+    x = ukf.update(x, dt_s, accel_CG_double_mps2, omega_body_double_radps);
 
     // 3. Populate and return estimated GNC states
     NAVb navb;
@@ -31,27 +31,27 @@ NAVb NAV::update(const GNCb& gnc) {
 
 IMU_Compensated NAV::compensate_imu(const GNCb& gnc) {
     // 1. Read raw measurements from IMU_RAW
-    Eigen::Vector3f accel_raw = gnc.halb.imu.accel_body_mps2;
-    Eigen::Vector3f omega_raw = gnc.halb.imu.omega_body_radps;
+    Eigen::Vector3f accel_raw_mps2 = gnc.halb.imu.accel_body_mps2;
+    Eigen::Vector3f omega_raw_radps = gnc.halb.imu.omega_body_radps;
 
     // 2. Rotate to vehicle body frame
-    Eigen::Vector3f accel_body_raw = cfg_data.navc.q_IMU2body * accel_raw;
-    Eigen::Vector3f omega_body = cfg_data.navc.q_IMU2body * omega_raw;
+    Eigen::Vector3f accel_body_raw_mps2 = cfg_data.navc.q_IMU2body * accel_raw_mps2;
+    Eigen::Vector3f omega_body_radps = cfg_data.navc.q_IMU2body * omega_raw_radps;
 
     // 3. Compensate for off-CG offset
     Eigen::Vector3f r_body_m = cfg_data.navc.r_IMU2CG_mm * 0.001f;
     Eigen::Vector3f omega_dot_radps2 = Eigen::Vector3f::Zero();
     if (dt_s > 0.0) {
-        omega_dot_radps2 = (omega_body - prev_omega_body_radps) / static_cast<float>(dt_s);
+        omega_dot_radps2 = (omega_body_radps - prev_omega_body_radps) / static_cast<float>(dt_s);
     }
-    prev_omega_body_radps = omega_body;
+    prev_omega_body_radps = omega_body_radps;
 
-    Eigen::Vector3f centrifugal = omega_body.cross(omega_body.cross(r_body_m));
-    Eigen::Vector3f euler = omega_dot_radps2.cross(r_body_m);
-    Eigen::Vector3f accel_CG = accel_body_raw - centrifugal - euler;
+    Eigen::Vector3f centrifugal_accel_mps2 = omega_body_radps.cross(omega_body_radps.cross(r_body_m));
+    Eigen::Vector3f euler_accel_mps2 = omega_dot_radps2.cross(r_body_m);
+    Eigen::Vector3f accel_CG_mps2 = accel_body_raw_mps2 - centrifugal_accel_mps2 - euler_accel_mps2;
 
     IMU_Compensated output;
-    output.accel_CG_mps2 = accel_CG;
-    output.omega_body_radps = omega_body;
+    output.accel_CG_mps2 = accel_CG_mps2;
+    output.omega_body_radps = omega_body_radps;
     return output;
 }

@@ -13,22 +13,22 @@ VSMb VSM::update(const GNCb& gnc) {
 }
 
 void VSM::setup_vehicle_mode_machine() {
-    float arm_threshold = cfg_data.vsmc.arm_threshold_frac;
-    float rate_threshold = cfg_data.vsmc.mode_rate_threshold_frac;
-    float angle_threshold = cfg_data.vsmc.mode_angle_threshold_frac;
+    float arm_threshold_frac = cfg_data.vsmc.arm_threshold_frac;
+    float rate_threshold_frac = cfg_data.vsmc.mode_rate_threshold_frac;
+    float angle_threshold_frac = cfg_data.vsmc.mode_angle_threshold_frac;
 
     // State: DISARMED
     State<STATE, GNCb> disarmed_state;
     disarmed_state.id = STATE::DISARMED;
     disarmed_state.exit_paths = {
-        { STATE::RATE, [arm_threshold, rate_threshold](const GNCb& g) {
-            return g.halb.stick.arm_frac > arm_threshold && g.halb.stick.mode_frac < rate_threshold;
+        { STATE::RATE, [arm_threshold_frac, rate_threshold_frac](const GNCb& g) {
+            return g.halb.stick.arm_frac > arm_threshold_frac && g.halb.stick.mode_frac < rate_threshold_frac;
         }},
-        { STATE::ANGLE, [arm_threshold, rate_threshold, angle_threshold](const GNCb& g) {
-            return g.halb.stick.arm_frac > arm_threshold && g.halb.stick.mode_frac >= rate_threshold && g.halb.stick.mode_frac < angle_threshold;
+        { STATE::ANGLE, [arm_threshold_frac, rate_threshold_frac, angle_threshold_frac](const GNCb& g) {
+            return g.halb.stick.arm_frac > arm_threshold_frac && g.halb.stick.mode_frac >= rate_threshold_frac && g.halb.stick.mode_frac < angle_threshold_frac;
         }},
-        { STATE::GPS_HOLD, [arm_threshold, angle_threshold](const GNCb& g) {
-            return g.halb.stick.arm_frac > arm_threshold && g.halb.stick.mode_frac >= angle_threshold;
+        { STATE::GPS_HOLD, [arm_threshold_frac, angle_threshold_frac](const GNCb& g) {
+            return g.halb.stick.arm_frac > arm_threshold_frac && g.halb.stick.mode_frac >= angle_threshold_frac;
         }}
     };
 
@@ -36,14 +36,14 @@ void VSM::setup_vehicle_mode_machine() {
     State<STATE, GNCb> rate_state;
     rate_state.id = STATE::RATE;
     rate_state.exit_paths = {
-        { STATE::DISARMED, [arm_threshold](const GNCb& g) {
-            return g.halb.stick.arm_frac <= arm_threshold;
+        { STATE::DISARMED, [arm_threshold_frac](const GNCb& g) {
+            return g.halb.stick.arm_frac <= arm_threshold_frac;
         }},
-        { STATE::ANGLE, [rate_threshold, angle_threshold](const GNCb& g) {
-            return g.halb.stick.mode_frac >= rate_threshold && g.halb.stick.mode_frac < angle_threshold;
+        { STATE::ANGLE, [rate_threshold_frac, angle_threshold_frac](const GNCb& g) {
+            return g.halb.stick.mode_frac >= rate_threshold_frac && g.halb.stick.mode_frac < angle_threshold_frac;
         }},
-        { STATE::GPS_HOLD, [angle_threshold](const GNCb& g) {
-            return g.halb.stick.mode_frac >= angle_threshold;
+        { STATE::GPS_HOLD, [angle_threshold_frac](const GNCb& g) {
+            return g.halb.stick.mode_frac >= angle_threshold_frac;
         }}
     };
 
@@ -51,14 +51,14 @@ void VSM::setup_vehicle_mode_machine() {
     State<STATE, GNCb> angle_state;
     angle_state.id = STATE::ANGLE;
     angle_state.exit_paths = {
-        { STATE::DISARMED, [arm_threshold](const GNCb& g) {
-            return g.halb.stick.arm_frac <= arm_threshold;
+        { STATE::DISARMED, [arm_threshold_frac](const GNCb& g) {
+            return g.halb.stick.arm_frac <= arm_threshold_frac;
         }},
-        { STATE::RATE, [rate_threshold](const GNCb& g) {
-            return g.halb.stick.mode_frac < rate_threshold;
+        { STATE::RATE, [rate_threshold_frac](const GNCb& g) {
+            return g.halb.stick.mode_frac < rate_threshold_frac;
         }},
-        { STATE::GPS_HOLD, [angle_threshold](const GNCb& g) {
-            return g.halb.stick.mode_frac >= angle_threshold;
+        { STATE::GPS_HOLD, [angle_threshold_frac](const GNCb& g) {
+            return g.halb.stick.mode_frac >= angle_threshold_frac;
         }}
     };
 
@@ -66,14 +66,14 @@ void VSM::setup_vehicle_mode_machine() {
     State<STATE, GNCb> gps_hold_state;
     gps_hold_state.id = STATE::GPS_HOLD;
     gps_hold_state.exit_paths = {
-        { STATE::DISARMED, [arm_threshold](const GNCb& g) {
-            return g.halb.stick.arm_frac <= arm_threshold;
+        { STATE::DISARMED, [arm_threshold_frac](const GNCb& g) {
+            return g.halb.stick.arm_frac <= arm_threshold_frac;
         }},
-        { STATE::RATE, [rate_threshold](const GNCb& g) {
-            return g.halb.stick.mode_frac < rate_threshold;
+        { STATE::RATE, [rate_threshold_frac](const GNCb& g) {
+            return g.halb.stick.mode_frac < rate_threshold_frac;
         }},
-        { STATE::ANGLE, [rate_threshold, angle_threshold](const GNCb& g) {
-            return g.halb.stick.mode_frac >= rate_threshold && g.halb.stick.mode_frac < angle_threshold;
+        { STATE::ANGLE, [rate_threshold_frac, angle_threshold_frac](const GNCb& g) {
+            return g.halb.stick.mode_frac >= rate_threshold_frac && g.halb.stick.mode_frac < angle_threshold_frac;
         }}
     };
 
