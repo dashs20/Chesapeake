@@ -1,26 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
-
-// HAL BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-struct IMU_RAW { // IMU sub bus
-    Eigen::Vector3f omega_body_radps;
-    Eigen::Vector3f accel_body_mps2;
-};
-
-struct STICK { // STICK sub bus
-    float arm_frac;
-    float mode_frac;
-    float thr_frac;
-    float roll_frac;
-    float pitch_frac;
-    float yaw_frac;
-};
-
-struct HALb {
-    IMU_RAW imu;
-    STICK stick;
-};
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#include "../HAL/bus.hpp"
 
 // VSM BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 enum class STATE{DISARMED, RATE, ANGLE, GPS_HOLD};

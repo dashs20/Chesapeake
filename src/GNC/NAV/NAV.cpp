@@ -8,15 +8,12 @@ NAV::NAV(GNCc cfg) : cfg_data(cfg) {
 }
 
 NAVb NAV::update(const GNCb& gnc) {
-    // 1. Run calibration/rotation/offset compensation
     IMU_Compensated compensated_imu = compensate_imu(gnc);
 
-    // 2. Run State Estimation (UKF accepts inputs at the vehicle CG)
     Eigen::Vector3d accel_CG_double_mps2 = compensated_imu.accel_CG_mps2.cast<double>();
     Eigen::Vector3d omega_body_double_radps = compensated_imu.omega_body_radps.cast<double>();
     x = ukf.update(x, dt_s, accel_CG_double_mps2, omega_body_double_radps);
 
-    // 3. Populate and return estimated GNC states
     NAVb navb;
     navb.omega_body_radps = x.tail<3>().cast<float>();
     navb.q_earth2body = ukf.getOrientation().cast<float>();
@@ -30,15 +27,12 @@ NAVb NAV::update(const GNCb& gnc) {
 }
 
 IMU_Compensated NAV::compensate_imu(const GNCb& gnc) {
-    // 1. Read raw measurements from IMU_RAW
-    Eigen::Vector3f accel_raw_mps2 = gnc.halb.imu.accel_body_mps2;
-    Eigen::Vector3f omega_raw_radps = gnc.halb.imu.omega_body_radps;
+    Eigen::Vector3f accel_raw_mps2 = gnc.halb.imub.accel_body_mps2;
+    Eigen::Vector3f omega_raw_radps = gnc.halb.imub.omega_body_radps;
 
-    // 2. Rotate to vehicle body frame
     Eigen::Vector3f accel_body_raw_mps2 = cfg_data.navc.q_IMU2body * accel_raw_mps2;
     Eigen::Vector3f omega_body_radps = cfg_data.navc.q_IMU2body * omega_raw_radps;
 
-    // 3. Compensate for off-CG offset
     Eigen::Vector3f r_body_m = cfg_data.navc.r_IMU2CG_mm * 0.001f;
     Eigen::Vector3f omega_dot_radps2 = Eigen::Vector3f::Zero();
     if (dt_s > 0.0) {
