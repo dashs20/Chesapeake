@@ -1,14 +1,15 @@
 #pragma once
 #include "../bus.hpp"
 #include "../cfg.hpp"
-#include "UKF.hpp"
+#include "UKF/UKF.hpp"
 
-class NAV{
-    public:
-        UKF ukf;
-        Eigen::VectorXd x;
-        double dt_s;
+class NAV {
+public:
+    NAV(GNCc cfg);
+    NAVb update(const GNCb& gnc);
 
-        NAV(GNCc cfg);
-        GNCb update(GNCb gnc);
+private:
+    double dt_s;
+    Eigen::VectorXd x;
+    UKF ukf;
 };

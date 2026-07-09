@@ -6,7 +6,7 @@
 class CTL {
 public:
     CTL(GNCc cfg);
-    GNCb update(GNCb gnc);
+    CTLb update(const GNCb& gnc);
 
 private:
     PID_3DOF rate_controller;

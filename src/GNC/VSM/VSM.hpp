@@ -6,7 +6,7 @@
 class VSM {
 public:
     VSM(GNCc cfg);
-    GNCb update(GNCb gnc);
+    VSMb update(const GNCb& gnc);
 
 private:
     GNCc cfg_data;

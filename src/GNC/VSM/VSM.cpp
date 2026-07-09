@@ -5,10 +5,11 @@ VSM::VSM(GNCc cfg) : cfg_data(cfg) {
     setup_attitude_mode_machine();
 }
 
-GNCb VSM::update(GNCb gnc) {
-    gnc.vsmb.state = vehicle_mode_machine.update(gnc.vsmb.state, gnc);
-    gnc.vsmb.att_mode = attitude_mode_machine.update(gnc.vsmb.att_mode, gnc);
-    return gnc;
+VSMb VSM::update(const GNCb& gnc) {
+    VSMb vsmb;
+    vsmb.state = vehicle_mode_machine.update(gnc.vsmb.state, gnc);
+    vsmb.att_mode = attitude_mode_machine.update(gnc.vsmb.att_mode, gnc);
+    return vsmb;
 }
 
 void VSM::setup_vehicle_mode_machine() {

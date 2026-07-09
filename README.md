@@ -20,6 +20,8 @@ src/
 └── GNC/                   # Guidance, Navigation, and Control
     ├── bus.hpp            # Central definition of state and communication buses
     ├── cfg.hpp            # Central configuration file (GNCc config master)
+    ├── GNC.hpp            # GNC master coordinator class declaration
+    ├── GNC.cpp            # GNC master coordinator class implementation
     ├── NAV/               # Navigation (State Estimation)
     │   ├── NAV.hpp        # NAV class declaration (uses UKF and GNCb interface)
     │   └── NAV.cpp        # NAV class implementation
@@ -49,6 +51,7 @@ src/
 ### 1. Data Buses & Configurations (`src/GNC/`)
 *   **[bus.hpp](file:///src/GNC/bus.hpp)**: Defines the standard communication interfaces (buses) passing data between blocks (`HALb`, `NAVb`, `CTLb`, and the master `GNCb` struct).
 *   **[cfg.hpp](file:///src/GNC/cfg.hpp)**: Defines the master configuration structure `GNCc` which bundles `NAVc` (navigation constants), `CTLc` (control loop constants, enclosing rate and angle `PID_3DOFc` loop parameters), `GUIc` (guidance expo and scale parameters), `ALLOCc` (allocation and clamping limits), and `VSMc` (mode transition thresholds).
+*   **[GNC.hpp](file:///src/GNC/GNC.hpp)** & **[GNC.cpp](file:///src/GNC/GNC.cpp)**: Master GNC coordinator class. Integrates all GNC submodules (`VSM`, `NAV`, `GUI`, `CTL`, `ALLOC`) and executes their updates sequentially, enforcing strict sub-bus data encapsulation.
 
 ### 2. State Estimation (`src/GNC/NAV/`)
 The Navigation module handles attitude and state estimation:

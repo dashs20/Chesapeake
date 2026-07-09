@@ -52,6 +52,7 @@ Configuration structures (typically suffixed with `c`, e.g., `NAVc`, `CTLc`, `PI
 *   **Descriptive Variable Naming**: Avoid creating short, cryptically named local helper variables (such as `def_s`, `min_m`, `min_s`, `max_s`, `T`, `R`, `P`, `Y`). If a local variable is needed, use a full, descriptive, self-documenting name (e.g. `throttle`, `roll_effort`, `minimum_motor_fraction`). Assign config variables directly to struct members when possible rather than using temporary short-name placeholders.
 *   **Enum Branching**: When branching based on `enum` or `enum class` values, use `if/else` if it is a binary choice (either a certain state or any other state) or a unary check. Use `switch` statements only when there are three or more distinct cases to handle. This ensures clean, concise branching for simple checks while maintaining compiler-assisted completeness warnings for complex state machines.
 *   **Compilation Checks**: Do not invoke compilation commands (e.g. `pio run` or PlatformIO builds) unless explicitly requested by the user, or after verifying that a valid, compile-worthy entrypoint (such as `main.cpp`) is present in the workspace.
+*   **Submodule Data Encapsulation**: To prevent cross-contamination of bus data, GNC submodules must not return the entire `GNCb` bus. Instead, their `update` methods must accept `const GNCb& gnc` (read-only) and return only their designated sub-bus structure (e.g. `NAVb` for `NAV`, `VSMb` for `VSM`, etc.). The master `GNC` coordinator class is responsible for updating/swapping these returned sub-buses back into the main `gnc` bus.
 *   **Commit Attribution**: Any commit containing modifications written or assisted by an LLM must explicitly credit the LLM by name in the commit body (e.g., "Assisted by Gemini").
 *   **Headers**: Every header file must start with `#pragma once`.
 *   **Semicolons**: Struct definitions in C++ must end with a semicolon `;` (e.g., `struct IMU { ... };`).
@@ -149,3 +150,8 @@ To ensure continuous improvement and prevent repeating mistakes, the following r
     *   *Mistake*: The agent used `switch` statements to branch on `ATT_MODE` (only two states) and `ALLOCATOR` (only one state for now).
     *   *Advised Solution*: Do not use `switch` statements for binary or unary enum checks. Use simple `if-else` blocks for binary/unary choices to keep code clean and readable, and reserve `switch` blocks for enums with three or more cases.
     *   *Action*: Updated the rule in `LLM.md` and refactored `GUI.cpp`, `CTL.cpp`, and `ALLOC.cpp` to use `if-else` blocks.
+
+*   **Correction #17 (2026-07-08)**: Loose Bus Modifiability in Submodules.
+    *   *Mistake*: The agent initially designed all submodule update signatures to accept and return the entire `GNCb` bus, allowing potential cross-bus write contamination.
+    *   *Advised Solution*: Enforce encapsulation: pass `const GNCb&` as a read-only input to submodules, and have them return only their respective sub-buses (e.g. `NAVb`, `VSMb`, etc.), allowing the coordinator to perform swapping.
+    *   *Action*: Updated the rule in `LLM.md`, refactored all submodules (`NAV`, `VSM`, `GUI`, `CTL`, `ALLOC`), and implemented the `GNC` master coordinator class.

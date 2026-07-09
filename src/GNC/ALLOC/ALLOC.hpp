@@ -5,12 +5,12 @@
 class ALLOC {
 public:
     ALLOC(GNCc cfg);
-    GNCb update(GNCb gnc);
+    ACTb update(const GNCb& gnc);
 
 private:
     GNCc cfg_data;
 
-    GNCb run_allocator(GNCb gnc);
-    GNCb clamp_actuators(GNCb gnc);
-    GNCb allocate_quad(GNCb gnc);
+    ACTb run_allocator(const GNCb& gnc);
+    ACTb clamp_actuators(const GNCb& gnc, ACTb actb);
+    ACTb allocate_quad(const GNCb& gnc);
 };
