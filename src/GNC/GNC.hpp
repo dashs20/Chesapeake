@@ -11,6 +11,7 @@ class GNC {
 public:
     GNC(GNCc cfg);
     ACTb update(const HALb& halb);
+    void update_dual_core(GNCb& gnc_k, const GNCb& gnc_km1);
     const GNCb& get_bus() const { return gnc_bus; }
 
 private:
