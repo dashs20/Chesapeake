@@ -7,7 +7,7 @@ void load_default_config(MASTERc& config) {
     config.halc.motc.m2_pin = 28;
     config.halc.motc.m3_pin = 5;
     config.halc.motc.m4_pin = 6;
-    config.halc.motc.speed_kbd = 600;
+    config.halc.motc.speed_kbd = 300;
     config.halc.motc.pole_pairs = 14;
 
     config.halc.rcrxc.uart_id = 0;
