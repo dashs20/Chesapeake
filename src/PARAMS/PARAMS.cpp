@@ -490,12 +490,12 @@ void PARAMS::run_cli(MASTERc& config) {
                     } else if (std::strcmp(cmd, "reboot") == 0) {
                         Serial.println("Rebooting FC...");
                         delay(100);
-                        rp2040.reboot();
+                        NVIC_SystemReset();
                     } else if (std::strcmp(cmd, "save") == 0) {
                         save(config);
                         Serial.println("Saved config to flash! Rebooting FC...");
                         delay(100);
-                        rp2040.reboot();
+                        NVIC_SystemReset();
                     } else if (std::strcmp(cmd, "get") == 0) {
                         char* param_name = std::strtok(nullptr, " ");
                         if (param_name != nullptr) {
@@ -575,7 +575,7 @@ void PARAMS::calibrate_imu(MASTERc& config) {
 
         Serial.println("Rebooting flight controller to apply biases...");
         delay(200);
-        rp2040.reboot();
+        NVIC_SystemReset();
     } else {
         Serial.println("Error: No samples collected.");
     }
