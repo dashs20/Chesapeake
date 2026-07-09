@@ -115,6 +115,10 @@ function clearBoardUI() {
     const grid = document.getElementById("params-grid");
     grid.style.display = "none";
     grid.innerHTML = "";
+    const monitor = document.getElementById("serial-monitor");
+    if (monitor) monitor.textContent = "";
+    const output = document.getElementById("cli-output");
+    if (output) output.textContent = "";
 }
 
 async function writeRaw(text) {
@@ -143,10 +147,12 @@ function handleIncomingChunk(chunk) {
     serialBuffer += chunk;
     let lineEndIdx;
     let cliOutput = "";
+    let rawOutput = "";
     while ((lineEndIdx = serialBuffer.indexOf("\n")) !== -1) {
         const line = serialBuffer.substring(0, lineEndIdx);
         serialBuffer = serialBuffer.substring(lineEndIdx + 1);
         const trimmed = line.trim();
+        rawOutput += line + "\n";
         if (trimmed.startsWith("$")) {
             continue;
         }
@@ -167,11 +173,25 @@ function handleIncomingChunk(chunk) {
             }
         }
     }
+    if (rawOutput) {
+        appendSerialMonitor(rawOutput);
+    }
     if (cliOutput) {
         const output = document.getElementById("cli-output");
         output.textContent += cliOutput;
         output.scrollTop = output.scrollHeight;
     }
+}
+
+function appendSerialMonitor(text) {
+    const monitor = document.getElementById("serial-monitor");
+    if (!monitor) return;
+    monitor.textContent += text;
+    const lines = monitor.textContent.split("\n");
+    if (lines.length > 150) {
+        monitor.textContent = lines.slice(lines.length - 150).join("\n");
+    }
+    monitor.scrollTop = monitor.scrollHeight;
 }
 
 async function reloadParams() {
