@@ -42,7 +42,7 @@ ACTb ALLOC::run_allocator(const GNCb& gnc) {
 }
 
 ACTb ALLOC::allocate_quad(const GNCb& gnc) {
-    float throttle_frac = gnc.halb.stick.thr_frac;
+    float throttle_frac = gnc.halb.rcrxb.thr_frac;
     float roll_effort_frac = gnc.ctlb.axes_effort_frac.x();
     float pitch_effort_frac = gnc.ctlb.axes_effort_frac.y();
     float yaw_effort_frac = gnc.ctlb.axes_effort_frac.z();

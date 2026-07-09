@@ -10,10 +10,11 @@
 class GNC {
 public:
     GNC(GNCc cfg);
-    GNCb update(GNCb gnc);
+    ACTb update(const HALb& halb);
 
 private:
     GNCc cfg_data;
+    GNCb gnc_bus;
     NAV nav;
     VSM vsm;
     GUI gui;

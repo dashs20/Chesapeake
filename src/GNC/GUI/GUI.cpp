@@ -8,9 +8,9 @@ float GUI::apply_expo(float input_frac, float expo_frac) {
 }
 
 GUIb GUI::update(const GNCb& gnc) {
-    float roll_expo_frac = apply_expo(gnc.halb.stick.roll_frac, cfg_data.guic.expoc.roll);
-    float pitch_expo_frac = apply_expo(gnc.halb.stick.pitch_frac, cfg_data.guic.expoc.pitch);
-    float yaw_expo_frac = apply_expo(gnc.halb.stick.yaw_frac, cfg_data.guic.expoc.yaw);
+    float roll_expo_frac = apply_expo(gnc.halb.rcrxb.roll_frac, cfg_data.guic.expoc.roll);
+    float pitch_expo_frac = apply_expo(gnc.halb.rcrxb.pitch_frac, cfg_data.guic.expoc.pitch);
+    float yaw_expo_frac = apply_expo(gnc.halb.rcrxb.yaw_frac, cfg_data.guic.expoc.yaw);
 
     GUIb guib;
     if (gnc.vsmb.att_mode == ATT_MODE::RATE) {
