@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Chesapeake Autopilot System Architecture</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0b0f19;
+            color: #e2e8f0;
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .sidebar {
+            width: 320px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin-top: 24px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #94a3b8;
+            margin-top: 4px;
+        }
+        
+        .details-panel {
+            flex-grow: 1;
+            overflow-y: auto;
+            margin-top: 12px;
+            padding-right: 4px;
+        }
+        
+        .details-empty {
+            color: #64748b;
+            font-style: italic;
+            font-size: 13px;
+        }
+        
+        .details-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 16px;
+        }
+        
+        .details-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #38bdf8;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+        
+        .details-row {
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .details-label {
+            color: #94a3b8;
+            font-weight: 600;
+        }
+        
+        .canvas-area {
+            flex-grow: 1;
+            position: relative;
+            height: 100%;
+        }
+        
+        #network {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            gap: 12px;
+            z-index: 10;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        button:hover {
+            background: #0ea5e9;
+            border-color: #38bdf8;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 10;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">Chesapeake Arch</div>
+            
+            <div class="section-title">Statistics</div>
+            <div class="stat-card">
+                <div class="stat-value">39</div>
+                <div class="stat-label">Total Files Detected</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value">1841</div>
+                <div class="stat-label">Total Lines of Code</div>
+            </div>
+            
+            <div class="section-title">Node Inspector</div>
+            <div id="inspector" class="details-panel">
+                <div class="details-empty">Click on any node in the system diagram to inspect details.</div>
+            </div>
+        </div>
+        
+        <div class="canvas-area">
+            <div class="controls">
+                <button onclick="toggleLayout()">Toggle Hierarchical</button>
+                <button onclick="fitNetwork()">Center Camera</button>
+                <button onclick="togglePhysics()">Pause Physics</button>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #0ea5e9;"></div>
+                    <span>GNC (Guidance Navigation Control)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #10b981;"></div>
+                    <span>HAL (Hardware Abstraction Layer)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #f59e0b;"></div>
+                    <span>PARAMS (Flash Configuration)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #8b5cf6;"></div>
+                    <span>Main entrypoint</span>
+                </div>
+            </div>
+            
+            <div id="network"></div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        const rawNodes = [
+    {
+        "id": 0,
+        "label": "main.cpp",
+        "title": "Path: src/main.cpp<br>Lines: 39",
+        "group": "MAIN.CPP",
+        "value": 39,
+        "rel_path": "main.cpp",
+        "line_count": 39
+    },
+    {
+        "id": 1,
+        "label": "bus.hpp",
+        "title": "Path: src/GNC/bus.hpp<br>Lines: 60",
+        "group": "GNC/BUS.HPP",
+        "value": 60,
+        "rel_path": "GNC/bus.hpp",
+        "line_count": 60
+    },
+    {
+        "id": 2,
+        "label": "cfg.hpp",
+        "title": "Path: src/GNC/cfg.hpp<br>Lines: 73",
+        "group": "GNC/CFG.HPP",
+        "value": 73,
+        "rel_path": "GNC/cfg.hpp",
+        "line_count": 73
+    },
+    {
+        "id": 3,
+        "label": "GNC.cpp",
+        "title": "Path: src/GNC/GNC.cpp<br>Lines: 22",
+        "group": "GNC/GNC.CPP",
+        "value": 22,
+        "rel_path": "GNC/GNC.cpp",
+        "line_count": 22
+    },
+    {
+        "id": 4,
+        "label": "GNC.hpp",
+        "title": "Path: src/GNC/GNC.hpp<br>Lines: 24",
+        "group": "GNC/GNC.HPP",
+        "value": 24,
+        "rel_path": "GNC/GNC.hpp",
+        "line_count": 24
+    },
+    {
+        "id": 5,
+        "label": "ALLOC.cpp",
+        "title": "Path: src/GNC/ALLOC/ALLOC.cpp<br>Lines: 93",
+        "group": "GNC/ALLOC/ALLOC.CPP",
+        "value": 93,
+        "rel_path": "GNC/ALLOC/ALLOC.cpp",
+        "line_count": 93
+    },
+    {
+        "id": 6,
+        "label": "ALLOC.hpp",
+        "title": "Path: src/GNC/ALLOC/ALLOC.hpp<br>Lines: 17",
+        "group": "GNC/ALLOC/ALLOC.HPP",
+        "value": 17,
+        "rel_path": "GNC/ALLOC/ALLOC.hpp",
+        "line_count": 17
+    },
+    {
+        "id": 7,
+        "label": "CTL.cpp",
+        "title": "Path: src/GNC/CTL/CTL.cpp<br>Lines: 64",
+        "group": "GNC/CTL/CTL.CPP",
+        "value": 64,
+        "rel_path": "GNC/CTL/CTL.cpp",
+        "line_count": 64
+    },
+    {
+        "id": 8,
+        "label": "CTL.hpp",
+        "title": "Path: src/GNC/CTL/CTL.hpp<br>Lines: 20",
+        "group": "GNC/CTL/CTL.HPP",
+        "value": 20,
+        "rel_path": "GNC/CTL/CTL.hpp",
+        "line_count": 20
+    },
+    {
+        "id": 9,
+        "label": "PID_3DOF.cpp",
+        "title": "Path: src/GNC/CTL/PID/PID_3DOF.cpp<br>Lines: 51",
+        "group": "GNC/CTL/PID/PID_3DOF.CPP",
+        "value": 51,
+        "rel_path": "GNC/CTL/PID/PID_3DOF.cpp",
+        "line_count": 51
+    },
+    {
+        "id": 10,
+        "label": "PID_3DOF.hpp",
+        "title": "Path: src/GNC/CTL/PID/PID_3DOF.hpp<br>Lines: 26",
+        "group": "GNC/CTL/PID/PID_3DOF.HPP",
+        "value": 26,
+        "rel_path": "GNC/CTL/PID/PID_3DOF.hpp",
+        "line_count": 26
+    },
+    {
+        "id": 11,
+        "label": "GUI.cpp",
+        "title": "Path: src/GNC/GUI/GUI.cpp<br>Lines: 30",
+        "group": "GNC/GUI/GUI.CPP",
+        "value": 30,
+        "rel_path": "GNC/GUI/GUI.cpp",
+        "line_count": 30
+    },
+    {
+        "id": 12,
+        "label": "GUI.hpp",
+        "title": "Path: src/GNC/GUI/GUI.hpp<br>Lines: 13",
+        "group": "GNC/GUI/GUI.HPP",
+        "value": 13,
+        "rel_path": "GNC/GUI/GUI.hpp",
+        "line_count": 13
+    },
+    {
+        "id": 13,
+        "label": "NAV.cpp",
+        "title": "Path: src/GNC/NAV/NAV.cpp<br>Lines: 51",
+        "group": "GNC/NAV/NAV.CPP",
+        "value": 51,
+        "rel_path": "GNC/NAV/NAV.cpp",
+        "line_count": 51
+    },
+    {
+        "id": 14,
+        "label": "NAV.hpp",
+        "title": "Path: src/GNC/NAV/NAV.hpp<br>Lines: 24",
+        "group": "GNC/NAV/NAV.HPP",
+        "value": 24,
+        "rel_path": "GNC/NAV/NAV.hpp",
+        "line_count": 24
+    },
+    {
+        "id": 15,
+        "label": "StateMachine.hpp",
+        "title": "Path: src/GNC/UTIL/StateMachine.hpp<br>Lines: 41",
+        "group": "GNC/UTIL/STATEMACHINE.HPP",
+        "value": 41,
+        "rel_path": "GNC/UTIL/StateMachine.hpp",
+        "line_count": 41
+    },
+    {
+        "id": 16,
+        "label": "VSM.cpp",
+        "title": "Path: src/GNC/VSM/VSM.cpp<br>Lines: 76",
+        "group": "GNC/VSM/VSM.CPP",
+        "value": 76,
+        "rel_path": "GNC/VSM/VSM.cpp",
+        "line_count": 76
+    },
+    {
+        "id": 17,
+        "label": "VSM.hpp",
+        "title": "Path: src/GNC/VSM/VSM.hpp<br>Lines: 18",
+        "group": "GNC/VSM/VSM.HPP",
+        "value": 18,
+        "rel_path": "GNC/VSM/VSM.hpp",
+        "line_count": 18
+    },
+    {
+        "id": 18,
+        "label": "bus.hpp",
+        "title": "Path: src/HAL/bus.hpp<br>Lines: 30",
+        "group": "HAL/BUS.HPP",
+        "value": 30,
+        "rel_path": "HAL/bus.hpp",
+        "line_count": 30
+    },
+    {
+        "id": 19,
+        "label": "cfg.hpp",
+        "title": "Path: src/HAL/cfg.hpp<br>Lines: 90",
+        "group": "HAL/CFG.HPP",
+        "value": 90,
+        "rel_path": "HAL/cfg.hpp",
+        "line_count": 90
+    },
+    {
+        "id": 20,
+        "label": "HAL.cpp",
+        "title": "Path: src/HAL/HAL.cpp<br>Lines: 24",
+        "group": "HAL/HAL.CPP",
+        "value": 24,
+        "rel_path": "HAL/HAL.cpp",
+        "line_count": 24
+    },
+    {
+        "id": 21,
+        "label": "HAL.hpp",
+        "title": "Path: src/HAL/HAL.hpp<br>Lines: 28",
+        "group": "HAL/HAL.HPP",
+        "value": 28,
+        "rel_path": "HAL/HAL.hpp",
+        "line_count": 28
+    },
+    {
+        "id": 22,
+        "label": "BAT.cpp",
+        "title": "Path: src/HAL/BAT/BAT.cpp<br>Lines: 15",
+        "group": "HAL/BAT/BAT.CPP",
+        "value": 15,
+        "rel_path": "HAL/BAT/BAT.cpp",
+        "line_count": 15
+    },
+    {
+        "id": 23,
+        "label": "BAT.hpp",
+        "title": "Path: src/HAL/BAT/BAT.hpp<br>Lines: 15",
+        "group": "HAL/BAT/BAT.HPP",
+        "value": 15,
+        "rel_path": "HAL/BAT/BAT.hpp",
+        "line_count": 15
+    },
+    {
+        "id": 24,
+        "label": "IMU.cpp",
+        "title": "Path: src/HAL/IMU/IMU.cpp<br>Lines: 88",
+        "group": "HAL/IMU/IMU.CPP",
+        "value": 88,
+        "rel_path": "HAL/IMU/IMU.cpp",
+        "line_count": 88
+    },
+    {
+        "id": 25,
+        "label": "IMU.hpp",
+        "title": "Path: src/HAL/IMU/IMU.hpp<br>Lines: 21",
+        "group": "HAL/IMU/IMU.HPP",
+        "value": 21,
+        "rel_path": "HAL/IMU/IMU.hpp",
+        "line_count": 21
+    },
+    {
+        "id": 26,
+        "label": "LED.cpp",
+        "title": "Path: src/HAL/LED/LED.cpp<br>Lines: 31",
+        "group": "HAL/LED/LED.CPP",
+        "value": 31,
+        "rel_path": "HAL/LED/LED.cpp",
+        "line_count": 31
+    },
+    {
+        "id": 27,
+        "label": "LED.hpp",
+        "title": "Path: src/HAL/LED/LED.hpp<br>Lines: 16",
+        "group": "HAL/LED/LED.HPP",
+        "value": 16,
+        "rel_path": "HAL/LED/LED.hpp",
+        "line_count": 16
+    },
+    {
+        "id": 28,
+        "label": "MOT.cpp",
+        "title": "Path: src/HAL/MOT/MOT.cpp<br>Lines: 70",
+        "group": "HAL/MOT/MOT.CPP",
+        "value": 70,
+        "rel_path": "HAL/MOT/MOT.cpp",
+        "line_count": 70
+    },
+    {
+        "id": 29,
+        "label": "MOT.hpp",
+        "title": "Path: src/HAL/MOT/MOT.hpp<br>Lines: 17",
+        "group": "HAL/MOT/MOT.HPP",
+        "value": 17,
+        "rel_path": "HAL/MOT/MOT.hpp",
+        "line_count": 17
+    },
+    {
+        "id": 30,
+        "label": "RCRX.cpp",
+        "title": "Path: src/HAL/RCRX/RCRX.cpp<br>Lines: 62",
+        "group": "HAL/RCRX/RCRX.CPP",
+        "value": 62,
+        "rel_path": "HAL/RCRX/RCRX.cpp",
+        "line_count": 62
+    },
+    {
+        "id": 31,
+        "label": "RCRX.hpp",
+        "title": "Path: src/HAL/RCRX/RCRX.hpp<br>Lines: 19",
+        "group": "HAL/RCRX/RCRX.HPP",
+        "value": 19,
+        "rel_path": "HAL/RCRX/RCRX.hpp",
+        "line_count": 19
+    },
+    {
+        "id": 32,
+        "label": "SERVO.cpp",
+        "title": "Path: src/HAL/SERVO/SERVO.cpp<br>Lines: 38",
+        "group": "HAL/SERVO/SERVO.CPP",
+        "value": 38,
+        "rel_path": "HAL/SERVO/SERVO.cpp",
+        "line_count": 38
+    },
+    {
+        "id": 33,
+        "label": "SERVO.hpp",
+        "title": "Path: src/HAL/SERVO/SERVO.hpp<br>Lines: 17",
+        "group": "HAL/SERVO/SERVO.HPP",
+        "value": 17,
+        "rel_path": "HAL/SERVO/SERVO.hpp",
+        "line_count": 17
+    },
+    {
+        "id": 34,
+        "label": "defaults.cpp",
+        "title": "Path: src/PARAMS/defaults.cpp<br>Lines: 92",
+        "group": "PARAMS/DEFAULTS.CPP",
+        "value": 92,
+        "rel_path": "PARAMS/defaults.cpp",
+        "line_count": 92
+    },
+    {
+        "id": 35,
+        "label": "defaults.hpp",
+        "title": "Path: src/PARAMS/defaults.hpp<br>Lines: 5",
+        "group": "PARAMS/DEFAULTS.HPP",
+        "value": 5,
+        "rel_path": "PARAMS/defaults.hpp",
+        "line_count": 5
+    },
+    {
+        "id": 36,
+        "label": "MASTERc.hpp",
+        "title": "Path: src/PARAMS/MASTERc.hpp<br>Lines: 10",
+        "group": "PARAMS/MASTERC.HPP",
+        "value": 10,
+        "rel_path": "PARAMS/MASTERc.hpp",
+        "line_count": 10
+    },
+    {
+        "id": 37,
+        "label": "PARAMS.cpp",
+        "title": "Path: src/PARAMS/PARAMS.cpp<br>Lines: 391",
+        "group": "PARAMS/PARAMS.CPP",
+        "value": 391,
+        "rel_path": "PARAMS/PARAMS.cpp",
+        "line_count": 391
+    },
+    {
+        "id": 38,
+        "label": "PARAMS.hpp",
+        "title": "Path: src/PARAMS/PARAMS.hpp<br>Lines: 20",
+        "group": "PARAMS/PARAMS.HPP",
+        "value": 20,
+        "rel_path": "PARAMS/PARAMS.hpp",
+        "line_count": 20
+    }
+];
+        const rawEdges = [
+    {
+        "from": 0,
+        "to": 38,
+        "arrows": "to"
+    },
+    {
+        "from": 0,
+        "to": 35,
+        "arrows": "to"
+    },
+    {
+        "from": 0,
+        "to": 21,
+        "arrows": "to"
+    },
+    {
+        "from": 0,
+        "to": 4,
+        "arrows": "to"
+    },
+    {
+        "from": 1,
+        "to": 18,
+        "arrows": "to"
+    },
+    {
+        "from": 3,
+        "to": 4,
+        "arrows": "to"
+    },
+    {
+        "from": 4,
+        "to": 1,
+        "arrows": "to"
+    },
+    {
+        "from": 4,
+        "to": 2,
+        "arrows": "to"
+    },
+    {
+        "from": 4,
+        "to": 14,
+        "arrows": "to"
+    },
+    {
+        "from": 4,
+        "to": 17,
+        "arrows": "to"
+    },
+    {
+        "from": 4,
+        "to": 12,
+        "arrows": "to"
+    },
+    {
+        "from": 4,
+        "to": 8,
+        "arrows": "to"
+    },
+    {
+        "from": 4,
+        "to": 6,
+        "arrows": "to"
+    },
+    {
+        "from": 5,
+        "to": 6,
+        "arrows": "to"
+    },
+    {
+        "from": 6,
+        "to": 1,
+        "arrows": "to"
+    },
+    {
+        "from": 6,
+        "to": 2,
+        "arrows": "to"
+    },
+    {
+        "from": 7,
+        "to": 8,
+        "arrows": "to"
+    },
+    {
+        "from": 8,
+        "to": 1,
+        "arrows": "to"
+    },
+    {
+        "from": 8,
+        "to": 2,
+        "arrows": "to"
+    },
+    {
+        "from": 8,
+        "to": 10,
+        "arrows": "to"
+    },
+    {
+        "from": 9,
+        "to": 10,
+        "arrows": "to"
+    },
+    {
+        "from": 10,
+        "to": 2,
+        "arrows": "to"
+    },
+    {
+        "from": 11,
+        "to": 12,
+        "arrows": "to"
+    },
+    {
+        "from": 12,
+        "to": 1,
+        "arrows": "to"
+    },
+    {
+        "from": 12,
+        "to": 2,
+        "arrows": "to"
+    },
+    {
+        "from": 13,
+        "to": 14,
+        "arrows": "to"
+    },
+    {
+        "from": 14,
+        "to": 1,
+        "arrows": "to"
+    },
+    {
+        "from": 14,
+        "to": 2,
+        "arrows": "to"
+    },
+    {
+        "from": 16,
+        "to": 17,
+        "arrows": "to"
+    },
+    {
+        "from": 17,
+        "to": 1,
+        "arrows": "to"
+    },
+    {
+        "from": 17,
+        "to": 2,
+        "arrows": "to"
+    },
+    {
+        "from": 17,
+        "to": 15,
+        "arrows": "to"
+    },
+    {
+        "from": 20,
+        "to": 21,
+        "arrows": "to"
+    },
+    {
+        "from": 21,
+        "to": 18,
+        "arrows": "to"
+    },
+    {
+        "from": 21,
+        "to": 19,
+        "arrows": "to"
+    },
+    {
+        "from": 21,
+        "to": 25,
+        "arrows": "to"
+    },
+    {
+        "from": 21,
+        "to": 31,
+        "arrows": "to"
+    },
+    {
+        "from": 21,
+        "to": 29,
+        "arrows": "to"
+    },
+    {
+        "from": 21,
+        "to": 23,
+        "arrows": "to"
+    },
+    {
+        "from": 21,
+        "to": 33,
+        "arrows": "to"
+    },
+    {
+        "from": 21,
+        "to": 27,
+        "arrows": "to"
+    },
+    {
+        "from": 22,
+        "to": 23,
+        "arrows": "to"
+    },
+    {
+        "from": 23,
+        "to": 19,
+        "arrows": "to"
+    },
+    {
+        "from": 23,
+        "to": 18,
+        "arrows": "to"
+    },
+    {
+        "from": 24,
+        "to": 25,
+        "arrows": "to"
+    },
+    {
+        "from": 25,
+        "to": 19,
+        "arrows": "to"
+    },
+    {
+        "from": 25,
+        "to": 18,
+        "arrows": "to"
+    },
+    {
+        "from": 26,
+        "to": 27,
+        "arrows": "to"
+    },
+    {
+        "from": 27,
+        "to": 19,
+        "arrows": "to"
+    },
+    {
+        "from": 27,
+        "to": 1,
+        "arrows": "to"
+    },
+    {
+        "from": 28,
+        "to": 29,
+        "arrows": "to"
+    },
+    {
+        "from": 29,
+        "to": 19,
+        "arrows": "to"
+    },
+    {
+        "from": 29,
+        "to": 1,
+        "arrows": "to"
+    },
+    {
+        "from": 30,
+        "to": 31,
+        "arrows": "to"
+    },
+    {
+        "from": 31,
+        "to": 19,
+        "arrows": "to"
+    },
+    {
+        "from": 31,
+        "to": 18,
+        "arrows": "to"
+    },
+    {
+        "from": 32,
+        "to": 33,
+        "arrows": "to"
+    },
+    {
+        "from": 33,
+        "to": 19,
+        "arrows": "to"
+    },
+    {
+        "from": 33,
+        "to": 1,
+        "arrows": "to"
+    },
+    {
+        "from": 34,
+        "to": 35,
+        "arrows": "to"
+    },
+    {
+        "from": 35,
+        "to": 36,
+        "arrows": "to"
+    },
+    {
+        "from": 36,
+        "to": 19,
+        "arrows": "to"
+    },
+    {
+        "from": 36,
+        "to": 2,
+        "arrows": "to"
+    },
+    {
+        "from": 37,
+        "to": 38,
+        "arrows": "to"
+    },
+    {
+        "from": 37,
+        "to": 35,
+        "arrows": "to"
+    },
+    {
+        "from": 38,
+        "to": 36,
+        "arrows": "to"
+    }
+];
+        
+        const groupColors = {
+            "GNC": { border: "#0284c7", background: "#0ea5e9", highlight: { border: "#38bdf8", background: "#7dd3fc" } },
+            "HAL": { border: "#059669", background: "#10b981", highlight: { border: "#34d399", background: "#6ee7b7" } },
+            "PARAMS": { border: "#d97706", background: "#f59e0b", highlight: { border: "#fbbf24", background: "#fde047" } },
+            "MAIN": { border: "#7c3aed", background: "#8b5cf6", highlight: { border: "#a78bfa", background: "#c4b5fd" } }
+        };
+        
+        const nodes = rawNodes.map(n => {
+            const color = groupColors[n.group] || groupColors["MAIN"];
+            return {
+                id: n.id,
+                label: n.label,
+                title: n.title,
+                value: n.value,
+                color: color,
+                font: { color: "#f8fafc", face: "Outfit" },
+                scaling: { min: 12, max: 30 },
+                borderWidth: 2,
+                shape: "dot",
+                rel_path: n.rel_path,
+                line_count: n.line_count,
+                groupName: n.group
+            };
+        });
+
+        const edges = rawEdges.map(e => ({
+            from: e.from,
+            to: e.to,
+            arrows: "to",
+            color: { color: "rgba(255,255,255,0.15)", highlight: "#38bdf8" },
+            width: 1,
+            hoverWidth: 2,
+            selectionWidth: 2
+        }));
+
+        const container = document.getElementById("network");
+        const data = {
+            nodes: new vis.DataSet(nodes),
+            edges: new vis.DataSet(edges)
+        };
+        
+        let hierarchical = false;
+        let physicsEnabled = true;
+
+        const options = {
+            nodes: {
+                shape: "dot"
+            },
+            edges: {
+                smooth: {
+                    type: "continuous",
+                    forceDirection: "none",
+                    roundness: 0.5
+                }
+            },
+            groups: groupColors,
+            physics: {
+                stabilization: {
+                    iterations: 150
+                },
+                barnesHut: {
+                    gravitationalConstant: -8000,
+                    springConstant: 0.04,
+                    springLength: 95
+                }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 200
+            }
+        };
+
+        let network = new vis.Network(container, data, options);
+        
+        network.on("click", function (params) {
+            const inspector = document.getElementById("inspector");
+            if (params.nodes.length > 0) {
+                const nodeId = params.nodes[0];
+                const nodeData = nodes.find(n => n.id === nodeId);
+                
+                const dependents = edges
+                    .filter(e => e.to === nodeId)
+                    .map(e => nodes.find(n => n.id === e.from).label);
+                
+                const dependencies = edges
+                    .filter(e => e.from === nodeId)
+                    .map(e => nodes.find(n => n.id === e.to).label);
+                
+                let dependentsHtml = dependents.length > 0 
+                    ? dependents.map(d => `<div style="background:rgba(255,255,255,0.05); padding:4px 8px; margin-bottom:4px; border-radius:4px;">${d}</div>`).join("")
+                    : '<div style="color:#64748b; font-style:italic;">None</div>';
+                    
+                let dependenciesHtml = dependencies.length > 0 
+                    ? dependencies.map(d => `<div style="background:rgba(255,255,255,0.05); padding:4px 8px; margin-bottom:4px; border-radius:4px;">${d}</div>`).join("")
+                    : '<div style="color:#64748b; font-style:italic;">None</div>';
+
+                inspector.innerHTML = `
+                    <div class="details-card">
+                        <div class="details-title">${nodeData.label}</div>
+                        <div class="details-row">
+                            <span class="details-label">Module:</span> ${nodeData.groupName}
+                        </div>
+                        <div class="details-row">
+                            <span class="details-label">Path:</span> <span style="font-family:monospace; color:#cbd5e1; font-size:12px;">src/${nodeData.rel_path}</span>
+                        </div>
+                        <div class="details-row">
+                            <span class="details-label">Lines of Code:</span> ${nodeData.line_count}
+                        </div>
+                        
+                        <div class="section-title" style="margin-top:16px; margin-bottom:8px; font-size:12px;">Includes</div>
+                        ${dependenciesHtml}
+                        
+                        <div class="section-title" style="margin-top:16px; margin-bottom:8px; font-size:12px;">Included By</div>
+                        ${dependentsHtml}
+                    </div>
+                `;
+            } else {
+                inspector.innerHTML = '<div class="details-empty">Click on any node in the system diagram to inspect details.</div>';
+            }
+        });
+
+        function toggleLayout() {
+            hierarchical = !hierarchical;
+            if (hierarchical) {
+                network.setOptions({
+                    layout: {
+                        hierarchical: {
+                            direction: "UD",
+                            sortMethod: "directed",
+                            nodeSpacing: 150,
+                            levelCalculationMethod: "hubsize"
+                        }
+                    },
+                    physics: false
+                });
+            } else {
+                network.setOptions({
+                    layout: {
+                        hierarchical: false
+                    },
+                    physics: {
+                        enabled: physicsEnabled
+                    }
+                });
+            }
+        }
+
+        function fitNetwork() {
+            network.fit({ animation: true });
+        }
+
+        function togglePhysics() {
+            physicsEnabled = !physicsEnabled;
+            const btn = document.querySelector("button[onclick='togglePhysics()']");
+            btn.textContent = physicsEnabled ? "Pause Physics" : "Resume Physics";
+            network.setOptions({
+                physics: {
+                    enabled: physicsEnabled
+                }
+            });
+        }
+    </script>
+</body>
+</html>
