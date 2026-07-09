@@ -2,96 +2,153 @@
 
 ![Chesapeake Logo](configurator/chesapeake.png)
 
-Chesapeake is an embedded flight control firmware designed for the Seeed Studio Xiao RP2350 microcontroller. It uses PlatformIO with the Arduino framework, integrating the Eigen library for optimized matrix and vector mathematics.
-
-This document describes the structure and organization of the core source code directory (`src`).
+Chesapeake is a high-performance, modular embedded flight control firmware designed for the Seeed Studio XIAO RP2350 microcontroller. Built in C++ using PlatformIO with the Earle Philhower Arduino-Pico core, it implements state-of-the-art guidance, navigation, and control algorithms, leveraging Eigen for optimized vector mathematics, double-precision Unscented Kalman Filtering (UKF) for attitude estimation, and custom Hardware Abstraction Layer (HAL) drivers.
 
 ---
 
-## Source Directory Structure (`src/`)
+## 1. System Architecture
 
-The `src/` folder is divided into three primary directories:
-1. **`CONFIGURATOR/`**: Tooling and assets related to ground control / configuration (currently empty).
-2. **`HAL/`**: Hardware Abstraction Layer for device-specific sensor and peripheral drivers (currently empty).
-3. **`GNC/`**: Guidance, Navigation, and Control (core flight software logic).
+```mermaid
+graph TD
+    subgraph Main Loop [main.cpp Setup & Loop Pacing]
+        M[main.cpp] -->|Paces Loop rate| L[Loop Rate Regulator]
+        M -->|Runs non-blocking CLI| P_CLI[PARAMS CLI]
+    end
 
-```
-src/
-├── CONFIGURATOR/          # Configurator assets (currently empty)
-├── HAL/                   # Hardware Abstraction Layer (currently empty)
-└── GNC/                   # Guidance, Navigation, and Control
-    ├── bus.hpp            # Central definition of state and communication buses
-    ├── cfg.hpp            # Central configuration file (GNCc config master)
-    ├── GNC.hpp            # GNC master coordinator class declaration
-    ├── GNC.cpp            # GNC master coordinator class implementation
-    ├── NAV/               # Navigation (State Estimation)
-    │   ├── NAV.hpp        # NAV class declaration (uses UKF and GNCb interface)
-    │   └── NAV.cpp        # NAV class implementation
-    ├── CTL/               # Control Algorithms
-    │   ├── CTL.hpp        # CTL class declaration (conforms to GNCb interface)
-    │   ├── CTL.cpp        # CTL class implementation
-    │   └── PID/           # PID Controller Sub-module
-    │       ├── PID_3DOF.hpp # PID_3DOF & PID_scalar class declarations
-    │       └── PID_3DOF.cpp # PID_3DOF & PID_scalar class implementations
-    ├── GUI/               # Guidance Submodule (RC Expo & stick to target mappings)
-    │   ├── GUI.hpp        # GUI class declaration
-    │   └── GUI.cpp        # GUI class implementation
-    ├── ALLOC/             # Actuator Allocation Sub-module (mixer & safety clamps)
-    │   ├── ALLOC.hpp      # ALLOC class declaration
-    │   └── ALLOC.cpp      # ALLOC class implementation
-    ├── VSM/               # Vehicle State Machine Submodule (high-level modes & transitions)
-    │   ├── VSM.hpp        # VSM class declaration
-    │   └── VSM.cpp        # VSM class implementation
-    └── UTIL/              # Utilities
-        └── StateMachine.hpp # Generic C++ State Machine template
+    subgraph Parameters [PARAMS Module]
+        P_CLI -->|EEPROM Read/Write| EEPROM[(EEPROM Flash)]
+        P_CLI -->|Tuning & Config| M_CFG[MASTERc Structure]
+    end
+
+    subgraph HAL [Hardware Abstraction Layer]
+        H_COORD[HAL Coordinator] --> IMU[LSM6DSV16X SPI1 IMU]
+        H_COORD --> RCRX[ELRS UART0 Receiver]
+        H_COORD --> MOT[Bidir DShot PIO Motors]
+        H_COORD --> BAT[ADC Voltage Divider]
+        H_COORD --> SRV[Servo PWM Outputs]
+        H_COORD --> LED[GPIO17 Status LED]
+    end
+
+    subgraph GNC [Guidance Navigation Control]
+        G_COORD[GNC Coordinator] --> VSM[Vehicle State Machine]
+        G_COORD --> NAV[NAV UKF State Estimator]
+        G_COORD --> GUI[GUI Expo & Target Mappings]
+        G_COORD --> CTL[CTL Rate & Angle Cascade PID]
+        G_COORD --> ALLOC[ALLOC Actuator Mixer]
+    end
+
+    %% Data flow connections
+    M -->|Updates| H_COORD
+    H_COORD -->|Returns HALb Sensor Data| G_COORD
+    G_COORD -->|Returns ACTb Control Efforts| H_COORD
 ```
 
 ---
 
-## Core Components Description
+## 2. Directory Structure
 
-### 1. Data Buses & Configurations (`src/GNC/`)
-*   **[bus.hpp](file:///src/GNC/bus.hpp)**: Defines the standard communication interfaces (buses) passing data between blocks (`HALb`, `NAVb`, `CTLb`, and the master `GNCb` struct).
-*   **[cfg.hpp](file:///src/GNC/cfg.hpp)**: Defines the master configuration structure `GNCc` which bundles `NAVc` (navigation constants), `CTLc` (control loop constants, enclosing rate and angle `PID_3DOFc` loop parameters), `GUIc` (guidance expo and scale parameters), `ALLOCc` (allocation and clamping limits), and `VSMc` (mode transition thresholds).
-*   **[GNC.hpp](file:///src/GNC/GNC.hpp)** & **[GNC.cpp](file:///src/GNC/GNC.cpp)**: Master GNC coordinator class. Integrates all GNC submodules (`VSM`, `NAV`, `GUI`, `CTL`, `ALLOC`) and executes their updates sequentially, enforcing strict sub-bus data encapsulation.
-
-### 2. State Estimation (`src/GNC/NAV/`)
-The Navigation module handles attitude and state estimation:
-*   **[NAV.hpp](file:///src/GNC/NAV/NAV.hpp)** & **[NAV.cpp](file:///src/GNC/NAV/NAV.cpp)**: Interfaces with the double-precision UKF sensor fusion library to update estimations and extract the body up-vector and roll/pitch Euler angles onto the bus.
-
-### 3. Flight Control (`src/GNC/CTL/`)
-The Control module processes state estimations and pilot inputs to calculate motor and servo command signals:
-*   **[CTL.hpp](file:///src/GNC/CTL/CTL.hpp)** & **[CTL.cpp](file:///src/GNC/CTL/CTL.cpp)**: Declares and implements the control loop coordinator. It handles both standard Rate Control and multi-rate cascaded Attitude Control (Angle Loop -> Rate Loop), and continuously resets PIDs when the vehicle is disarmed.
-*   **PID Sub-module (`src/GNC/CTL/PID/`)**:
-    *   **[PID_3DOF.hpp](file:///src/GNC/CTL/PID/PID_3DOF.hpp)** & **[PID_3DOF.cpp](file:///src/GNC/CTL/PID/PID_3DOF.cpp)**: Implements the single-axis scalar controller `PID_scalar` and the 3-axis vector controller `PID_3DOF` (using three `PID_scalar` instances for roll, pitch, and yaw) with integral anti-windup and output constraint limiting, configured using `PID_3DOFc` and `PID_SCALARc` structs.
-
-### 4. Guidance (`src/GNC/GUI/`)
-Handles pilot stick expo calculations and maps outputs to control/rate commands based on attitude mode:
-*   **[GUI.hpp](file:///src/GNC/GUI/GUI.hpp)** & **[GUI.cpp](file:///src/GNC/GUI/GUI.cpp)**: Implements the Guidance class.
-
-### 5. Actuator Allocation (`src/GNC/ALLOC/`)
-Translates throttle and raw multi-axis control efforts into motor and servo commands:
-*   **[ALLOC.hpp](file:///src/GNC/ALLOC/ALLOC.hpp)** & **[ALLOC.cpp](file:///src/GNC/ALLOC/ALLOC.cpp)**: Implements standard mixing algorithms (e.g. QUAD X) and applies standardized safety limits (e.g., disarmed motor shutdowns and servo centering) using `ALLOCc` constraints.
-
-### 6. Vehicle State Machine (`src/GNC/VSM/`)
-Manages high-level vehicle modes and inner attitude mode resolutions:
-*   **[VSM.hpp](file:///src/GNC/VSM/VSM.hpp)** & **[VSM.cpp](file:///src/GNC/VSM/VSM.cpp)**: Uses the generic state machine template to evaluate mode transitions based on pilot switches.
-
-### 7. Utilities (`src/GNC/UTIL/`)
-Generic helper components used across modules:
-*   **[StateMachine.hpp](file:///src/GNC/UTIL/StateMachine.hpp)**: A generic, header-only C++ template mapping states to their transition conditions.
+```
+Chesapeake/
+├── hardware/
+│   └── bluecrab.net       # KiCad board netlist used to map pinouts
+├── lib/
+│   ├── eigen-master/      # Optimized linear algebra library
+│   └── UKF-main/          # Unscented Kalman Filter state estimation
+├── src/
+│   ├── main.cpp           # Arduino entrypoint setup and loop pacing
+│   ├── PARAMS/            # Configuration management & Serial CLI
+│   │   ├── MASTERc.hpp    # Master configuration structure
+│   │   ├── PARAMS.hpp     # Parameter load/save & CLI runner header
+│   │   ├── PARAMS.cpp     # CLI parser and get/set commands
+│   │   ├── defaults.hpp   # Hardcoded default values header
+│   │   └── defaults.cpp   # Base configuration factory settings
+│   ├── HAL/               # Hardware Abstraction Layer
+│   │   ├── bus.hpp        # HAL sub-buses (IMUb, MOTb, RCRXb)
+│   │   ├── cfg.hpp        # Hardware specific config structs (IMUc, MOTc, etc.)
+│   │   ├── HAL.hpp        # Master HAL class coordinator
+│   │   ├── HAL.cpp        # Sequences sensor reads & motor writes
+│   │   ├── IMU/           # LSM6DSV16X IMU SPI driver
+│   │   ├── RCRX/          # ELRS CRSF protocol UART receiver
+│   │   ├── MOT/           # Bidirectional DShot motor outputs & RPM feedback
+│   │   ├── BAT/           # Analog battery voltage sensor
+│   │   ├── SERVO/         # Servo.h angle command mapping
+│   │   └── LED/           # Status LED driver
+│   └── GNC/               # Guidance, Navigation, and Control
+│       ├── bus.hpp        # Inner communication buses (VSMb, NAVb, etc.)
+│       ├── cfg.hpp        # Flight control config structs (GNCc, CTLc)
+│       ├── GNC.hpp        # GNC master class coordinator
+│       ├── GNC.cpp        # Sequences estimations, PIDs, and mixing
+│       ├── NAV/           # Navigation state estimation (translates to UKF)
+│       ├── CTL/           # Attitude rate/angle control loops
+│       │   └── PID/       # 3-Axis & single-axis PID controllers
+│       ├── GUI/           # Target input stick mapping & RC Expo
+│       ├── ALLOC/         # Actuator mixing & state-based LED blinking
+│       └── VSM/           # Vehicle State Machine (Disarmed, Rate, Angle)
+```
 
 ---
 
-## Credits & Third-Party Libraries
+## 3. Hardware Interfacing & Default Pinout
 
-Chesapeake builds upon several open-source libraries to communicate with hardware peripherals and optimize mathematical operations:
+The default microcontroller pin configurations are mapped from the `hardware/bluecrab.net` KiCad schematic for the Seeed Studio XIAO RP2350:
 
-*   **[Eigen](https://libeigen.gitlab.io/)**: A high-performance template library for linear algebra, matrices, vectors, and numerical solvers.
-*   **[UKF (Unscented Kalman Filter)](https://github.com/NovelMobileRobotsLab/UKF)**: A double-precision sensor fusion library for state estimation and attitude determination.
-*   **[AlfredoCRSF](https://github.com/AlfredoSystems/AlfredoCRSF)**: A communication library implementing the CRSF (Crossfire) receiver protocol for ELRS pilot RC stick interface.
-*   **[LSM6DSV16X](https://github.com/stm32duino/LSM6DSV16X)**: Hardware driver for the STMicroelectronics LSM6DSV16X 6-axis Inertial Measurement Unit (IMU).
-*   **[pico-bidir-dshot](https://github.com/bastian2001/pico-bidir-dshot)**: A hardware-targeted driver utilizing PIO/DMA to support Bidirectional DShot motor signals on RP2040 and RP2350 microcontrollers.
+| Peripheral | Netlist Label | RP2350 Pin / GPIO | Notes |
+|---|---|---|---|
+| **Battery ADC** | `vbat_div` | GPIO26 (A0 / D0) | Voltage divider resistors: $R_1=9.1\text{k}\Omega$, $R_3=1.0\text{k}\Omega$ ($10.1\times$ division factor) |
+| **Motor 1** | `M1` | GPIO27 (A1 / D1) | Bidirectional DShot |
+| **Motor 2** | `M2` | GPIO28 (A2 / D2) | Bidirectional DShot |
+| **Motor 3** | `M3` | GPIO5 (D3) | Bidirectional DShot |
+| **Motor 4** | `M4` | GPIO6 (D4) | Bidirectional DShot |
+| **Servo 1** | `SS1_Pin1` | GPIO7 (D5) | PWM Output |
+| **Servo 2** | `SS1_Pin2` | GPIO2 (D8) | PWM Output (Shared SPI0 SCK) |
+| **Servo 3** | `SS1_Pin3` | GPIO4 (D9) | PWM Output (Shared SPI0 MISO) |
+| **Servo 4** | `SS1_Pin4` | GPIO3 (D10) | PWM Output (Shared SPI0 MOSI) |
+| **ELRS RX** | `ELRS1_RX` | GPIO0 (TX0) | UART0 interface (`Serial1`) |
+| **ELRS TX** | `ELRS1_TX` | GPIO1 (RX0) | UART0 interface (`Serial1`) |
+| **IMU CS** | `IMU_CS` | GPIO9 (D18) | SPI1 Chip Select |
+| **IMU SCK** | `IMU_SCK` | GPIO10 (D17) | SPI1 Bus Clock |
+| **IMU MOSI**| `IMU_MOSI`| GPIO11 (D15) | SPI1 Master-Out Slave-In |
+| **IMU MISO**| `IMU_MISO`| GPIO12 (D16) | SPI1 Master-In Slave-Out |
+| **Status LED**| `LED_diode`| GPIO17 (D13) | Active High Status indicator |
+
+---
+
+## 4. Parameter Management & CLI Commands
+
+Chesapeake includes an interactive Serial Command Line Interface (CLI) operating at 115200 baud. Parameters can be modified in RAM and committed to the RP2350 emulated EEPROM flash.
+
+The following commands are available:
+*   `help` - Show options.
+*   `dump` - Print all current RAM parameter settings and values.
+*   `get <param>` - Fetch the current value of a specific parameter.
+*   `set <param> = <value>` - Adjust a parameter value in RAM.
+*   `defaults` - Load default factory parameters into RAM.
+*   `save` - Commit RAM parameters to EEPROM and reboot the flight controller.
+*   `reboot` - Perform a system reboot (`rp2040.reboot()`).
+
+### Tunable Parameters include:
+*   `gnc_looprate_hz` - Autopilot core rate frequency (default: 500Hz).
+*   `angle_loop_hz` - Attitude loop cascade PID execution rate (default: 100Hz).
+*   `led_pin` - Blink indicator pin (default: 17).
+*   `blink_hz_disarmed` / `blink_hz_rate` / `blink_hz_angle` - LED blinking rates depending on VSM flight mode.
+*   `roll_rate_kp` / `roll_rate_ki` / `roll_rate_kd` - Roll Rate controller PID terms (same for `pitch` and `yaw`).
+*   `roll_ang_kp` - Roll Angle controller P gain (same for `pitch` and `yaw`).
+*   `mot_m1_pin` to `mot_m4_pin` - Individual motor hardware pin mappings.
+*   `servo_s1_pin` to `servo_s4_pin` - Individual servo hardware pin mappings.
+*   `servo_min_us` / `servo_max_us` - Pulse-width limits for servos.
+*   `bat_division_factor` - Calibration scaler for ADC battery readings.
+
+---
+
+## 5. Third-Party Libraries
+
+Chesapeake relies on the following standard open-source libraries:
+*   **[Eigen](https://libeigen.gitlab.io/)** (v3.4.99): High-performance matrix and vector math.
+*   **[UKF (Unscented Kalman Filter)](https://github.com/NovelMobileRobotsLab/UKF)**: Double-precision sensor fusion and attitude estimation.
+*   **[AlfredoCRSF](https://github.com/AlfredoSystems/AlfredoCRSF)** (v1.0.1): ELRS pilot control receiver mapping over CRSF protocol.
+*   **[LSM6DSV16X](https://github.com/stm32duino/LSM6DSV16X)** (v2.0.3): STMicroelectronics LSM6DSV16X 6-axis SPI IMU driver.
+*   **[pico-bidir-dshot](https://github.com/bastian2001/pico-bidir-dshot)** (v1.0.2): PIO-driven bidirectional DShot throttle signal and RPM telemetry return.
+*   **[Servo(rp2040)](https://github.com/earlephilhower/arduino-pico)** (v1.0.0): Hardware PWM servo command generation.
 
 ---
 Assisted by Gemini.
