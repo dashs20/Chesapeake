@@ -1,5 +1,7 @@
 # Chesapeake Flight Control System
 
+![Chesapeake Logo](configurator/chesapeake.png)
+
 Chesapeake is an embedded flight control firmware designed for the Seeed Studio Xiao RP2350 microcontroller. It uses PlatformIO with the Arduino framework, integrating the Eigen library for optimized matrix and vector mathematics.
 
 This document describes the structure and organization of the core source code directory (`src`).
