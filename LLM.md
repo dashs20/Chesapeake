@@ -1,109 +1,102 @@
-# Chesapeake Repository Context
+# Chesapeake Codebase Standards & Conventions
 
-This file serves as a comprehensive reference guide for LLM coding assistants to quickly bootstrap and understand the codebase layout, hardware architecture, APIs, data structures, and standard flows.
-
----
-
-## 📂 Repository Directory Layout & Key Entrypoints
-
-* **[platformio.ini](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/platformio.ini)**: Core build environment configuration.
-* **[README.md](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/README.md)**: High-level overview and setup documentation.
-* **[src/main.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/main.cpp)**: Primary flight setup and real-time execution loop.
-* **`src/gnc/`**: Guidance, Navigation, and Control modules.
-  * **[src/gnc/gnc.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/gnc.hpp)** / **[src/gnc/gnc.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/gnc.cpp)**: Central GNC API.
-  * **`src/gnc/allocation/`**: Swappable actuator mixers (VTVL and QuadX). Defined in **[src/gnc/allocation/alloc.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/allocation/alloc.hpp)**.
-  * **`src/gnc/controllers/`**: PID attitude controllers. Defined in **[src/gnc/controllers/pid.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/controllers/pid.hpp)**.
-  * **`src/gnc/filters/`**: Low-pass filter logic for sensors. Defined in **[src/gnc/filters/lowpass_filter.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/filters/lowpass_filter.hpp)**.
-  * **`src/gnc/gnc_util/`**: 3D coordinate transformations and vector math helper utilities. Defined in **[src/gnc/gnc_util/gnc_util.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc_util/gnc_util.hpp)**.
-* **`src/gnc_config/`**: GNC parameter registry mapping. Defined in **[src/gnc_config/gnc_config.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc_config/gnc_config.hpp)**.
-* **`src/pin_config/`**: Hardware pin maps. Defined in **[src/pin_config/pin_config.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/pin_config/pin_config.hpp)**.
-* **`src/hardware/`**: Execution rate timing utilities. Defined in **[src/hardware/hardware_util.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/hardware/hardware_util.hpp)**.
-* **[src/cli_handler.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/cli_handler.cpp)**: Serial terminal command interpreter.
-* **[src/config_manager.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/config_manager.cpp)**: EEPROM storage load/save controller.
-* **`src/tests/`**: Modular test entrypoints for IMU, Receiver, and DShot ESC hardware verification.
-* **`configurator/`**: Browser Configurator Web App codebase.
-  * **[configurator/index.html](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/configurator/index.html)**: Front-end layout.
-  * **[configurator/app.js](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/configurator/app.js)**: Serial API communication and Three.js visualizer.
+This document outlines the architectural patterns, directory structure, and coding standards for the Chesapeake PlatformIO project. Any LLM working on this codebase should adhere to these guidelines.
 
 ---
 
-## 🛠️ Hardware Stack & Pin Mappings
+## 1. Project Directory Structure
 
-Chesapeake targets the Seeed Studio Xiao RP2350 microcontroller.
+The project follows a modular structure where hardware abstraction, core algorithms, and state machines are cleanly separated.
 
-### Components
-* **IMU**: LSM6DSV16X 6-axis SPI accelerometer/gyroscope.
-* **Receiver**: ELRS Receiver running CRSF protocol over hardware Serial.
-* **Actuators**: DShot-compatible speed controllers (ESCs) and PWM servos.
-
-### Pin Definitions
-GPIO hardware pin mappings are tracked in:
-* Struct layout: **[src/pin_config/pin_config.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/pin_config/pin_config.hpp)**
-* Concrete pin assignments: **[src/pin_config/pin_config.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/pin_config/pin_config.cpp)**
-
----
-
-## ⚙️ Configurable Parameters System
-
-Parameters are persistent across reboots via the onboard EEPROM storage module.
-
-### GNC Configurations & Defaults
-GNC variables, attitude controller gains, lowpass filters, and actuator boundaries are registered in:
-* Configurations structure: **[src/gnc_config/gnc_config.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc_config/gnc_config.hpp)**
-* Default values & sync logic: **[src/gnc_config/gnc_config.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc_config/gnc_config.cpp)**
+*   **`src/`**: Main application source files.
+    *   **`HAL/`**: Hardware Abstraction Layer. Contains code interacting directly with sensors and peripherals (currently empty).
+    *   **`CONFIGURATOR/`**: Tooling and assets related to ground control / configurator (currently empty).
+    *   **`GNC/`**: Guidance, Navigation, and Control.
+        *   **`bus.hpp`**: Define central data structures (buses) passing information between modules.
+        *   **`NAV/`**: State estimation/navigation algorithms (e.g., UKF-based navigation).
+        *   **`CTL/`**: Flight control algorithms.
+            *   **`PID/`**: Contains the local PID controller class.
+*   **`lib/`**: External libraries and hardware drivers (e.g., `eigen-master`, `UKF-main`).
 
 ---
 
-## ⚡ Real-Time Flight Loop Architecture
+## 2. Bus Architecture (`bus.hpp`)
 
-The main execution flow runs as a regulated periodic loop.
-
-```mermaid
-graph TD
-    A[Start Loop: ping] --> B[Read LSM6DSV16X Gyro Raw Data]
-    B --> C[Read ELRS RC Controller Channels]
-    C --> D[Run GNC query]
-    D --> E[Rotate Gyro Data using Euler angles]
-    E --> F[Filter Gyro Data using Low-pass Filter]
-    F --> G[Run PID Attitude Rate Controllers]
-    G --> H[Allocate actuator mixing: VTVL vs QuadX]
-    H --> I[Apply Arming State Safety logic]
-    I --> J[Write commands to Escs & Servos]
-    J --> K[Update CLI Terminal]
-    K --> L[Regulate Loop: pong_and_wait]
-    L --> A
-```
-
-### Arming Safety States
-Safety states disable or enable subsets of actuators based on receiver signals:
-1. **Fully Disarmed**: Servos default to center, motor signals are zeroed.
-2. **Servos Only**: Gimbals respond to control loops, motors remain disarmed.
-3. **Fully Armed**: Gimbals and motors are fully active.
-
-The safety state check logic and receiver thresholds are managed in **[src/main.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/main.cpp)**.
+All communication between high-level blocks is handled via defined structures in [bus.hpp](file:///src/GNC/bus.hpp).
+*   **Master Bus (`GNCb`)**: Every primary GNC submodule (like `NAV` and `CTL`) shares the exact same method interface: they take in a `GNCb` master bus object, perform their respective computations, update their specific segment of the bus, and return the updated `GNCb` object.
+    ```cpp
+    GNCb update(GNCb gnc);
+    ```
+*   **Naming Convention**: Inter-module structs use a suffix `b` (e.g., `HALb` for HAL bus, `NAVb` for NAV bus, `CTLb` for Control bus).
+*   **Instance Naming Rule**: Instances of bus and configuration structs must have names that are identical to their type names, except for capitalization (e.g., `NAVb` type has instance name `navb`, `HALb` type has instance name `halb`), **UNLESS** there are multiple instances of the same type within a parent struct (e.g., `PIDc` having multiple instances like `rate` and `angle`).
+*   **No Redundant Class State**: Modules must **not** store redundant bus structures (like `NAVb` or `CTLb`) as class member variables. Since submodules receive the master bus `GNCb` as an input to their `update()` method and return the updated bus, storing duplicate copies of these bus structures within the class creates redundant state, memory overhead, and risk of desynchronization. Output values must be written directly to the input `GNCb` bus structure.
+*   **Enums**: Status and state enums are defined as scoped `enum class` to prevent name clashes (e.g., `enum class STATE` and `enum class CONTROL_MODE`).
+*   **Data Types**: Physical 3D vectors use `Eigen::Vector3f` and orientations use `Eigen::Quaternionf` to ensure compatibility with single-precision hardware FPUs.
+*   **Bus/Config Struct Naming**: All bus and configuration structure type names must be written in ALL CAPS except for the final suffix character `b` or `c` (e.g. `GNCb`, `NAVc`, `PID_SCALARc`).
+*   **No Redundant Suffixes in Buses**: Do not append suffixes like `_des`, `_cmd`, `_est`, or `_meas` to variables if their context is already clear from the bus they reside in. For example, in the Guidance bus `GUIb`, the desired attitude is simply `q_earth2body` and desired rates are `omega_body_radps` (not `q_earth2body_des` or `omega_des_radps`). Similarly, in the Navigation bus `NAVb`, they are `q_earth2body` and `omega_body_radps` (since `NAVb` inherently represents estimated states).
 
 ---
 
-## 💻 CLI Terminal Reference
+## 3. Configuration Conventions (`cfg.hpp`)
 
-A serial command interpreter allows you to query and adjust parameters at runtime:
-* Dynamic RAM updates, saving changes to EEPROM, and restoring defaults.
-
-Commands and parsers are coded in **[src/cli_handler.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/cli_handler.cpp)**.
+Configuration structures (typically suffixed with `c`, e.g., `NAVc`, `CTLc`, `PID_SCALARc`, `PID_3DOFc`, `GNCc`) specify constants like gains, time-steps, and initial states. They are organized as follows:
+*   **Master Config**: All configurations are consolidated into a single centralized configuration file [src/GNC/cfg.hpp](file:///src/GNC/cfg.hpp). This file contains the master configuration struct `GNCc`, which bundles `NAVc` (instance name `navc`), `CTLc` (instance name `ctlc`), and `PID_3DOFc` (consisting of three `PID_SCALARc` structures for roll, pitch, and yaw control, instantiated as `rate` and `angle` per the Instance Naming Rule exceptions).
 
 ---
 
-## 🔨 PlatformIO Build Environments
+## 4. Coding & Math Standards
 
-Build environments compile the codebase into executable targets (main software or standalone hardware test benches).
-Specific source filters, build flags, and board configurations are defined in **[platformio.ini](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/platformio.ini)**.
+*   **Precision**: Use single-precision floats (`float`, `Eigen::Vector3f`, `Eigen::Quaternionf`) for all physical control-loop quantities to maximize performance on microcontroller hardware. Cast double-precision library types (e.g., from UKF) explicitly using `.cast<float>()`.
+*   **Quaternion Naming Convention**: Quaternions must always be named using the explicit format `q_<FRAMEA>2<FRAMEB>` representing the rotation from Frame A to Frame B (e.g., `q_earth2body` for estimated attitude, `q_earth2body_des` for desired attitude, and `q_body2body_des` for the attitude error rotation).
+*   **Physical Units in Variable Names**: Every variable representing a physical quantity with units must explicitly append the unit as a suffix in lowercase (e.g. `_s` for seconds, `_radps` for radians per second, `_mps2` for meters per second squared, `_deg` for degrees, `_frac` for unitless fractions/ratios). No exceptions. For example, use `dt_s` instead of `dt`.
+*   **Headers**: Every header file must start with `#pragma once`.
+*   **Semicolons**: Struct definitions in C++ must end with a semicolon `;` (e.g., `struct IMU { ... };`).
+*   **Styling**: 
+    *   Avoid comments in core mathematical or algorithmic blocks; use clean vertical whitespace/line spacing to separate sections of logic instead.
+    *   Ensure proper use of namespaces or fully qualified paths (e.g., `Eigen::Vector3f` rather than pulling global namespaces).
 
 ---
 
-## 📏 Code Standards & Instructions
+## 5. LLM Correction & Self-Learning Policy
 
-- Do not populate readmes with vehicle configuration specific information; it should all be broad, and focus on the general structure/purpose/functionality of the repo.
-- Never, ever hardcode anything without explicit permission from the user.
-- If being asked to implement large changes and the branch is "master" ask the user first if they wish to spin off a branch for changes.
-- DO NOT CHANGE ANY MATH ALGORITHMS/GAINS IN THE CONFIGURATION unless explicitly asked to
-- In commit messages, state clearly what LLM you are, and what you assisted with in the commit.
+To ensure continuous improvement and prevent repeating mistakes, the following rule applies to all AI coding agents working on this codebase:
+*   **Error Reflection**: Any time the user corrects the agent on a design decision, C++ syntax, project convention, or variable naming, the agent **must** immediately update this [LLM.md](file:///LLM.md) file to document:
+    1. The mistake/issue that occurred.
+    2. The advised solution or standard.
+    3. Rules or constraints to prevent the same issue in the future.
+
+### Correction Log:
+*   **Correction #1 (2026-07-08)**: Redundant Bus Member Variables inside Submodule Classes.
+    *   *Mistake*: The agent kept a duplicate state variable `NAVb navb;` inside the `NAV` class.
+    *   *Advised Solution*: Do not store local copies of bus structs (e.g. `NAVb`, `CTLb`) as class members. All estimations and control efforts must be calculated and written directly onto the fields of the master `GNCb` bus passed to the submodule's `update()` function.
+    *   *Action*: Remove any such bus member variables from submodule classes.
+
+*   **Correction #2 (2026-07-08)**: Generalized PID Class and Struct Naming.
+    *   *Mistake*: The agent used axis-specific naming (`AXIS_PIDc` / `PID` with `roll`/`pitch`/`yaw` axis classes) which was too restrictive for a generic controller library.
+    *   *Advised Solution*: Rename single-dimension PID components to a scalar naming scheme (`PID_scalarc` config struct, `PID_scalar` class). Group 3D/3-axis vector PID controllers under a 3-DOF naming scheme (`PID_3DOFc` config struct, `PID_3DOF` class). Ensure all config and bus instances are consistent with these naming schemes.
+    *   *Action*: Replaced `AXIS_PIDc` and `PIDc` with `PID_scalarc` and `PID_3DOFc`, and renamed the `PID` class containing three sub-controllers to `PID_3DOF` comprising three `PID_scalar` sub-instances.
+
+*   **Correction #3 (2026-07-08)**: Casing rules for bus and configuration structure names.
+    *   *Mistake*: The agent used lowercase letters in a config struct name (`PID_scalarc`).
+    *   *Advised Solution*: All bus and configuration structures must be named in ALL CAPS except for the final `b` or `c` suffix (e.g. `PID_SCALARc` instead of `PID_scalarc`).
+    *   *Action*: Renamed `PID_scalarc` to `PID_SCALARc` in `cfg.hpp` and updated all file references.
+
+*   **Correction #4 (2026-07-08)**: Quaternion Naming Conventions.
+    *   *Mistake*: The agent used ambiguous naming (e.g., `q_des`, `q_err`) for orientation quaternions.
+    *   *Advised Solution*: Always use the naming format `q_<FRAMEA>2<FRAMEB>` to describe the rotation direction clearly (e.g., `q_earth2body_des`, `q_body2body_des`).
+    *   *Action*: Documented this naming standard and updated the planning files.
+
+*   **Correction #5 (2026-07-08)**: Redundant Suffixes inside Bus Variables.
+    *   *Mistake*: The agent used redundant suffixes like `_des` (e.g. `q_earth2body_des`, `omega_des_radps`) inside the `GUIb` bus.
+    *   *Advised Solution*: Never append suffixes like `_des`, `_cmd`, `_est`, or `_meas` to variables in bus structs. The context is already defined by the bus itself (e.g. `GUIb` represents target guidance commands, `NAVb` represents estimated navigation states, `HALb` represents hardware/sensor values).
+    *   *Action*: Documented the rule in LLM.md and updated the plan to use `q_earth2body` and `omega_body_radps` inside `GUIb`.
+
+*   **Correction #6 (2026-07-08)**: Missing Units in Variable Names.
+    *   *Mistake*: The agent used variable name `dt` instead of `dt_s` for sample time in seconds.
+    *   *Advised Solution*: Always append physical unit suffixes to variable names representing physical quantities (e.g., `_s` for seconds).
+    *   *Action*: Documented the unit naming convention in LLM.md and updated the plan to use `dt_s` and `time_accumulator_s`.
+
+*   **Correction #7 (2026-07-08)**: Explicit Module-Level Loop Rate Configuration.
+    *   *Mistake*: The agent used `cfg_data.angle.pitch.dt_s` (a sub-component PID configuration parameter) to determine the loop rate downsampling condition for the outer attitude loop inside `CTL::update`.
+    *   *Advised Solution*: Always define loop rate configurations in a dedicated configuration struct for the parent module (e.g., `CTLc` configuration struct containing `angle_loop_dt_s` for the `CTL` class), rather than borrowing or extracting them from sub-component configurations (like `PID_SCALARc` values).
+    *   *Action*: Created `CTLc` configuration struct containing `angle_loop_dt_s`, integrated it into `GNCc`, and updated `CTL.cpp` and `LLM.md`.

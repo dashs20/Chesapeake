@@ -1,58 +1,60 @@
-# Chesapeake
+# Chesapeake Flight Control System
 
-<p align="center">
-  <img src="configurator/chesapeake.png" alt="Chesapeake Logo" width="320" />
-</p>
+Chesapeake is an embedded flight control firmware designed for the Seeed Studio Xiao RP2350 microcontroller. It uses PlatformIO with the Arduino framework, integrating the Eigen library for optimized matrix and vector mathematics.
 
-Chesapeake is a flight control software designed for advanced vertical takeoff and vertical landing (VTVL) vehicles and quadcopters. Built on the Seeed Studio Xiao RP2350 platform, it provides real-time guidance, navigation, and control (GNC) capabilities using modular components and a high-rate control loop.
-
-For repository-wide context and developer guidelines, see **[LLM.md](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/LLM.md)**.
+This document describes the structure and organization of the core source code directory (`src`).
 
 ---
 
-## Key Features
+## Source Directory Structure (`src/`)
 
-* **Quadcopter Control Allocation**: Dedicated Quadcopter (QuadX) motor mixing with configurable minimum throttle settings.
-* **PID Attitude Rate Controllers**: Fully adjustable PID controllers for Roll, Pitch, and Yaw attitude rate control loops with integrated anti-windup clamping.
-* **First-Order Lowpass Filters**: Low-latency signal filtering on IMU gyro readings to reduce vibration and sensor noise.
-* **Dynamic Mounting Orientation**: Computes full 3D Euler coordinate rotations for the IMU to handle physical mounting offsets on the vehicle.
-* **EEPROM State Persistence**: Integrates a custom configuration manager that loads and saves calibration and control parameters across reboots.
-* **Interactive Web Configurator**: A Maryland Calvert/Crossland flag-themed web interface built with the Web Serial API and Three.js 3D visualizer for live tuning and attitude monitoring. Supports robust automatic reconnection and state recovery when the flight board reboots or commits settings.
-* **Built-in CLI Terminal**: Command-line interface accessible via standard Serial to query, set, or default GNC parameters on-the-fly.
+The `src/` folder is divided into three primary directories:
+1. **`CONFIGURATOR/`**: Tooling and assets related to ground control / configuration (currently empty).
+2. **`HAL/`**: Hardware Abstraction Layer for device-specific sensor and peripheral drivers (currently empty).
+3. **`GNC/`**: Guidance, Navigation, and Control (core flight software logic).
 
----
-
-## Project Structure
-
-* **`src/`**: Core flight software source code
-  * **`gnc/`**: Guidance, Navigation, and Control algorithms
-    * **`controllers/`**: Attitude PID controller modules ([src/gnc/controllers/pid.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/controllers/pid.hpp))
-    * **`allocation/`**: Actuator mixers ([src/gnc/allocation/alloc.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/allocation/alloc.hpp))
-    * **`filters/`**: Raw sensor low-pass filtering ([src/gnc/filters/lowpass_filter.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/filters/lowpass_filter.hpp))
-    * **`gnc_util/`**: Math utilities and 3D coordinate transformations ([src/gnc/gnc_util/gnc_util.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc/gnc_util/gnc_util.hpp))
-  * **`gnc_config/`**: Config structures mapping CLI commands to memory variables ([src/gnc_config/gnc_config.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/gnc_config/gnc_config.hpp))
-  * **`pin_config/`**: Hardware pin assignments ([src/pin_config/pin_config.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/pin_config/pin_config.hpp))
-  * **`hardware/`**: Real-time loop rate regulator and RC conversion functions ([src/hardware/hardware_util.hpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/hardware/hardware_util.hpp))
-  * **`tests/`**: Test suites for DShot ESCs, LSM6DSV16X IMU, and ELRS receivers
-  * **[src/main.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/main.cpp)**: Main setup and real-time control loop
-* **`configurator/`**: Web Serial UI
-  * **[configurator/index.html](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/configurator/index.html)**: Dashboard structure
-  * **[configurator/app.js](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/configurator/app.js)**: Web serial protocol, input syncing, and Three.js IMU rendering
-  * **[configurator/styles.css](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/configurator/styles.css)**: Layout styling
+```
+src/
+├── CONFIGURATOR/          # Configurator assets (currently empty)
+├── HAL/                   # Hardware Abstraction Layer (currently empty)
+└── GNC/                   # Guidance, Navigation, and Control
+    ├── bus.hpp            # Central definition of state and communication buses
+    ├── cfg.hpp            # Central configuration file (GNCc config master)
+    ├── NAV/               # Navigation (State Estimation)
+    │   ├── NAV.hpp        # NAV class declaration (uses UKF and GNCb interface)
+    │   └── NAV.cpp        # NAV class implementation
+    ├── CTL/               # Control Algorithms
+    │   ├── CTL.hpp        # CTL class declaration (conforms to GNCb interface)
+    │   ├── CTL.cpp        # CTL class implementation
+    │   └── PID/           # PID Controller Sub-module
+    │       ├── PID_3DOF.hpp # PID_3DOF & PID_scalar class declarations
+    │       └── PID_3DOF.cpp # PID_3DOF & PID_scalar class implementations
+    └── UTIL/              # Math Utilities
+        ├── quat_util.hpp  # Quaternion math utility declarations
+        └── quat_util.cpp  # Quaternion math utility implementations
+```
 
 ---
 
-## Hardware & Libraries
+## Core Components Description
 
-* **Microcontroller**: Seeed Studio Xiao RP2350 (RP2040 core framework)
-* **Sensor**: ST LSM6DSV16X 6-axis IMU (SPI interface)
-* **Receiver**: ELRS Receiver (`AlfredoCRSF` library over hardware serial defined in [src/pin_config/pin_config.cpp](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/src/pin_config/pin_config.cpp))
-* **Actuators**: Servos (`Servo` library) and DShot-compatible ESCs (`PIO_DShot` library)
+### 1. Data Buses & Configurations (`src/GNC/`)
+*   **[bus.hpp](file:///src/GNC/bus.hpp)**: Defines the standard communication interfaces (buses) passing data between blocks (`HALb`, `NAVb`, `CTLb`, and the master `GNCb` struct).
+*   **[cfg.hpp](file:///src/GNC/cfg.hpp)**: Defines the master configuration structure `GNCc` which bundles `NAVc` (navigation constants), `CTLc` (control loop constants), and `PID_3DOFc` (consisting of three `PID_SCALARc` structures for roll, pitch, and yaw control, configured for rate and angle control loops).
 
----
+### 2. State Estimation (`src/GNC/NAV/`)
+The Navigation module handles attitude and state estimation:
+*   **[NAV.hpp](file:///src/GNC/NAV/NAV.hpp)** & **[NAV.cpp](file:///src/GNC/NAV/NAV.cpp)**: Declares and implements the `NAV` class, which uses an Unscented Kalman Filter (`UKF` library) to estimate the vehicle's orientation and body rates. It implements the standard interface:
+    ```cpp
+    GNCb update(GNCb gnc);
+    ```
 
-## Getting Started
+### 3. Flight Control (`src/GNC/CTL/`)
+The Control module processes state estimations and pilot inputs to calculate motor and servo command signals:
+*   **[CTL.hpp](file:///src/GNC/CTL/CTL.hpp)** & **[CTL.cpp](file:///src/GNC/CTL/CTL.cpp)**: Declares and implements the control loop coordinator. It handles both standard Rate Control and multi-rate cascaded Attitude Control (Angle Loop -> Rate Loop).
+*   **PID Sub-module (`src/GNC/CTL/PID/`)**:
+    *   **[PID_3DOF.hpp](file:///src/GNC/CTL/PID/PID_3DOF.hpp)** & **[PID_3DOF.cpp](file:///src/GNC/CTL/PID/PID_3DOF.cpp)**: Implements the single-axis scalar controller `PID_scalar` and the 3-axis vector controller `PID_3DOF` (using three `PID_scalar` instances for roll, pitch, and yaw) with integral anti-windup and output constraint limiting, configured using `PID_3DOFc` and `PID_SCALARc` structs.
 
-1. Open this repository in PlatformIO.
-2. Select your target environment defined in **[platformio.ini](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/platformio.ini)** and compile/upload the code to the board.
-3. Open the **[configurator/index.html](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/configurator/index.html)** tool in a Web Serial-supported browser (Chrome/Edge), connect your device, and start tuning!
+### 4. Utilities (`src/GNC/UTIL/`)
+Shared mathematical operations used across multiple modules:
+*   **[quat_util.hpp](file:///src/GNC/UTIL/quat_util.hpp)** & **[quat_util.cpp](file:///src/GNC/UTIL/quat_util.cpp)**: Custom quaternion-to-Euler conversion function (`quat_to_euler`) that handles singularities and outputs angles in the full $[-\pi, \pi]$ range.
