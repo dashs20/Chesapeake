@@ -65,9 +65,19 @@ struct IMUc {
     LSM6DSV16X_ODR gyro_odr;
 };
 
+struct SERVOc {
+    uint8_t s1_pin;
+    uint8_t s2_pin;
+    uint8_t s3_pin;
+    uint8_t s4_pin;
+    uint16_t min_us;
+    uint16_t max_us;
+};
+
 struct HALc {
     MOTc motc;
     RCRXc rcrxc;
     BATc batc;
     IMUc imuc;
+    SERVOc servoc;
 };
