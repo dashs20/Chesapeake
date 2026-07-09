@@ -93,7 +93,8 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("servo_min_us = "); Serial.println(config.halc.servoc.min_us);
     Serial.print("servo_max_us = "); Serial.println(config.halc.servoc.max_us);
 
-    Serial.print("gnc_dt_s = "); Serial.println(config.gncc.dt_s);
+    Serial.print("gnc_looprate_hz = "); Serial.println(config.gncc.looprate_hz);
+    Serial.print("angle_loop_hz = "); Serial.println(config.gncc.ctlc.angle_loop_hz);
     Serial.print("roll_rate_kp = "); Serial.println(config.gncc.ctlc.rate.roll.kp);
     Serial.print("roll_rate_ki = "); Serial.println(config.gncc.ctlc.rate.roll.ki);
     Serial.print("roll_rate_kd = "); Serial.println(config.gncc.ctlc.rate.roll.kd);
@@ -153,8 +154,10 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.halc.servoc.min_us);
     } else if (std::strcmp(name, "servo_max_us") == 0) {
         Serial.println(config.halc.servoc.max_us);
-    } else if (std::strcmp(name, "gnc_dt_s") == 0) {
-        Serial.println(config.gncc.dt_s);
+    } else if (std::strcmp(name, "gnc_looprate_hz") == 0) {
+        Serial.println(config.gncc.looprate_hz);
+    } else if (std::strcmp(name, "angle_loop_hz") == 0) {
+        Serial.println(config.gncc.ctlc.angle_loop_hz);
     } else if (std::strcmp(name, "roll_rate_kp") == 0) {
         Serial.println(config.gncc.ctlc.rate.roll.kp);
     } else if (std::strcmp(name, "roll_rate_ki") == 0) {
@@ -261,8 +264,10 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.halc.servoc.min_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "servo_max_us") == 0) {
         config.halc.servoc.max_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "gnc_dt_s") == 0) {
-        config.gncc.dt_s = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_looprate_hz") == 0) {
+        config.gncc.looprate_hz = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "angle_loop_hz") == 0) {
+        config.gncc.ctlc.angle_loop_hz = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "roll_rate_kp") == 0) {
         config.gncc.ctlc.rate.roll.kp = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "roll_rate_ki") == 0) {

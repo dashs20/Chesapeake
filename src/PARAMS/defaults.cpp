@@ -33,10 +33,9 @@ void load_default_config(MASTERc& config) {
     config.halc.servoc.min_us = 1000;
     config.halc.servoc.max_us = 2000;
 
-    config.gncc.dt_s = 0.002f;
+    config.gncc.looprate_hz = 500;
     config.gncc.allocator = ALLOCATOR::QUAD;
 
-    config.gncc.navc.dt_s = 0.002;
     Eigen::VectorXd state_x0(7);
     state_x0 << 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
     config.gncc.navc.x0 = state_x0;
@@ -50,7 +49,7 @@ void load_default_config(MASTERc& config) {
     rate_pid.i_max = 0.5f;
     rate_pid.out_min = -1.0f;
     rate_pid.out_max = 1.0f;
-    rate_pid.dt_s = 0.002f;
+    rate_pid.dt_s = 0.0f;
 
     PID_SCALARc angle_pid;
     angle_pid.kp = 2.0f;
@@ -59,9 +58,9 @@ void load_default_config(MASTERc& config) {
     angle_pid.i_max = 0.0f;
     angle_pid.out_min = -5.0f;
     angle_pid.out_max = 5.0f;
-    angle_pid.dt_s = 0.01f;
+    angle_pid.dt_s = 0.0f;
 
-    config.gncc.ctlc.angle_loop_dt_s = 0.01f;
+    config.gncc.ctlc.angle_loop_hz = 100;
     config.gncc.ctlc.rate.roll = rate_pid;
     config.gncc.ctlc.rate.pitch = rate_pid;
     config.gncc.ctlc.rate.yaw = rate_pid;

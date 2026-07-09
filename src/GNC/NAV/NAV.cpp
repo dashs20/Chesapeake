@@ -1,7 +1,7 @@
 #include "NAV.hpp"
 
 NAV::NAV(GNCc cfg) : cfg_data(cfg) {
-    dt_s = cfg.navc.dt_s;
+    dt_s = 1.0 / static_cast<double>(cfg.looprate_hz);
     x = cfg.navc.x0;
     ukf.initialize(x);
     prev_omega_body_radps = Eigen::Vector3f::Zero();
