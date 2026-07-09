@@ -14,6 +14,11 @@ GNCb NAV::update(GNCb gnc) {
 
     gnc.navb.omega_body_radps = x.tail<3>().cast<float>();
     gnc.navb.q_earth2body = ukf.getOrientation().cast<float>();
+    
+    gnc.navb.up_body_hat = (gnc.navb.q_earth2body * Eigen::Vector3f::UnitZ()).normalized();
+    float pitch_rad = std::asin(-gnc.navb.up_body_hat.x());
+    float roll_rad = std::atan2(gnc.navb.up_body_hat.y(), gnc.navb.up_body_hat.z());
+    gnc.navb.euler_bodyz2up_rad = Eigen::Vector2f(roll_rad, pitch_rad);
 
     return gnc;
 }

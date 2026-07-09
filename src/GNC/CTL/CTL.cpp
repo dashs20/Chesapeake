@@ -1,5 +1,4 @@
 #include "CTL.hpp"
-#include "../UTIL/quat_util.hpp"
 
 CTL::CTL(GNCc cfg) 
     : rate_controller(cfg.rate), 
@@ -21,11 +20,15 @@ GNCb CTL::update(GNCb gnc) {
         if (time_accumulator_s >= cfg_data.ctlc.angle_loop_dt_s) {
             time_accumulator_s = 0.0f;
 
-            Eigen::Quaternionf q_body2body_des = gnc.navb.q_earth2body.inverse() * gnc.guib.q_earth2body;
+            float roll_error = gnc.guib.euler_bodyz2up_rad.x() - gnc.navb.euler_bodyz2up_rad.x();
+            float pitch_error = gnc.guib.euler_bodyz2up_rad.y() - gnc.navb.euler_bodyz2up_rad.y();
 
-            Eigen::Vector3f euler_error = quat_to_euler(q_body2body_des);
+            Eigen::Vector3f euler_error(roll_error, pitch_error, 0.0f);
+            Eigen::Vector3f target_rates_xy = angle_controller.update(euler_error, Eigen::Vector3f::Zero());
 
-            target_rates = angle_controller.update(euler_error, Eigen::Vector3f::Zero());
+            target_rates.x() = target_rates_xy.x();
+            target_rates.y() = target_rates_xy.y();
+            target_rates.z() = gnc.guib.omega_body_radps.z();
         }
 
         Eigen::Vector3f measurement = gnc.navb.omega_body_radps;

@@ -49,6 +49,8 @@ struct ACTb{
 struct NAVb{ // NAV bus
     Eigen::Vector3f omega_body_radps;
     Eigen::Quaternionf q_earth2body; // estimated orientation with respect to "earth" frame; we don't have a compass, so we don't know where north is.
+    Eigen::Vector3f up_body_hat;      // Estimated unit up-vector in the body frame
+    Eigen::Vector2f euler_bodyz2up_rad; // Estimated Euler angles [roll, pitch] in radians
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -60,8 +62,8 @@ struct CTLb{ // CTL bus
 
 // GUI BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 struct GUIb {
-    Eigen::Quaternionf q_earth2body;     // Desired orientation (rotation from earth to desired body frame)
-    Eigen::Vector3f omega_body_radps;    // Commanded body rates for rate mode
+    Eigen::Vector2f euler_bodyz2up_rad; // Commanded Euler angles [roll, pitch] in radians
+    Eigen::Vector3f omega_body_radps;    // Commanded body rates in radians per second
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

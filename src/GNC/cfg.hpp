@@ -10,6 +10,18 @@ struct CTLc {
     float angle_loop_dt_s;
 };
 
+struct EXPOc {
+    float roll;
+    float pitch;
+    float yaw;
+};
+
+struct GUIc {
+    float max_rate_radps;
+    float max_angle_rad;
+    EXPOc expoc;
+};
+
 struct PID_SCALARc {
     float kp;
     float ki;
@@ -31,5 +43,6 @@ struct GNCc {
     CTLc ctlc;
     PID_3DOFc rate;
     PID_3DOFc angle;
+    GUIc guic;
     float dt_s;
 };
