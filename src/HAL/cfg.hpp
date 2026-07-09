@@ -35,8 +35,10 @@ enum class LSM6DSV16X_GYRO_FS {
 };
 
 struct MOTc {
-    uint8_t start_pin;
-    uint8_t num_pins;
+    uint8_t m1_pin;
+    uint8_t m2_pin;
+    uint8_t m3_pin;
+    uint8_t m4_pin;
     uint32_t speed_kbd;
     uint8_t pole_pairs;
 };
@@ -65,9 +67,24 @@ struct IMUc {
     LSM6DSV16X_ODR gyro_odr;
 };
 
+struct SERVOc {
+    uint8_t s1_pin;
+    uint8_t s2_pin;
+    uint8_t s3_pin;
+    uint8_t s4_pin;
+    uint16_t min_us;
+    uint16_t max_us;
+};
+
+struct LEDc {
+    uint8_t pin;
+};
+
 struct HALc {
     MOTc motc;
     RCRXc rcrxc;
     BATc batc;
     IMUc imuc;
+    SERVOc servoc;
+    LEDc ledc;
 };

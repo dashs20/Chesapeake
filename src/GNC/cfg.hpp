@@ -1,8 +1,8 @@
 #pragma once
 #include <Eigen/Dense>
+#include <cstdint>
 
 struct NAVc {
-    double dt_s;
     Eigen::VectorXd x0;
     Eigen::Vector3f r_IMU2CG_mm;       // IMU position relative to CG in millimeters
     Eigen::Quaternionf q_IMU2body;      // Rotation from IMU sensor frame to vehicle body frame
@@ -25,7 +25,7 @@ struct PID_3DOFc {
 };
 
 struct CTLc {
-    float angle_loop_dt_s;
+    uint32_t angle_loop_hz;
     PID_3DOFc rate;
     PID_3DOFc angle;
 };
@@ -39,6 +39,9 @@ struct ALLOCc {
     float servo_min_ang_deg;
     float servo_max_ang_deg;
     float servo_default_ang_deg;
+    float blink_hz_disarmed;
+    float blink_hz_rate;
+    float blink_hz_angle;
 };
 
 struct EXPOc {
@@ -66,5 +69,5 @@ struct GNCc {
     ALLOCc allocc;
     VSMc vsmc;
     ALLOCATOR allocator;
-    float dt_s;
+    uint32_t looprate_hz;
 };

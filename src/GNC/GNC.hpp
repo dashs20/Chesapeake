@@ -14,6 +14,7 @@ public:
 
 private:
     GNCc cfg_data;
+    float dt_s;
     GNCb gnc_bus;
     NAV nav;
     VSM vsm;

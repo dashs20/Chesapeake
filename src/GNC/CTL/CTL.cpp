@@ -1,11 +1,30 @@
 #include "CTL.hpp"
+#include <cassert>
 
 CTL::CTL(GNCc cfg) 
-    : rate_controller(cfg.ctlc.rate), 
-      angle_controller(cfg.ctlc.angle), 
+    : rate_controller([&]() {
+          PID_3DOFc rate_cfg = cfg.ctlc.rate;
+          float dt = 1.0f / static_cast<float>(cfg.looprate_hz);
+          rate_cfg.roll.dt_s = dt;
+          rate_cfg.pitch.dt_s = dt;
+          rate_cfg.yaw.dt_s = dt;
+          return rate_cfg;
+      }()), 
+      angle_controller([&]() {
+          PID_3DOFc angle_cfg = cfg.ctlc.angle;
+          float dt = 1.0f / static_cast<float>(cfg.ctlc.angle_loop_hz);
+          angle_cfg.roll.dt_s = dt;
+          angle_cfg.pitch.dt_s = dt;
+          angle_cfg.yaw.dt_s = dt;
+          return angle_cfg;
+      }()), 
       cfg_data(cfg), 
+      dt_s(1.0f / static_cast<float>(cfg.looprate_hz)),
+      angle_loop_dt_s(1.0f / static_cast<float>(cfg.ctlc.angle_loop_hz)),
       time_accumulator_s(0.0f), 
-      target_rates_radps(Eigen::Vector3f::Zero()) {}
+      target_rates_radps(Eigen::Vector3f::Zero()) {
+    assert(cfg.ctlc.angle_loop_hz < cfg.looprate_hz);
+}
 
 CTLb CTL::update(const GNCb& gnc) {
     if (gnc.vsmb.state == STATE::DISARMED) {
@@ -13,7 +32,7 @@ CTLb CTL::update(const GNCb& gnc) {
         angle_controller.reset();
     }
 
-    time_accumulator_s += cfg_data.dt_s;
+    time_accumulator_s += dt_s;
 
     CTLb ctlb;
 
@@ -23,7 +42,7 @@ CTLb CTL::update(const GNCb& gnc) {
 
         ctlb.axes_effort_frac = rate_controller.update(omega_body_setpoint_radps, omega_body_measurement_radps);
     } else if (gnc.vsmb.att_mode == ATT_MODE::ANGLE) {
-        if (time_accumulator_s >= cfg_data.ctlc.angle_loop_dt_s) {
+        if (time_accumulator_s >= angle_loop_dt_s) {
             time_accumulator_s = 0.0f;
 
             float roll_error_rad = gnc.guib.euler_bodyz2up_rad.x() - gnc.navb.euler_bodyz2up_rad.x();

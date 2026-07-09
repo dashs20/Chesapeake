@@ -2,6 +2,7 @@
 
 GNC::GNC(GNCc cfg) 
     : cfg_data(cfg),
+      dt_s(1.0f / static_cast<float>(cfg.looprate_hz)),
       gnc_bus{},
       nav(cfg),
       vsm(cfg),

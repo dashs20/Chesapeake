@@ -11,6 +11,8 @@ Centralize Configurations: Consolidate all configs into src/GNC/cfg.hpp under th
 
 Nest Configurations: Nest component configs within their parent module configs (e.g., nest PID_3DOFc inside CTLc, not globally).
 
+Servo Mapping: GNC commands servo angles directly. They map 1:1 to what the HAL module writes. Never apply offsets (like adding 90 degrees) to servo commands in the HAL layer.
+
 Naming Conventions
 Bus Structs: ALL CAPS + b suffix (e.g., GNCb, IMUb, RCRXb).
 
@@ -50,3 +52,9 @@ Compilation: Never invoke pio run unless explicitly requested or a valid main.cp
 Attribution: Include "Assisted by Gemini" in all relevant commit bodies.
 
 Self-Correction: Immediately document any user correction in LLM.md following the established format.
+
+Correction Log:
+*   **Correction #1 (2026-07-08)**: Offset Scaling on Servo Commands.
+    *   *Mistake*: Assumed GNC servo commands were relative to center and added a 90-degree offset in the HAL layer.
+    *   *Advised Solution*: GNC commands servo angles directly, mapping 1:1 to the values written by the HAL module. Never apply offsets to servo commands in the HAL layer.
+    *   *Action*: Added a rule preventing offsets in the HAL layer for servo commands, and updated the servo module plan.

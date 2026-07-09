@@ -4,8 +4,8 @@
 ALLOC::ALLOC(GNCc cfg) : cfg_data(cfg) {}
 
 ACTb ALLOC::update(const GNCb& gnc) {
+    ACTb actb;
     if (gnc.vsmb.state == STATE::DISARMED) {
-        ACTb actb;
         actb.m1_frac = 0.0f;
         actb.m2_frac = 0.0f;
         actb.m3_frac = 0.0f;
@@ -16,11 +16,13 @@ ACTb ALLOC::update(const GNCb& gnc) {
         actb.s3_deg = cfg_data.allocc.servo_default_ang_deg;
         actb.s4_deg = cfg_data.allocc.servo_default_ang_deg;
 
-        return clamp_actuators(gnc, actb);
+        actb = clamp_actuators(gnc, actb);
     } else {
-        ACTb actb = run_allocator(gnc);
-        return clamp_actuators(gnc, actb);
+        actb = run_allocator(gnc);
+        actb = clamp_actuators(gnc, actb);
     }
+    actb.LED_blink_Hz = determine_blink_hz(gnc.vsmb.state);
+    return actb;
 }
 
 ACTb ALLOC::run_allocator(const GNCb& gnc) {
@@ -75,4 +77,17 @@ ACTb ALLOC::clamp_actuators(const GNCb& gnc, ACTb actb) {
     actb.s4_deg = std::max(cfg_data.allocc.servo_min_ang_deg, std::min(cfg_data.allocc.servo_max_ang_deg, actb.s4_deg));
 
     return actb;
+}
+
+float ALLOC::determine_blink_hz(STATE state) {
+    switch (state) {
+        case STATE::DISARMED:
+            return cfg_data.allocc.blink_hz_disarmed;
+        case STATE::RATE:
+            return cfg_data.allocc.blink_hz_rate;
+        case STATE::ANGLE:
+            return cfg_data.allocc.blink_hz_angle;
+        default:
+            return 0.0f;
+    }
 }
