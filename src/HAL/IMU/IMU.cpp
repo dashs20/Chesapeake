@@ -75,9 +75,13 @@ IMUb IMU::update(const HALb& halb) {
         int32_t gyro_mdps[3] = {0, 0, 0};
 
         if (sensor->Get_X_Axes(acc_mg) == LSM6DSV16X_OK) {
-            imub.accel_body_mps2.x() = (static_cast<float>(acc_mg[0]) * 0.001f * 9.80665f) - imuc.accel_bias_x_mps2;
-            imub.accel_body_mps2.y() = (static_cast<float>(acc_mg[1]) * 0.001f * 9.80665f) - imuc.accel_bias_y_mps2;
-            imub.accel_body_mps2.z() = (static_cast<float>(acc_mg[2]) * 0.001f * 9.80665f) - imuc.accel_bias_z_mps2;
+            float raw_x = static_cast<float>(acc_mg[0]) * 0.001f * 9.80665f;
+            float raw_y = static_cast<float>(acc_mg[1]) * 0.001f * 9.80665f;
+            float raw_z = static_cast<float>(acc_mg[2]) * 0.001f * 9.80665f;
+
+            imub.accel_body_mps2.x() = raw_z - imuc.accel_bias_x_mps2;
+            imub.accel_body_mps2.y() = raw_y - imuc.accel_bias_y_mps2;
+            imub.accel_body_mps2.z() = raw_x - imuc.accel_bias_z_mps2;
         }
 
         if (sensor->Get_G_Axes(gyro_mdps) == LSM6DSV16X_OK) {
