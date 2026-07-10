@@ -9,8 +9,6 @@ let paramsCache = {};
 let modifiedParams = {};
 let serialBuffer = "";
 let pendingCommandType = null;
-let isCollectingCalibration = false;
-let collectedSamples = [];
 
 const dropdownOptions = {
     "imu_accel_fs": ["2G", "4G", "8G", "16G"],
@@ -132,6 +130,11 @@ function clearBoardUI() {
     if (monitor) monitor.textContent = "";
     const output = document.getElementById("cli-output");
     if (output) output.textContent = "";
+    const btnCalibrate = document.getElementById("btn-calibrate");
+    if (btnCalibrate) {
+        btnCalibrate.textContent = "Calibrate";
+        btnCalibrate.disabled = false;
+    }
 }
 
 async function writeRaw(text) {
@@ -167,24 +170,6 @@ function handleIncomingChunk(chunk) {
         const trimmed = line.trim();
         if (trimmed.startsWith("$DBG,")) {
             rawOutput += line + "\n";
-            if (isCollectingCalibration) {
-                const parts = trimmed.split(",");
-                if (parts.length >= 9) {
-                    collectedSamples.push({
-                        ax: parseFloat(parts[1]),
-                        ay: parseFloat(parts[2]),
-                        az: parseFloat(parts[3]),
-                        gx: parseFloat(parts[4]),
-                        gy: parseFloat(parts[5]),
-                        gz: parseFloat(parts[6])
-                    });
-                    const progress = Math.round((collectedSamples.length / 20) * 100);
-                    document.getElementById("btn-calibrate").textContent = `Calibrating (${progress}%)...`;
-                    if (collectedSamples.length >= 20) {
-                        processCalibration();
-                    }
-                }
-            }
             continue;
         }
         if (trimmed.startsWith("$")) {
@@ -347,95 +332,15 @@ async function sendCliCommand() {
     input.value = "";
 }
 
-function startCalibration() {
+async function startCalibration() {
     if (!isConnected) return;
     document.getElementById("btn-calibrate").disabled = true;
-    document.getElementById("btn-calibrate").textContent = "Calibrating (0%)...";
-    collectedSamples = [];
-    isCollectingCalibration = true;
-}
-
-async function processCalibration() {
-    isCollectingCalibration = false;
-    document.getElementById("btn-calibrate").textContent = "Processing...";
-    
-    let sum_ax = 0, sum_ay = 0, sum_az = 0;
-    let sum_gx = 0, sum_gy = 0, sum_gz = 0;
-    
-    collectedSamples.forEach(s => {
-        sum_ax += s.ax;
-        sum_ay += s.ay;
-        sum_az += s.az;
-        sum_gx += s.gx;
-        sum_gy += s.gy;
-        sum_gz += s.gz;
-    });
-    
-    const count = collectedSamples.length;
-    const avg_ax = sum_ax / count;
-    const avg_ay = sum_ay / count;
-    const avg_az = sum_az / count;
-    const avg_gx = sum_gx / count;
-    const avg_gy = sum_gy / count;
-    const avg_gz = sum_gz / count;
-    
-    const bias_ax_curr = parseFloat(paramsCache["imu_accel_bias_x_mps2"]) || 0;
-    const bias_ay_curr = parseFloat(paramsCache["imu_accel_bias_y_mps2"]) || 0;
-    const bias_az_curr = parseFloat(paramsCache["imu_accel_bias_z_mps2"]) || 0;
-    const bias_gx_curr = parseFloat(paramsCache["imu_gyro_bias_x_radps"]) || 0;
-    const bias_gy_curr = parseFloat(paramsCache["imu_gyro_bias_y_radps"]) || 0;
-    const bias_gz_curr = parseFloat(paramsCache["imu_gyro_bias_z_radps"]) || 0;
-    
-    const raw_ax = avg_ax + bias_ax_curr;
-    const raw_ay = avg_ay + bias_ay_curr;
-    const raw_az = avg_az + bias_az_curr;
-    const raw_gx = avg_gx + bias_gx_curr;
-    const raw_gy = avg_gy + bias_gy_curr;
-    const raw_gz = avg_gz + bias_gz_curr;
-    
-    const g = 9.80665;
-    const diff_x = Math.abs(Math.abs(raw_ax) - g);
-    const diff_y = Math.abs(Math.abs(raw_ay) - g);
-    const diff_z = Math.abs(Math.abs(raw_az) - g);
-    
-    let bias_ax = raw_ax;
-    let bias_ay = raw_ay;
-    let bias_az = raw_az;
-    
-    const min_diff = Math.min(diff_x, diff_y, diff_z);
-    if (min_diff === diff_x) {
-        bias_ax = raw_ax > 0 ? (raw_ax - g) : (raw_ax + g);
-    } else if (min_diff === diff_y) {
-        bias_ay = raw_ay > 0 ? (raw_ay - g) : (raw_ay + g);
-    } else {
-        bias_az = raw_az > 0 ? (raw_az - g) : (raw_az + g);
-    }
-    
-    const bias_gx = raw_gx;
-    const bias_gy = raw_gy;
-    const bias_gz = raw_gz;
-    
+    document.getElementById("btn-calibrate").textContent = "Calibrating...";
     try {
-        await writeRaw(`set imu_accel_bias_x_mps2 = ${bias_ax.toFixed(6)}\n`);
-        await new Promise(r => setTimeout(r, 100));
-        await writeRaw(`set imu_accel_bias_y_mps2 = ${bias_ay.toFixed(6)}\n`);
-        await new Promise(r => setTimeout(r, 100));
-        await writeRaw(`set imu_accel_bias_z_mps2 = ${bias_az.toFixed(6)}\n`);
-        await new Promise(r => setTimeout(r, 100));
-        await writeRaw(`set imu_gyro_bias_x_radps = ${bias_gx.toFixed(6)}\n`);
-        await new Promise(r => setTimeout(r, 100));
-        await writeRaw(`set imu_gyro_bias_y_radps = ${bias_gy.toFixed(6)}\n`);
-        await new Promise(r => setTimeout(r, 100));
-        await writeRaw(`set imu_gyro_bias_z_radps = ${bias_gz.toFixed(6)}\n`);
-        await new Promise(r => setTimeout(r, 100));
-        await writeRaw("save\n");
-        
-        alert("Calibration successful! Saved config to flash and rebooting board.");
+        await writeRaw("calibrate\n");
     } catch (err) {
-        alert("Calibration failed: " + err.message);
-    } finally {
+        alert("Failed to send calibration command: " + err.message);
         document.getElementById("btn-calibrate").textContent = "Calibrate";
         document.getElementById("btn-calibrate").disabled = false;
-        await disconnect();
     }
 }

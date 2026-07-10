@@ -17,6 +17,7 @@ public:
     ~HAL();
 
     HALb update(const ALLb& allb_km1);
+    const HALb& get_bus() const { return hal_bus; }
 
 private:
     HALc cfg_data;
