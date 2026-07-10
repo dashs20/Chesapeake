@@ -140,7 +140,24 @@ The following commands are available:
 
 ---
 
-## 5. Third-Party Libraries
+## 5. Web Configurator
+
+Chesapeake includes a browser-based Web Serial GUI configurator located in the `/configurator` directory. It provides a visual dashboard to interact with the flight controller without requiring external CLI tools.
+
+### Features:
+*   **Web Serial Interface**: Connects directly to the flight controller over USB Serial (compatible with Chrome, Edge, or Opera).
+*   **Interactive Parameter Grid**: Search, read, edit, and write flight parameters in real-time.
+*   **Live CLI Terminal**: Built-in monitor and command console.
+*   **Quick Controls**: One-click actions to Reboot, Reset Defaults, or trigger IMU Calibration.
+
+### How to Use:
+1. Open [configurator/index.html](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/configurator/index.html) in a compatible browser.
+2. Click **Connect** and select the flight controller's USB COM port.
+3. Once connected, parameters will auto-populate in the grid. Make changes and click **Save Changes** to commit them to EEPROM.
+
+---
+
+## 6. Third-Party Libraries
 
 Chesapeake relies on the following standard open-source libraries:
 *   **[Eigen](https://libeigen.gitlab.io/)** (v3.4.99): High-performance matrix and vector math.
