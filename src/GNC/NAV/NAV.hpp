@@ -13,9 +13,7 @@ public:
     NAVb update(const GNCb& gnc);
 
 private:
-    double dt_s;
     GNCc cfg_data;
-    Eigen::Vector3f prev_omega_body_radps;
 
     IMU_Compensated compensate_imu(const GNCb& gnc);
 };

@@ -44,10 +44,6 @@ void load_default_config(MASTERc& config) {
     config.gncc.looprate_hz = 250;
     config.gncc.allocator = ALLOCATOR::QUAD;
 
-    Eigen::VectorXd state_x0(7);
-    state_x0 << 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-    config.gncc.navc.x0 = state_x0;
-    config.gncc.navc.r_IMU2CG_mm = Eigen::Vector3f::Zero();
     config.gncc.navc.q_IMU2body = Eigen::Quaternionf::Identity();
     config.gncc.navc.accel_bias = Eigen::Vector3f::Zero();
     config.gncc.navc.gyro_bias = Eigen::Vector3f::Zero();
