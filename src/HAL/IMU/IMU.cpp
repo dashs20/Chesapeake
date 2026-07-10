@@ -79,7 +79,7 @@ IMUb IMU::update(const HALb& halb) {
             float raw_y = static_cast<float>(acc_mg[1]) * 0.001f * 9.80665f;
             float raw_z = static_cast<float>(acc_mg[2]) * 0.001f * 9.80665f;
 
-            imub.accel_body_mps2.x() = raw_z - imuc.accel_bias_x_mps2;
+            imub.accel_body_mps2.x() = raw_z - imuc.accel_bias_x_mps2; // I know this looks wrong but it's not, this IMU is cursed
             imub.accel_body_mps2.y() = raw_y - imuc.accel_bias_y_mps2;
             imub.accel_body_mps2.z() = raw_x - imuc.accel_bias_z_mps2;
         }
