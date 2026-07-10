@@ -61,7 +61,11 @@ Chesapeake/
 ├── hardware/
 │   └── bluecrab.net       # KiCad board netlist used to map pinouts
 ├── lib/
-│   └── eigen-master/      # Optimized linear algebra library
+│   ├── eigen-master/          # Optimized linear algebra library
+│   ├── AlfredoCRSF-main/      # ELRS CRSF serial receiver driver
+│   ├── LSM6DSV16X-main/       # SPI IMU sensor driver
+│   ├── OpenIMUFilter-master/  # Mahony/Madgwick orientation filter
+│   └── pico-bidir-dshot-main/ # PIO-driven bidirectional DShot driver
 ├── src/
 │   ├── main.cpp           # Arduino entrypoint setup and loop pacing
 │   ├── PARAMS/            # Configuration management & Serial CLI
