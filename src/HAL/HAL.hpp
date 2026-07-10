@@ -6,15 +6,17 @@
 #include "RCRX/RCRX.hpp"
 #include "MOT/MOT.hpp"
 #include "BAT/BAT.hpp"
-#include "SERVO/SERVO.hpp"
+#include "SER/SER.hpp"
 #include "LED/LED.hpp"
+#include "RPI/RPI.hpp"
+#include "DEBUG/DEBUG.hpp"
 
 class HAL {
 public:
     HAL(HALc cfg);
     ~HAL();
 
-    HALb update(const ACTb& actb);
+    HALb update(const ALLb& allb_km1);
 
 private:
     HALc cfg_data;
@@ -23,6 +25,8 @@ private:
     RCRX rcrx;
     MOT mot;
     BAT bat;
-    SERVO servo;
+    SER ser;
     LED led;
+    RPI rpi;
+    DEBUG debug;
 };

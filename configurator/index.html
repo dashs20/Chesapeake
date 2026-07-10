@@ -7,121 +7,46 @@
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="app-container">
-        <!-- Sidebar Navigation -->
-        <div class="sidebar">
-            <div class="header-logo">
-                <img src="chesapeake.png" alt="Chesapeake Logo" class="logo-img">
-                <span class="logo-text">CHESAPEAKE</span>
-            </div>
-            
-            <div class="connection-box">
-                <button id="btn-connect" class="btn btn-connect">Connect</button>
-                <div id="connection-status" class="status-indicator disconnected">Disconnected</div>
-            </div>
-            
-            <div class="sidebar-nav">
-                <a href="#" class="nav-item active" onclick="switchTab('setup')">Setup</a>
-                <a href="#" class="nav-item" onclick="switchTab('params')">Configuration</a>
-                <a href="#" class="nav-item" onclick="switchTab('cli')">CLI Terminal</a>
-            </div>
+    <div class="header">
+        <span class="title">CHESAPEAKE CONFIGURATOR</span>
+        <div class="connection-controls">
+            <button id="btn-connect" class="btn">Connect</button>
+            <span id="connection-status" class="status-indicator disconnected">Disconnected</span>
+            <button id="btn-reboot" class="btn" disabled>Reboot</button>
+            <button id="btn-defaults" class="btn btn-warning" disabled>Reset Defaults</button>
+            <button id="btn-calibrate" class="btn btn-success" disabled>Calibrate</button>
+        </div>
+    </div>
 
-            <div class="fc-info-box">
-                <div class="info-row"><span class="info-label">Board:</span> <span class="info-value">XIAO RP2350</span></div>
-                <div class="info-row"><span class="info-label">Firmware:</span> <span class="info-value">Chesapeake v1.0</span></div>
-                <div class="info-row"><span class="info-label">Battery:</span> <span id="info-battery" class="info-value">- V</span></div>
+    <div class="dashboard">
+        <div class="panel console-panel">
+            <h2>Serial Monitor & CLI</h2>
+            <div class="cli-container">
+                <div class="monitor-header">Serial Monitor</div>
+                <div id="serial-monitor" class="serial-monitor"></div>
+                <div class="monitor-header">CLI Terminal</div>
+                <div id="cli-output" class="cli-output"></div>
+                <div class="cli-input-line">
+                    <input type="text" id="cli-input" placeholder="Type command (e.g. help, dump) and press Enter..." disabled>
+                    <button id="btn-send-cli" class="btn" disabled>Send</button>
+                </div>
             </div>
         </div>
 
-        <!-- Main Content Area -->
-        <div class="main-content">
-            <!-- Setup Tab -->
-            <div id="tab-setup" class="tab-pane active">
-                <h2>Flight Controller Setup</h2>
-                <div class="card">
-                    <h3>Connection Information</h3>
-                    <p>Welcome to the Chesapeake Flight Control System Configurator. This utility communicates with a Chesapeake supported board, like Bluecrab, using Web Serial directly from your browser.</p>
-                    <div class="setup-controls">
-                        <button id="btn-reboot" class="btn" disabled>Reboot Controller</button>
-                        <button id="btn-defaults" class="btn btn-warning" disabled>Reset to Defaults</button>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <h3>Hardware Settings Summary</h3>
-                    <div class="grid-2">
-                        <div>
-                            <h4>Actuator Pins</h4>
-                            <ul class="summary-list">
-                                <li>Motor 1: <span id="sum-m1" class="value-highlight">-</span></li>
-                                <li>Motor 2: <span id="sum-m2" class="value-highlight">-</span></li>
-                                <li>Motor 3: <span id="sum-m3" class="value-highlight">-</span></li>
-                                <li>Motor 4: <span id="sum-m4" class="value-highlight">-</span></li>
-                            </ul>
-                        </div>
-                        <div>
-                            <h4>Board Frequencies</h4>
-                            <ul class="summary-list">
-                                <li>Loop Rate: <span id="sum-looprate" class="value-highlight">-</span></li>
-                                <li>Attitude Loop: <span id="sum-attitude" class="value-highlight">-</span></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <h3>Live Telemetry & UKF Visualizer</h3>
-                    <div class="grid-2">
-                        <div>
-                            <h4>Telemetry Values</h4>
-                            <ul class="summary-list" style="margin-bottom: 20px;">
-                                <li>Battery Voltage: <span id="tel-vbat" class="value-highlight">- V</span></li>
-                                <li>Quaternion W: <span id="tel-qw" class="value-highlight">-</span></li>
-                                <li>Quaternion X: <span id="tel-qx" class="value-highlight">-</span></li>
-                                <li>Quaternion Y: <span id="tel-qy" class="value-highlight">-</span></li>
-                                <li>Quaternion Z: <span id="tel-qz" class="value-highlight">-</span></li>
-                            </ul>
-                        </div>
-                        <div class="visualizer-container">
-                            <canvas id="ukf-canvas" width="200" height="200"></canvas>
-                            <span class="visualizer-label">UKF Orientation (3D Block)</span>
-                        </div>
-                    </div>
+        <div class="panel params-panel">
+            <div class="panel-header">
+                <h2>Parameters</h2>
+                <div class="param-actions">
+                    <input type="text" id="param-search" placeholder="Search..." disabled>
+                    <button id="btn-refresh" class="btn" disabled>Reload</button>
+                    <button id="btn-save" class="btn btn-success" disabled>Save Changes</button>
                 </div>
             </div>
-
-            <!-- Parameters/Configuration Tab -->
-            <div id="tab-params" class="tab-pane">
-                <div class="pane-header">
-                    <h2>Flight Parameters</h2>
-                    <div class="action-buttons">
-                        <input type="text" id="param-search" placeholder="Search parameters..." class="input-search">
-                        <button id="btn-refresh" class="btn" disabled>Reload</button>
-                        <button id="btn-save" class="btn btn-success" disabled>Save to Board</button>
-                    </div>
+            <div class="params-container">
+                <div id="params-loading" class="params-placeholder">
+                    Connect to view and edit flight parameters.
                 </div>
-                
-                <div class="params-container">
-                    <div id="params-loading" class="params-placeholder">
-                        Connect to a Chesapeake supported board, like Bluecrab, to view and edit flight parameters.
-                    </div>
-                    <div id="params-grid" class="params-grid" style="display: none;">
-                        <!-- Dynamically filled by app.js -->
-                    </div>
-                </div>
-            </div>
-
-            <!-- CLI Console Tab -->
-            <div id="tab-cli" class="tab-pane">
-                <h2>CLI Terminal</h2>
-                <div class="cli-container">
-                    <div id="cli-output" class="cli-output"></div>
-                    <div class="cli-input-line">
-                        <span class="cli-prompt">></span>
-                        <input type="text" id="cli-input" placeholder="Type a command (e.g. help, dump, get roll_rate_kp) and press Enter..." disabled>
-                        <button id="btn-send-cli" class="btn" disabled>Send</button>
-                    </div>
-                </div>
+                <div id="params-grid" class="params-grid" style="display: none;"></div>
             </div>
         </div>
     </div>

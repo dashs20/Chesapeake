@@ -38,9 +38,9 @@ enum class ALLOCATOR {
 
 struct ALLOCc {
     float min_motor_frac;
-    float servo_min_ang_deg;
-    float servo_max_ang_deg;
-    float servo_default_ang_deg;
+    float ser_min_ang_deg;
+    float ser_max_ang_deg;
+    float ser_default_ang_deg;
     float blink_hz_disarmed;
     float blink_hz_rate;
     float blink_hz_angle;

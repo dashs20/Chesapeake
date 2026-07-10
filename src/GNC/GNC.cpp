@@ -20,3 +20,11 @@ ACTb GNC::update(const HALb& halb) {
 
     return gnc_bus.actb;
 }
+
+void GNC::update_dual_core(GNCb& gnc_k, const GNCb& gnc_km1) {
+    gnc_k.vsmb = vsm.update(gnc_km1);
+    gnc_k.navb = nav.update(gnc_km1);
+    gnc_k.guib = gui.update(gnc_km1);
+    gnc_k.ctlb = ctl.update(gnc_km1);
+    gnc_k.actb = alloc.update(gnc_km1);
+}

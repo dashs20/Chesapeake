@@ -75,15 +75,15 @@ IMUb IMU::update(const HALb& halb) {
         int32_t gyro_mdps[3] = {0, 0, 0};
 
         if (sensor->Get_X_Axes(acc_mg) == LSM6DSV16X_OK) {
-            imub.accel_body_mps2.x() = static_cast<float>(acc_mg[0]) * 0.001f * 9.80665f;
-            imub.accel_body_mps2.y() = static_cast<float>(acc_mg[1]) * 0.001f * 9.80665f;
-            imub.accel_body_mps2.z() = static_cast<float>(acc_mg[2]) * 0.001f * 9.80665f;
+            imub.accel_body_mps2.x() = (static_cast<float>(acc_mg[0]) * 0.001f * 9.80665f) - imuc.accel_bias_x_mps2;
+            imub.accel_body_mps2.y() = (static_cast<float>(acc_mg[1]) * 0.001f * 9.80665f) - imuc.accel_bias_y_mps2;
+            imub.accel_body_mps2.z() = (static_cast<float>(acc_mg[2]) * 0.001f * 9.80665f) - imuc.accel_bias_z_mps2;
         }
 
         if (sensor->Get_G_Axes(gyro_mdps) == LSM6DSV16X_OK) {
-            imub.omega_body_radps.x() = static_cast<float>(gyro_mdps[0]) * 0.001f * 0.0174532925f;
-            imub.omega_body_radps.y() = static_cast<float>(gyro_mdps[1]) * 0.001f * 0.0174532925f;
-            imub.omega_body_radps.z() = static_cast<float>(gyro_mdps[2]) * 0.001f * 0.0174532925f;
+            imub.omega_body_radps.x() = (static_cast<float>(gyro_mdps[0]) * 0.001f * 0.0174532925f) - imuc.gyro_bias_x_radps;
+            imub.omega_body_radps.y() = (static_cast<float>(gyro_mdps[1]) * 0.001f * 0.0174532925f) - imuc.gyro_bias_y_radps;
+            imub.omega_body_radps.z() = (static_cast<float>(gyro_mdps[2]) * 0.001f * 0.0174532925f) - imuc.gyro_bias_z_radps;
         }
     }
 

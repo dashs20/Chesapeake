@@ -4,14 +4,14 @@
 #include "../../GNC/bus.hpp"
 #include <Servo.h>
 
-class SERVO {
+class SER {
 public:
-    SERVO(SERVOc cfg);
-    ~SERVO();
+    SER(SERc cfg);
+    ~SER();
 
     void update(const ACTb& actb);
 
 private:
-    SERVOc servoc;
+    SERc serc;
     Servo servos[4];
 };

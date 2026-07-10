@@ -1,13 +1,13 @@
 #include "defaults.hpp"
 
 void load_default_config(MASTERc& config) {
-    config.magic = 0x43484555;
+    config.magic = 0x43484557;
 
     config.halc.motc.m1_pin = 27;
     config.halc.motc.m2_pin = 28;
     config.halc.motc.m3_pin = 5;
     config.halc.motc.m4_pin = 6;
-    config.halc.motc.speed_kbd = 600;
+    config.halc.motc.speed_kbd = 300;
     config.halc.motc.pole_pairs = 14;
 
     config.halc.rcrxc.uart_id = 0;
@@ -27,15 +27,21 @@ void load_default_config(MASTERc& config) {
     config.halc.imuc.gyro_fs = LSM6DSV16X_GYRO_FS::FS_1000DPS;
     config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_480Hz;
     config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_480Hz;
+    config.halc.imuc.accel_bias_x_mps2 = 0.0f;
+    config.halc.imuc.accel_bias_y_mps2 = 0.0f;
+    config.halc.imuc.accel_bias_z_mps2 = 0.0f;
+    config.halc.imuc.gyro_bias_x_radps = 0.0f;
+    config.halc.imuc.gyro_bias_y_radps = 0.0f;
+    config.halc.imuc.gyro_bias_z_radps = 0.0f;
 
-    config.halc.servoc.s1_pin = 7;
-    config.halc.servoc.s2_pin = 2;
-    config.halc.servoc.s3_pin = 4;
-    config.halc.servoc.s4_pin = 3;
-    config.halc.servoc.min_us = 1000;
-    config.halc.servoc.max_us = 2000;
+    config.halc.serc.s1_pin = 7;
+    config.halc.serc.s2_pin = 2;
+    config.halc.serc.s3_pin = 4;
+    config.halc.serc.s4_pin = 3;
+    config.halc.serc.min_us = 1000;
+    config.halc.serc.max_us = 2000;
 
-    config.gncc.looprate_hz = 500;
+    config.gncc.looprate_hz = 250;
     config.gncc.allocator = ALLOCATOR::QUAD;
 
     Eigen::VectorXd state_x0(7);
@@ -64,7 +70,7 @@ void load_default_config(MASTERc& config) {
     angle_pid.out_max = 5.0f;
     angle_pid.dt_s = 0.0f;
 
-    config.gncc.ctlc.angle_loop_hz = 100;
+    config.gncc.ctlc.angle_loop_hz = 125;
     config.gncc.ctlc.rate.roll = rate_pid;
     config.gncc.ctlc.rate.pitch = rate_pid;
     config.gncc.ctlc.rate.yaw = rate_pid;
@@ -79,14 +85,23 @@ void load_default_config(MASTERc& config) {
     config.gncc.guic.expoc.yaw = 0.3f;
 
     config.gncc.allocc.min_motor_frac = 0.15f;
-    config.gncc.allocc.servo_min_ang_deg = -30.0f;
-    config.gncc.allocc.servo_max_ang_deg = 30.0f;
-    config.gncc.allocc.servo_default_ang_deg = 0.0f;
+    config.gncc.allocc.ser_min_ang_deg = -30.0f;
+    config.gncc.allocc.ser_max_ang_deg = 30.0f;
+    config.gncc.allocc.ser_default_ang_deg = 0.0f;
     config.gncc.allocc.blink_hz_disarmed = 1.0f;
     config.gncc.allocc.blink_hz_rate = 5.0f;
     config.gncc.allocc.blink_hz_angle = 10.0f;
 
     config.halc.ledc.pin = 17;
+
+    config.halc.rpic.enabled = true;
+    config.halc.rpic.uart_id = 2;
+    config.halc.rpic.baudrate = 460800;
+    config.halc.rpic.tx_pin = 20;
+    config.halc.rpic.rx_pin = 21;
+    config.halc.rpic.rate_divisor = 5;
+
+    config.halc.debugc.enabled = true;
 
     config.gncc.vsmc.arm_threshold_frac = 0.8f;
     config.gncc.vsmc.mode_rate_threshold_frac = 0.3f;

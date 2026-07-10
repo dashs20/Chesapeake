@@ -65,9 +65,15 @@ struct IMUc {
     LSM6DSV16X_GYRO_FS gyro_fs;
     LSM6DSV16X_ODR accel_odr;
     LSM6DSV16X_ODR gyro_odr;
+    float accel_bias_x_mps2;
+    float accel_bias_y_mps2;
+    float accel_bias_z_mps2;
+    float gyro_bias_x_radps;
+    float gyro_bias_y_radps;
+    float gyro_bias_z_radps;
 };
 
-struct SERVOc {
+struct SERc {
     uint8_t s1_pin;
     uint8_t s2_pin;
     uint8_t s3_pin;
@@ -80,11 +86,26 @@ struct LEDc {
     uint8_t pin;
 };
 
+struct RPIc {
+    bool enabled;
+    uint8_t uart_id;
+    uint32_t baudrate;
+    uint8_t tx_pin;
+    uint8_t rx_pin;
+    uint8_t rate_divisor;
+};
+
+struct DEBUGc {
+    bool enabled;
+};
+
 struct HALc {
     MOTc motc;
     RCRXc rcrxc;
     BATc batc;
     IMUc imuc;
-    SERVOc servoc;
+    SERc serc;
     LEDc ledc;
+    RPIc rpic;
+    DEBUGc debugc;
 };
