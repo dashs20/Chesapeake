@@ -1,7 +1,7 @@
 #include "defaults.hpp"
 
 void load_default_config(MASTERc& config) {
-    config.magic = 0x43484556;
+    config.magic = 0x43484557;
 
     config.halc.motc.m1_pin = 27;
     config.halc.motc.m2_pin = 28;
@@ -27,6 +27,12 @@ void load_default_config(MASTERc& config) {
     config.halc.imuc.gyro_fs = LSM6DSV16X_GYRO_FS::FS_1000DPS;
     config.halc.imuc.accel_odr = LSM6DSV16X_ODR::ODR_480Hz;
     config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_480Hz;
+    config.halc.imuc.accel_bias_x_mps2 = 0.0f;
+    config.halc.imuc.accel_bias_y_mps2 = 0.0f;
+    config.halc.imuc.accel_bias_z_mps2 = 0.0f;
+    config.halc.imuc.gyro_bias_x_radps = 0.0f;
+    config.halc.imuc.gyro_bias_y_radps = 0.0f;
+    config.halc.imuc.gyro_bias_z_radps = 0.0f;
 
     config.halc.serc.s1_pin = 7;
     config.halc.serc.s2_pin = 2;

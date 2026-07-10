@@ -53,6 +53,8 @@ No Commits: Never create a git commit or stage files unless the user explicitly 
 
 Attribution: Include "Assisted by Gemini" in all relevant commit bodies.
 
+Serial Monitor: You are NOT allowed to open the serial monitor anymore. When you want to test, ask the USER and they will do it. Never run pio device monitor or any command to read from the serial port.
+
 Self-Correction: Immediately document any user correction in LLM.md following the established format.
 
 Correction Log:
@@ -60,3 +62,11 @@ Correction Log:
     *   *Mistake*: Assumed GNC servo commands were relative to center and added a 90-degree offset in the HAL layer.
     *   *Advised Solution*: GNC commands servo angles directly, mapping 1:1 to the values written by the HAL module. Never apply offsets to servo commands in the HAL layer.
     *   *Action*: Added a rule preventing offsets in the HAL layer for servo commands, and updated the servo module plan.
+*   **Correction #2 (2026-07-09)**: Serial Monitor Lifespan.
+    *   *Mistake*: Left serial monitor running in the background, locking up the terminal interface.
+    *   *Advised Solution*: Whenever you open the serial monitor, CLOSE IT WHEN YOU'RE DONE. Never leave it running when ending your turn or prompting the user.
+    *   *Action*: Added a rule to close the serial monitor immediately after testing and logged the correction.
+*   **Correction #3 (2026-07-09)**: Serial Monitor Prohibited.
+    *   *Mistake*: Attempted to run the serial monitor, which blocks/interferes with the user's terminal environment.
+    *   *Advised Solution*: You are NOT allowed to open the serial monitor anymore. When you want to test, ask the USER and they will do it.
+    *   *Action*: Replaced the serial monitor lifespan rule with an absolute prohibition on using the serial monitor, and logged the correction.

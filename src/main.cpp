@@ -15,7 +15,7 @@ static ALLb allb_km1{};
 static ALLb allb_k{};
 static volatile bool gnc_done = true;
 static volatile bool shifted = false;
-static volatile bool system_ready = false;
+volatile bool system_ready = false;
 
 void setup() {
     Serial.begin(115200);
@@ -73,12 +73,18 @@ void loop() {
     yield();
 }
 
+void __not_in_flash_func(core1_halt_loop)() {
+    while (!system_ready) {
+        asm volatile("nop");
+    }
+}
+
 void setup1() {
 }
 
 void loop1() {
     if (!system_ready) {
-        yield();
+        core1_halt_loop();
         return;
     }
 

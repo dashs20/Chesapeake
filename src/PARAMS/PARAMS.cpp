@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "../HAL/HAL.hpp"
 #include "hardware/watchdog.h"
+#include <pico/multicore.h>
 
 extern HAL* hal_ptr;
 
@@ -18,14 +19,21 @@ PARAMS::~PARAMS() {}
 bool PARAMS::load(MASTERc& config) {
     EEPROM.get(0, config);
     config.halc.imuc.spi_port = &SPI1;
+    Serial.printf("DEBUG: Loaded config. Magic = 0x%08X, Size = %u\n", config.magic, (unsigned int)sizeof(MASTERc));
     return (config.magic == 0x43484556);
 }
 
+extern volatile bool system_ready;
+
 void PARAMS::save(const MASTERc& config) {
+    system_ready = false;
+    delay(50);
     MASTERc mutable_config = config;
     mutable_config.magic = 0x43484556;
     EEPROM.put(0, mutable_config);
-    EEPROM.commit();
+    bool success = EEPROM.commit();
+    Serial.printf("DEBUG: EEPROM.commit() success = %d\n", success);
+    system_ready = true;
 }
 
 void PARAMS::print_help() {
@@ -110,6 +118,13 @@ void PARAMS::print_all(const MASTERc& config) {
         case LSM6DSV16X_ODR::ODR_3840Hz: Serial.println("3840Hz"); break;
         case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
     }
+    Serial.print("imu_accel_bias_x_mps2 = "); Serial.println(config.halc.imuc.accel_bias_x_mps2, 6);
+    Serial.print("imu_accel_bias_y_mps2 = "); Serial.println(config.halc.imuc.accel_bias_y_mps2, 6);
+    Serial.print("imu_accel_bias_z_mps2 = "); Serial.println(config.halc.imuc.accel_bias_z_mps2, 6);
+    Serial.print("imu_gyro_bias_x_radps = "); Serial.println(config.halc.imuc.gyro_bias_x_radps, 6);
+    Serial.print("imu_gyro_bias_y_radps = "); Serial.println(config.halc.imuc.gyro_bias_y_radps, 6);
+    Serial.print("imu_gyro_bias_z_radps = "); Serial.println(config.halc.imuc.gyro_bias_z_radps, 6);
+
 
     Serial.print("ser_s1_pin = "); Serial.println(config.halc.serc.s1_pin);
     Serial.print("ser_s2_pin = "); Serial.println(config.halc.serc.s2_pin);
@@ -237,6 +252,18 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
             case LSM6DSV16X_ODR::ODR_3840Hz: Serial.println("3840Hz"); break;
             case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
         }
+    } else if (std::strcmp(name, "imu_accel_bias_x_mps2") == 0) {
+        Serial.println(config.halc.imuc.accel_bias_x_mps2, 6);
+    } else if (std::strcmp(name, "imu_accel_bias_y_mps2") == 0) {
+        Serial.println(config.halc.imuc.accel_bias_y_mps2, 6);
+    } else if (std::strcmp(name, "imu_accel_bias_z_mps2") == 0) {
+        Serial.println(config.halc.imuc.accel_bias_z_mps2, 6);
+    } else if (std::strcmp(name, "imu_gyro_bias_x_radps") == 0) {
+        Serial.println(config.halc.imuc.gyro_bias_x_radps, 6);
+    } else if (std::strcmp(name, "imu_gyro_bias_y_radps") == 0) {
+        Serial.println(config.halc.imuc.gyro_bias_y_radps, 6);
+    } else if (std::strcmp(name, "imu_gyro_bias_z_radps") == 0) {
+        Serial.println(config.halc.imuc.gyro_bias_z_radps, 6);
     } else if (std::strcmp(name, "ser_s1_pin") == 0) {
         Serial.println(config.halc.serc.s1_pin);
     } else if (std::strcmp(name, "ser_s2_pin") == 0) {
@@ -415,6 +442,18 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         else if (std::strcmp(value, "3840Hz") == 0 || std::strcmp(value, "3840") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_3840Hz;
         else if (std::strcmp(value, "7680Hz") == 0 || std::strcmp(value, "7680") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_7680Hz;
         else { Serial.println("Error: Invalid gyro ODR"); return; }
+    } else if (std::strcmp(name, "imu_accel_bias_x_mps2") == 0) {
+        config.halc.imuc.accel_bias_x_mps2 = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "imu_accel_bias_y_mps2") == 0) {
+        config.halc.imuc.accel_bias_y_mps2 = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "imu_accel_bias_z_mps2") == 0) {
+        config.halc.imuc.accel_bias_z_mps2 = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "imu_gyro_bias_x_radps") == 0) {
+        config.halc.imuc.gyro_bias_x_radps = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "imu_gyro_bias_y_radps") == 0) {
+        config.halc.imuc.gyro_bias_y_radps = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "imu_gyro_bias_z_radps") == 0) {
+        config.halc.imuc.gyro_bias_z_radps = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "ser_s1_pin") == 0) {
         config.halc.serc.s1_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "ser_s2_pin") == 0) {
@@ -524,12 +563,14 @@ void PARAMS::run_cli(MASTERc& config) {
                     } else if (std::strcmp(cmd, "reboot") == 0) {
                         Serial.println("Rebooting FC...");
                         delay(100);
-                        watchdog_reboot(0, 0, 0);
+                        multicore_reset_core1();
+                        rp2040.reboot();
                     } else if (std::strcmp(cmd, "save") == 0) {
                         save(config);
                         Serial.println("Saved config to flash! Rebooting FC...");
                         delay(100);
-                        watchdog_reboot(0, 0, 0);
+                        multicore_reset_core1();
+                        rp2040.reboot();
                     } else if (std::strcmp(cmd, "get") == 0) {
                         char* param_name = std::strtok(nullptr, " ");
                         if (param_name != nullptr) {

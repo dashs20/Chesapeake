@@ -65,6 +65,12 @@ struct IMUc {
     LSM6DSV16X_GYRO_FS gyro_fs;
     LSM6DSV16X_ODR accel_odr;
     LSM6DSV16X_ODR gyro_odr;
+    float accel_bias_x_mps2;
+    float accel_bias_y_mps2;
+    float accel_bias_z_mps2;
+    float gyro_bias_x_radps;
+    float gyro_bias_y_radps;
+    float gyro_bias_z_radps;
 };
 
 struct SERc {
