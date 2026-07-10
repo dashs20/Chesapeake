@@ -147,6 +147,7 @@ Chesapeake relies on the following standard open-source libraries:
 *   **[LSM6DSV16X](https://github.com/stm32duino/LSM6DSV16X)** (v2.0.3): STMicroelectronics LSM6DSV16X 6-axis SPI IMU driver.
 *   **[pico-bidir-dshot](https://github.com/bastian2001/pico-bidir-dshot)** (v1.0.2): PIO-driven bidirectional DShot throttle signal and RPM telemetry return.
 *   **[Servo(rp2040)](https://github.com/earlephilhower/arduino-pico)** (v1.0.0): Hardware PWM servo command generation.
+*   **[OpenIMUFilter](https://github.com/hustcalm/OpenIMUFilter)**: Highly optimized Mahony/Madgwick orientation filter.
 
 ---
 Assisted by Gemini.
