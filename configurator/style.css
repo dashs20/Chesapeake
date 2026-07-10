@@ -15,6 +15,17 @@ body {
     margin-bottom: 20px;
 }
 
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo {
+    height: 36px;
+    width: auto;
+}
+
 .title {
     font-size: 20px;
     font-weight: 800;
