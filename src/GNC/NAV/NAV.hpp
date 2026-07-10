@@ -1,7 +1,6 @@
 #pragma once
 #include "../bus.hpp"
 #include "../cfg.hpp"
-#include "UKF.hpp"
 
 struct IMU_Compensated {
     Eigen::Vector3f accel_CG_mps2;
@@ -15,8 +14,6 @@ public:
 
 private:
     double dt_s;
-    Eigen::VectorXd x;
-    UKF ukf;
     GNCc cfg_data;
     Eigen::Vector3f prev_omega_body_radps;
 
