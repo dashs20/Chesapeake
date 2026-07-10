@@ -5,10 +5,12 @@
 #include <cstdlib>
 #include <algorithm>
 #include "../HAL/HAL.hpp"
+#include "../GNC/GNC.hpp"
 #include "hardware/watchdog.h"
 #include <pico/multicore.h>
 
 extern HAL* hal_ptr;
+extern GNC* gnc_ptr;
 
 PARAMS::PARAMS() : is_calibrating(false), calibration_counter(0), sum_ax(0.0f), sum_ay(0.0f), sum_az(0.0f), sum_gx(0.0f), sum_gy(0.0f), sum_gz(0.0f) {
     EEPROM.begin(sizeof(MASTERc));
@@ -20,7 +22,7 @@ bool PARAMS::load(MASTERc& config) {
     EEPROM.get(0, config);
     config.halc.imuc.spi_port = &SPI1;
     Serial.printf("DEBUG: Loaded config. Magic = 0x%08X, Size = %u\n", config.magic, (unsigned int)sizeof(MASTERc));
-    return (config.magic == 0x43484556);
+    return (config.magic == 0x43484558);
 }
 
 extern volatile bool system_ready;
@@ -29,7 +31,7 @@ void PARAMS::save(const MASTERc& config) {
     system_ready = false;
     delay(50);
     MASTERc mutable_config = config;
-    mutable_config.magic = 0x43484556;
+    mutable_config.magic = 0x43484558;
     EEPROM.put(0, mutable_config);
     bool success = EEPROM.commit();
     Serial.printf("DEBUG: EEPROM.commit() success = %d\n", success);
@@ -163,6 +165,7 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("blink_hz_disarmed = "); Serial.println(config.gncc.allocc.blink_hz_disarmed);
     Serial.print("blink_hz_rate = "); Serial.println(config.gncc.allocc.blink_hz_rate);
     Serial.print("blink_hz_angle = "); Serial.println(config.gncc.allocc.blink_hz_angle);
+    Serial.print("gnc_nav_gyro_error = "); Serial.println(config.gncc.navc.gyro_error_degps);
     Serial.print("gnc_nav_accel_bias_x = "); Serial.println(config.gncc.navc.accel_bias.x(), 6);
     Serial.print("gnc_nav_accel_bias_y = "); Serial.println(config.gncc.navc.accel_bias.y(), 6);
     Serial.print("gnc_nav_accel_bias_z = "); Serial.println(config.gncc.navc.accel_bias.z(), 6);
@@ -335,6 +338,8 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.gncc.ctlc.angle.pitch.kp);
     } else if (std::strcmp(name, "yaw_ang_kp") == 0) {
         Serial.println(config.gncc.ctlc.angle.yaw.kp);
+    } else if (std::strcmp(name, "gnc_nav_gyro_error") == 0) {
+        Serial.println(config.gncc.navc.gyro_error_degps);
     } else if (std::strcmp(name, "gnc_nav_accel_bias_x") == 0) {
         Serial.println(config.gncc.navc.accel_bias.x(), 6);
     } else if (std::strcmp(name, "gnc_nav_accel_bias_y") == 0) {
@@ -527,6 +532,8 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.gncc.ctlc.angle.pitch.kp = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "yaw_ang_kp") == 0) {
         config.gncc.ctlc.angle.yaw.kp = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_gyro_error") == 0) {
+        config.gncc.navc.gyro_error_degps = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "gnc_nav_accel_bias_x") == 0) {
         config.gncc.navc.accel_bias.x() = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "gnc_nav_accel_bias_y") == 0) {
@@ -630,6 +637,9 @@ void PARAMS::run_cli(MASTERc& config) {
                         rp2040.reboot();
                     } else if (std::strcmp(cmd, "calibrate") == 0) {
                         Serial.println("Starting IMU calibration... Keep the board flat and still.");
+                        if (gnc_ptr != nullptr) {
+                            gnc_ptr->reset_estimator();
+                        }
                         sum_ax = 0.0f;
                         sum_ay = 0.0f;
                         sum_az = 0.0f;

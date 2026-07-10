@@ -2,7 +2,7 @@
 
 ![Chesapeake Logo](configurator/chesapeake.png)
 
-Chesapeake is a high-performance, modular embedded flight control firmware designed for the Seeed Studio XIAO RP2350 microcontroller. Built in C++ using PlatformIO with the Earle Philhower Arduino-Pico core, it implements state-of-the-art guidance, navigation, and control algorithms, leveraging Eigen for optimized vector mathematics, double-precision Unscented Kalman Filtering (UKF) for attitude estimation, and custom Hardware Abstraction Layer (HAL) drivers.
+Chesapeake is a high-performance, modular embedded flight control firmware designed for the Seeed Studio XIAO RP2350 microcontroller. Built in C++ using PlatformIO with the Earle Philhower Arduino-Pico core, it implements state-of-the-art guidance, navigation, and control algorithms, leveraging Eigen for optimized vector mathematics, custom attitude estimation, and custom Hardware Abstraction Layer (HAL) drivers.
 
 ---
 
@@ -31,7 +31,7 @@ graph TD
 
     subgraph GNC [Guidance Navigation Control]
         G_COORD[GNC Coordinator] --> VSM[Vehicle State Machine]
-        G_COORD --> NAV[NAV UKF State Estimator]
+        G_COORD --> NAV[NAV State Estimator]
         G_COORD --> GUI[GUI Expo & Target Mappings]
         G_COORD --> CTL[CTL Rate & Angle Cascade PID]
         G_COORD --> ALLOC[ALLOC Actuator Mixer]
@@ -52,8 +52,7 @@ Chesapeake/
 ├── hardware/
 │   └── bluecrab.net       # KiCad board netlist used to map pinouts
 ├── lib/
-│   ├── eigen-master/      # Optimized linear algebra library
-│   └── UKF-main/          # Unscented Kalman Filter state estimation
+│   └── eigen-master/      # Optimized linear algebra library
 ├── src/
 │   ├── main.cpp           # Arduino entrypoint setup and loop pacing
 │   ├── PARAMS/            # Configuration management & Serial CLI
@@ -78,7 +77,7 @@ Chesapeake/
 │       ├── cfg.hpp        # Flight control config structs (GNCc, CTLc)
 │       ├── GNC.hpp        # GNC master class coordinator
 │       ├── GNC.cpp        # Sequences estimations, PIDs, and mixing
-│       ├── NAV/           # Navigation state estimation (translates to UKF)
+│       ├── NAV/           # Navigation state estimation
 │       ├── CTL/           # Attitude rate/angle control loops
 │       │   └── PID/       # 3-Axis & single-axis PID controllers
 │       ├── GUI/           # Target input stick mapping & RC Expo
@@ -161,11 +160,11 @@ Chesapeake includes a browser-based Web Serial GUI configurator located in the `
 
 Chesapeake relies on the following standard open-source libraries:
 *   **[Eigen](https://libeigen.gitlab.io/)** (v3.4.99): High-performance matrix and vector math.
-*   **[UKF (Unscented Kalman Filter)](https://github.com/NovelMobileRobotsLab/UKF)**: Double-precision sensor fusion and attitude estimation.
 *   **[AlfredoCRSF](https://github.com/AlfredoSystems/AlfredoCRSF)** (v1.0.1): ELRS pilot control receiver mapping over CRSF protocol.
 *   **[LSM6DSV16X](https://github.com/stm32duino/LSM6DSV16X)** (v2.0.3): STMicroelectronics LSM6DSV16X 6-axis SPI IMU driver.
 *   **[pico-bidir-dshot](https://github.com/bastian2001/pico-bidir-dshot)** (v1.0.2): PIO-driven bidirectional DShot throttle signal and RPM telemetry return.
 *   **[Servo(rp2040)](https://github.com/earlephilhower/arduino-pico)** (v1.0.0): Hardware PWM servo command generation.
+*   **[OpenIMUFilter](https://github.com/hustcalm/OpenIMUFilter)**: Highly optimized Mahony/Madgwick orientation filter.
 
 ---
 Assisted by Gemini.

@@ -13,6 +13,7 @@ public:
     ACTb update(const HALb& halb);
     void update_dual_core(GNCb& gnc_k, const GNCb& gnc_km1);
     const GNCb& get_bus() const { return gnc_bus; }
+    void reset_estimator() { nav.reset(); }
 
 private:
     GNCc cfg_data;

@@ -1,7 +1,7 @@
 #pragma once
 #include "../bus.hpp"
 #include "../cfg.hpp"
-#include "UKF.hpp"
+#include "IMUfilter.h"
 
 struct IMU_Compensated {
     Eigen::Vector3f accel_CG_mps2;
@@ -11,14 +11,14 @@ struct IMU_Compensated {
 class NAV {
 public:
     NAV(GNCc cfg);
+    ~NAV();
     NAVb update(const GNCb& gnc);
+    void reset();
 
 private:
     double dt_s;
-    Eigen::VectorXd x;
-    UKF ukf;
     GNCc cfg_data;
-    Eigen::Vector3f prev_omega_body_radps;
+    IMUfilter* filter;
 
     IMU_Compensated compensate_imu(const GNCb& gnc);
 };

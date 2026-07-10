@@ -1,7 +1,7 @@
 #include "defaults.hpp"
 
 void load_default_config(MASTERc& config) {
-    config.magic = 0x43484557;
+    config.magic = 0x43484558;
 
     config.halc.motc.m1_pin = 27;
     config.halc.motc.m2_pin = 28;
@@ -44,13 +44,10 @@ void load_default_config(MASTERc& config) {
     config.gncc.looprate_hz = 250;
     config.gncc.allocator = ALLOCATOR::QUAD;
 
-    Eigen::VectorXd state_x0(7);
-    state_x0 << 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0;
-    config.gncc.navc.x0 = state_x0;
-    config.gncc.navc.r_IMU2CG_mm = Eigen::Vector3f::Zero();
     config.gncc.navc.q_IMU2body = Eigen::Quaternionf::Identity();
     config.gncc.navc.accel_bias = Eigen::Vector3f::Zero();
     config.gncc.navc.gyro_bias = Eigen::Vector3f::Zero();
+    config.gncc.navc.gyro_error_degps = 5.0f;
 
     PID_SCALARc rate_pid;
     rate_pid.kp = 0.1f;
