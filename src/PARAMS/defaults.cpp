@@ -102,6 +102,7 @@ void load_default_config(MASTERc& config) {
     config.halc.rpic.rate_divisor = 5;
 
     config.halc.debugc.enabled = true;
+    config.halc.debugc.decimation = 125;
 
     config.gncc.vsmc.arm_threshold_frac = 0.8f;
     config.gncc.vsmc.mode_rate_threshold_frac = 0.3f;

@@ -140,6 +140,7 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("rpi_rx_pin = "); Serial.println(config.halc.rpic.rx_pin);
     Serial.print("rpi_rate_divisor = "); Serial.println(config.halc.rpic.rate_divisor);
     Serial.print("debug_enabled = "); Serial.println(config.halc.debugc.enabled);
+    Serial.print("debug_decimation = "); Serial.println(config.halc.debugc.decimation);
 
     Serial.print("gnc_looprate_hz = "); Serial.println(config.gncc.looprate_hz);
     Serial.print("angle_loop_hz = "); Serial.println(config.gncc.ctlc.angle_loop_hz);
@@ -292,6 +293,8 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.halc.rpic.rate_divisor);
     } else if (std::strcmp(name, "debug_enabled") == 0) {
         Serial.println(config.halc.debugc.enabled);
+    } else if (std::strcmp(name, "debug_decimation") == 0) {
+        Serial.println(config.halc.debugc.decimation);
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
         Serial.println(config.gncc.allocc.blink_hz_disarmed);
     } else if (std::strcmp(name, "blink_hz_rate") == 0) {
@@ -482,6 +485,8 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.halc.rpic.rate_divisor = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "debug_enabled") == 0) {
         config.halc.debugc.enabled = (std::strtol(value, nullptr, 10) != 0);
+    } else if (std::strcmp(name, "debug_decimation") == 0) {
+        config.halc.debugc.decimation = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
         config.gncc.allocc.blink_hz_disarmed = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "blink_hz_rate") == 0) {

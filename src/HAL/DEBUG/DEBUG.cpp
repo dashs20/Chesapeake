@@ -1,6 +1,6 @@
 #include "DEBUG.hpp"
 
-DEBUG::DEBUG(DEBUGc cfg) : debugc(cfg) {}
+DEBUG::DEBUG(DEBUGc cfg) : debugc(cfg), counter(0) {}
 
 DEBUG::~DEBUG() {}
 
@@ -9,11 +9,12 @@ void DEBUG::update(const ALLb& allb_km1) {
         return;
     }
 
-    Serial.printf("$DBG,%.4f,%.4f,%.4f,%.4f,%.4f,%.4f,0.0000,0.0000,0.0000\n",
-                  allb_km1.halb.imub.accel_body_mps2.x(),
-                  allb_km1.halb.imub.accel_body_mps2.y(),
-                  allb_km1.halb.imub.accel_body_mps2.z(),
-                  allb_km1.halb.imub.omega_body_radps.x(),
-                  allb_km1.halb.imub.omega_body_radps.y(),
-                  allb_km1.halb.imub.omega_body_radps.z());
+    counter++;
+    if (debugc.decimation > 0 && (counter % debugc.decimation) != 0) {
+        return;
+    }
+
+    Serial.printf("$DBG,%.4f,%.4f\n",
+                  allb_km1.halb.execution_time_ms,
+                  allb_km1.gnc_time_ms);
 }

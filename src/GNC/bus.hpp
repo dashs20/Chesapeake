@@ -56,6 +56,7 @@ struct GNCb{
     NAVb navb;
     CTLb ctlb;
     GUIb guib;
+    float gnc_time_ms;
 };
 // --~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~-
 

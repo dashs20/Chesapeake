@@ -27,4 +27,5 @@ struct HALb {
     RCRXb rcrxb;
     MOTb motb;
     float vbat_volts;
+    float execution_time_ms;
 };

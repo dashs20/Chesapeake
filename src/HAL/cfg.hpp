@@ -97,6 +97,7 @@ struct RPIc {
 
 struct DEBUGc {
     bool enabled;
+    uint32_t decimation;
 };
 
 struct HALc {

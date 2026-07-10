@@ -13,4 +13,5 @@ public:
 
 private:
     DEBUGc debugc;
+    uint32_t counter;
 };

@@ -43,7 +43,9 @@ void loop() {
 
     params_ptr->run_cli(config_data);
 
+    uint32_t hal_start = micros();
     allb_k.halb = hal_ptr->update(allb_km1);
+    allb_k.halb.execution_time_ms = (micros() - hal_start) / 1000.0f;
 
     uint32_t looprate_us = 1000000UL / config_data.gncc.looprate_hz;
 
@@ -89,7 +91,9 @@ void loop1() {
     }
 
     if (!gnc_done) {
+        uint32_t gnc_start = micros();
         gnc_ptr->update_dual_core(allb_k, allb_km1);
+        allb_k.gnc_time_ms = (micros() - gnc_start) / 1000.0f;
         gnc_done = true;
     }
     yield();
