@@ -49,6 +49,8 @@ Required Directives: Begin every header with #pragma once. Ensure all structs en
 
 Compilation: Never invoke pio run unless explicitly requested or a valid main.cpp entrypoint is verified.
 
+No Commits: Never create a git commit or stage files unless the user explicitly requests it.
+
 Attribution: Include "Assisted by Gemini" in all relevant commit bodies.
 
 Self-Correction: Immediately document any user correction in LLM.md following the established format.

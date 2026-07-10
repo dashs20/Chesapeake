@@ -18,12 +18,12 @@ PARAMS::~PARAMS() {}
 bool PARAMS::load(MASTERc& config) {
     EEPROM.get(0, config);
     config.halc.imuc.spi_port = &SPI1;
-    return (config.magic == 0x43484555);
+    return (config.magic == 0x43484556);
 }
 
 void PARAMS::save(const MASTERc& config) {
     MASTERc mutable_config = config;
-    mutable_config.magic = 0x43484555;
+    mutable_config.magic = 0x43484556;
     EEPROM.put(0, mutable_config);
     EEPROM.commit();
 }

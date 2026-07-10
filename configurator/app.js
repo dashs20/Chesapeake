@@ -152,7 +152,10 @@ function handleIncomingChunk(chunk) {
         const line = serialBuffer.substring(0, lineEndIdx);
         serialBuffer = serialBuffer.substring(lineEndIdx + 1);
         const trimmed = line.trim();
-        rawOutput += line + "\n";
+        if (trimmed.startsWith("$DBG,")) {
+            rawOutput += line + "\n";
+            continue;
+        }
         if (trimmed.startsWith("$")) {
             continue;
         }
