@@ -5,7 +5,7 @@
 class GUI {
 public:
     GUI(GNCc cfg);
-    GUIb update(const GNCb& gnc);
+    GUIb update(const ALLb& allb);
 
 private:
     GNCc cfg_data;

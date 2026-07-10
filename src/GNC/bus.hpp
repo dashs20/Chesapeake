@@ -48,9 +48,7 @@ struct GUIb {
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-// GNC MASTER BUS ~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~-
 struct GNCb{
-    HALb halb;
     VSMb vsmb;
     ACTb actb;
     NAVb navb;
@@ -60,4 +58,7 @@ struct GNCb{
 };
 // --~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~-
 
-using ALLb = GNCb;
+struct ALLb {
+    HALb halb;
+    GNCb gncb;
+};

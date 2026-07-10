@@ -12,7 +12,7 @@ class NAV {
 public:
     NAV(GNCc cfg);
     ~NAV();
-    NAVb update(const GNCb& gnc);
+    NAVb update(const ALLb& allb);
     void reset();
 
 private:
@@ -20,5 +20,5 @@ private:
     GNCc cfg_data;
     IMUfilter* filter;
 
-    IMU_Compensated compensate_imu(const GNCb& gnc);
+    IMU_Compensated compensate_imu(const ALLb& allb);
 };

@@ -5,13 +5,13 @@
 class ALLOC {
 public:
     ALLOC(GNCc cfg);
-    ACTb update(const GNCb& gnc);
+    ACTb update(const ALLb& allb);
 
 private:
     GNCc cfg_data;
 
-    ACTb run_allocator(const GNCb& gnc);
-    ACTb clamp_actuators(const GNCb& gnc, ACTb actb);
-    ACTb allocate_quad(const GNCb& gnc);
+    ACTb run_allocator(const ALLb& allb);
+    ACTb clamp_actuators(const ALLb& allb, ACTb actb);
+    ACTb allocate_quad(const ALLb& allb);
     float determine_blink_hz(STATE state);
 };

@@ -3,7 +3,6 @@
 GNC::GNC(GNCc cfg) 
     : cfg_data(cfg),
       dt_s(1.0f / static_cast<float>(cfg.looprate_hz)),
-      gnc_bus{},
       nav(cfg),
       vsm(cfg),
       gui(cfg),
@@ -11,20 +10,24 @@ GNC::GNC(GNCc cfg)
       alloc(cfg) {}
 
 ACTb GNC::update(const HALb& halb) {
-    gnc_bus.halb = halb;
-    gnc_bus.vsmb = vsm.update(gnc_bus);
-    gnc_bus.navb = nav.update(gnc_bus);
-    gnc_bus.guib = gui.update(gnc_bus);
-    gnc_bus.ctlb = ctl.update(gnc_bus);
-    gnc_bus.actb = alloc.update(gnc_bus);
-
-    return gnc_bus.actb;
+    ALLb temp_allb;
+    temp_allb.halb = halb;
+    temp_allb.gncb = update_dual_core_internal(temp_allb);
+    return temp_allb.gncb.actb;
 }
 
-void GNC::update_dual_core(GNCb& gnc_k, const GNCb& gnc_km1) {
-    gnc_k.vsmb = vsm.update(gnc_km1);
-    gnc_k.navb = nav.update(gnc_km1);
-    gnc_k.guib = gui.update(gnc_km1);
-    gnc_k.ctlb = ctl.update(gnc_km1);
-    gnc_k.actb = alloc.update(gnc_km1);
+void GNC::update_dual_core(ALLb& allb_k, const ALLb& allb_km1) {
+    uint32_t gnc_start = micros();
+    allb_k.gncb = update_dual_core_internal(allb_km1);
+    allb_k.gncb.gnc_time_ms = (micros() - gnc_start) / 1000.0f;
+}
+
+GNCb GNC::update_dual_core_internal(const ALLb& allb_km1) {
+    GNCb gncb;
+    gncb.vsmb = vsm.update(allb_km1);
+    gncb.navb = nav.update(allb_km1);
+    gncb.guib = gui.update(allb_km1);
+    gncb.ctlb = ctl.update(allb_km1);
+    gncb.actb = alloc.update(allb_km1);
+    return gncb;
 }

@@ -3,38 +3,38 @@
 
 ALLOC::ALLOC(GNCc cfg) : cfg_data(cfg) {}
 
-ACTb ALLOC::update(const GNCb& gnc) {
+ACTb ALLOC::update(const ALLb& allb) {
     ACTb actb;
-    if (gnc.vsmb.state == STATE::DISARMED) {
+    if (allb.gncb.vsmb.state == STATE::DISARMED) {
         actb.m1_frac = 0.0f;
         actb.m2_frac = 0.0f;
         actb.m3_frac = 0.0f;
         actb.m4_frac = 0.0f;
-
+ 
         actb.s1_deg = cfg_data.allocc.ser_default_ang_deg;
         actb.s2_deg = cfg_data.allocc.ser_default_ang_deg;
         actb.s3_deg = cfg_data.allocc.ser_default_ang_deg;
         actb.s4_deg = cfg_data.allocc.ser_default_ang_deg;
-
-        actb = clamp_actuators(gnc, actb);
+ 
+        actb = clamp_actuators(allb, actb);
     } else {
-        actb = run_allocator(gnc);
-        actb = clamp_actuators(gnc, actb);
+        actb = run_allocator(allb);
+        actb = clamp_actuators(allb, actb);
     }
-    actb.LED_blink_Hz = determine_blink_hz(gnc.vsmb.state);
+    actb.LED_blink_Hz = determine_blink_hz(allb.gncb.vsmb.state);
     return actb;
 }
-
-ACTb ALLOC::run_allocator(const GNCb& gnc) {
+ 
+ACTb ALLOC::run_allocator(const ALLb& allb) {
     if (cfg_data.allocator == ALLOCATOR::QUAD) {
-        return allocate_quad(gnc);
+        return allocate_quad(allb);
     } else {
         ACTb actb;
         actb.m1_frac = 0.0f;
         actb.m2_frac = 0.0f;
         actb.m3_frac = 0.0f;
         actb.m4_frac = 0.0f;
-
+ 
         actb.s1_deg = cfg_data.allocc.ser_default_ang_deg;
         actb.s2_deg = cfg_data.allocc.ser_default_ang_deg;
         actb.s3_deg = cfg_data.allocc.ser_default_ang_deg;
@@ -42,29 +42,29 @@ ACTb ALLOC::run_allocator(const GNCb& gnc) {
         return actb;
     }
 }
-
-ACTb ALLOC::allocate_quad(const GNCb& gnc) {
-    float throttle_frac = gnc.halb.rcrxb.thr_frac;
-    float roll_effort_frac = gnc.ctlb.axes_effort_frac.x();
-    float pitch_effort_frac = gnc.ctlb.axes_effort_frac.y();
-    float yaw_effort_frac = gnc.ctlb.axes_effort_frac.z();
-
+ 
+ACTb ALLOC::allocate_quad(const ALLb& allb) {
+    float throttle_frac = allb.halb.rcrxb.thr_frac;
+    float roll_effort_frac = allb.gncb.ctlb.axes_effort_frac.x();
+    float pitch_effort_frac = allb.gncb.ctlb.axes_effort_frac.y();
+    float yaw_effort_frac = allb.gncb.ctlb.axes_effort_frac.z();
+ 
     ACTb actb;
     actb.m1_frac = throttle_frac - roll_effort_frac + pitch_effort_frac - yaw_effort_frac;
     actb.m2_frac = throttle_frac - roll_effort_frac - pitch_effort_frac + yaw_effort_frac;
     actb.m3_frac = throttle_frac + roll_effort_frac + pitch_effort_frac + yaw_effort_frac;
     actb.m4_frac = throttle_frac + roll_effort_frac - pitch_effort_frac - yaw_effort_frac;
-
+ 
     actb.s1_deg = cfg_data.allocc.ser_default_ang_deg;
     actb.s2_deg = cfg_data.allocc.ser_default_ang_deg;
     actb.s3_deg = cfg_data.allocc.ser_default_ang_deg;
     actb.s4_deg = cfg_data.allocc.ser_default_ang_deg;
-
+ 
     return actb;
 }
-
-ACTb ALLOC::clamp_actuators(const GNCb& gnc, ACTb actb) {
-    float minimum_motor_fraction_frac = (gnc.vsmb.state == STATE::DISARMED) ? 0.0f : cfg_data.allocc.min_motor_frac;
+ 
+ACTb ALLOC::clamp_actuators(const ALLb& allb, ACTb actb) {
+    float minimum_motor_fraction_frac = (allb.gncb.vsmb.state == STATE::DISARMED) ? 0.0f : cfg_data.allocc.min_motor_frac;
 
     actb.m1_frac = std::max(minimum_motor_fraction_frac, std::min(1.0f, actb.m1_frac));
     actb.m2_frac = std::max(minimum_motor_fraction_frac, std::min(1.0f, actb.m2_frac));

@@ -1,4 +1,5 @@
 #pragma once
+#include <Arduino.h>
 #include "bus.hpp"
 #include "cfg.hpp"
 #include "NAV/NAV.hpp"
@@ -11,14 +12,14 @@ class GNC {
 public:
     GNC(GNCc cfg);
     ACTb update(const HALb& halb);
-    void update_dual_core(GNCb& gnc_k, const GNCb& gnc_km1);
-    const GNCb& get_bus() const { return gnc_bus; }
+    void update_dual_core(ALLb& allb_k, const ALLb& allb_km1);
     void reset_estimator() { nav.reset(); }
 
 private:
+    GNCb update_dual_core_internal(const ALLb& allb_km1);
+
     GNCc cfg_data;
     float dt_s;
-    GNCb gnc_bus;
     NAV nav;
     VSM vsm;
     GUI gui;

@@ -17,10 +17,10 @@ HAL::~HAL() {}
 HALb HAL::update(const ALLb& allb_km1) {
     hal_bus.imub = imu.update(hal_bus);
     hal_bus.rcrxb = rcrx.update(hal_bus);
-    hal_bus.motb = mot.update(allb_km1.actb);
+    hal_bus.motb = mot.update(allb_km1.gncb.actb);
     hal_bus.vbat_volts = bat.update(hal_bus);
-    ser.update(allb_km1.actb);
-    led.update(allb_km1.actb);
+    ser.update(allb_km1.gncb.actb);
+    led.update(allb_km1.gncb.actb);
     rpi.update(allb_km1);
     debug.update(allb_km1);
 

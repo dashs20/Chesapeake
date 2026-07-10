@@ -91,9 +91,7 @@ void loop1() {
     }
 
     if (!gnc_done) {
-        uint32_t gnc_start = micros();
         gnc_ptr->update_dual_core(allb_k, allb_km1);
-        allb_k.gnc_time_ms = (micros() - gnc_start) / 1000.0f;
         gnc_done = true;
     }
     yield();

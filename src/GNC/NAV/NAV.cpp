@@ -13,9 +13,9 @@ void NAV::reset() {
     filter->reset();
 }
 
-NAVb NAV::update(const GNCb& gnc) {
-    IMU_Compensated compensated_imu = compensate_imu(gnc);
-
+NAVb NAV::update(const ALLb& allb) {
+    IMU_Compensated compensated_imu = compensate_imu(allb);
+ 
     filter->updateFilter(
         static_cast<double>(compensated_imu.omega_body_radps.x()),
         static_cast<double>(compensated_imu.omega_body_radps.y()),
@@ -24,9 +24,9 @@ NAVb NAV::update(const GNCb& gnc) {
         static_cast<double>(compensated_imu.accel_CG_mps2.y()),
         static_cast<double>(compensated_imu.accel_CG_mps2.z())
     );
-
+ 
     filter->computeEuler();
-
+ 
     NAVb navb;
     navb.omega_body_radps = compensated_imu.omega_body_radps;
     navb.q_earth2body = Eigen::Quaternionf(
@@ -40,20 +40,20 @@ NAVb NAV::update(const GNCb& gnc) {
         static_cast<float>(filter->getRoll()),
         static_cast<float>(filter->getPitch())
     );
-
+ 
     return navb;
 }
-
-IMU_Compensated NAV::compensate_imu(const GNCb& gnc) {
-    Eigen::Vector3f accel_raw_mps2 = gnc.halb.imub.accel_body_mps2;
-    Eigen::Vector3f omega_raw_radps = gnc.halb.imub.omega_body_radps;
-
+ 
+IMU_Compensated NAV::compensate_imu(const ALLb& allb) {
+    Eigen::Vector3f accel_raw_mps2 = allb.halb.imub.accel_body_mps2;
+    Eigen::Vector3f omega_raw_radps = allb.halb.imub.omega_body_radps;
+ 
     accel_raw_mps2 -= cfg_data.navc.accel_bias;
     omega_raw_radps -= cfg_data.navc.gyro_bias;
-
+ 
     Eigen::Vector3f accel_body_raw_mps2 = cfg_data.navc.q_IMU2body * accel_raw_mps2;
     Eigen::Vector3f omega_body_radps = cfg_data.navc.q_IMU2body * omega_raw_radps;
-
+ 
     IMU_Compensated output;
     output.accel_CG_mps2 = accel_body_raw_mps2;
     output.omega_body_radps = omega_body_radps;
