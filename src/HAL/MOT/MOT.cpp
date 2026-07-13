@@ -1,70 +1,91 @@
 #include "MOT.hpp"
 #include <algorithm>
+#include <Arduino.h>
 
-MOT::MOT(MOTc cfg) : motc(cfg) {
-    for (uint8_t i = 0; i < 4; ++i) {
-        motors[i] = nullptr;
+MOT::MOT(MOTc cfg) : motc(cfg), dshot1(nullptr), dshot2(nullptr) {
+    dshot1 = new DShotX4(motc.m1_pin, 2, motc.speed_kbd, pio0);
+    if (dshot1->initError()) {
+        delete dshot1;
+        dshot1 = new DShotX4(motc.m1_pin, 2, motc.speed_kbd, pio1);
+        if (dshot1->initError()) {
+            Serial.printf("MOT: dshot1 FAILED on both pio0 and pio1!\n");
+        } else {
+            Serial.printf("MOT: dshot1 initialized on pio1\n");
+        }
+    } else {
+        Serial.printf("MOT: dshot1 initialized on pio0\n");
     }
-    if (motc.m1_pin != 255) motors[0] = new BidirDShotX1(motc.m1_pin, motc.speed_kbd);
-    if (motc.m2_pin != 255) motors[1] = new BidirDShotX1(motc.m2_pin, motc.speed_kbd);
-    if (motc.m3_pin != 255) motors[2] = new BidirDShotX1(motc.m3_pin, motc.speed_kbd);
-    if (motc.m4_pin != 255) motors[3] = new BidirDShotX1(motc.m4_pin, motc.speed_kbd);
+
+    dshot2 = new DShotX4(motc.m3_pin, 2, motc.speed_kbd, pio0);
+    if (dshot2->initError()) {
+        delete dshot2;
+        dshot2 = new DShotX4(motc.m3_pin, 2, motc.speed_kbd, pio1);
+        if (dshot2->initError()) {
+            Serial.printf("MOT: dshot2 FAILED on both pio0 and pio1!\n");
+        } else {
+            Serial.printf("MOT: dshot2 initialized on pio1\n");
+        }
+    } else {
+        Serial.printf("MOT: dshot2 initialized on pio0\n");
+    }
+
+    for (int count = 0; count < 1500; ++count) {
+        uint16_t zero_throttles[4] = {0, 0, 0, 0};
+        if (dshot1 != nullptr && !dshot1->initError()) {
+            dshot1->sendThrottles(zero_throttles);
+        }
+        if (dshot2 != nullptr && !dshot2->initError()) {
+            dshot2->sendThrottles(zero_throttles);
+        }
+        delay(2);
+    }
 }
 
 MOT::~MOT() {
-    for (uint8_t i = 0; i < 4; ++i) {
-        delete motors[i];
-    }
+    delete dshot1;
+    delete dshot2;
 }
 
-MOTb MOT::update(const ACTb& actb) {
-    if (motors[0] != nullptr && !motors[0]->initError()) {
+void MOT::update(const ACTb& actb) {
+    static uint32_t print_counter = 0;
+    print_counter++;
+    if (print_counter >= 500) {
+        print_counter = 0;
+        Serial.print("MOT STATUS: ");
+        if (dshot1 == nullptr || dshot1->initError()) {
+            Serial.print("D1:FAIL ");
+        } else {
+            Serial.print("D1:OK ");
+        }
+        if (dshot2 == nullptr || dshot2->initError()) {
+            Serial.print("D2:FAIL ");
+        } else {
+            Serial.print("D2:OK ");
+        }
+        Serial.println();
+    }
+
+    if (dshot1 != nullptr && !dshot1->initError()) {
         float m1_frac = std::clamp(actb.m1_frac, 0.0f, 1.0f);
-        motors[0]->sendThrottle(static_cast<uint16_t>(m1_frac * 2000.0f));
-    }
-    if (motors[1] != nullptr && !motors[1]->initError()) {
         float m2_frac = std::clamp(actb.m2_frac, 0.0f, 1.0f);
-        motors[1]->sendThrottle(static_cast<uint16_t>(m2_frac * 2000.0f));
+        uint16_t throttles[4] = {
+            static_cast<uint16_t>(m1_frac * 2000.0f),
+            static_cast<uint16_t>(m2_frac * 2000.0f),
+            0,
+            0
+        };
+        dshot1->sendThrottles(throttles);
     }
-    if (motors[2] != nullptr && !motors[2]->initError()) {
+
+    if (dshot2 != nullptr && !dshot2->initError()) {
         float m3_frac = std::clamp(actb.m3_frac, 0.0f, 1.0f);
-        motors[2]->sendThrottle(static_cast<uint16_t>(m3_frac * 2000.0f));
-    }
-    if (motors[3] != nullptr && !motors[3]->initError()) {
         float m4_frac = std::clamp(actb.m4_frac, 0.0f, 1.0f);
-        motors[3]->sendThrottle(static_cast<uint16_t>(m4_frac * 2000.0f));
+        uint16_t throttles[4] = {
+            static_cast<uint16_t>(m3_frac * 2000.0f),
+            static_cast<uint16_t>(m4_frac * 2000.0f),
+            0,
+            0
+        };
+        dshot2->sendThrottles(throttles);
     }
-
-    MOTb motb;
-    float divisor = (motc.pole_pairs > 0) ? static_cast<float>(motc.pole_pairs) : 1.0f;
-
-    uint32_t erpm_m1 = 0;
-    if (motors[0] != nullptr && motors[0]->getTelemetryErpm(&erpm_m1) == BidirDshotTelemetryType::ERPM) {
-        motb.m1_rpm = static_cast<float>(erpm_m1) / divisor;
-    } else {
-        motb.m1_rpm = 0.0f;
-    }
-
-    uint32_t erpm_m2 = 0;
-    if (motors[1] != nullptr && motors[1]->getTelemetryErpm(&erpm_m2) == BidirDshotTelemetryType::ERPM) {
-        motb.m2_rpm = static_cast<float>(erpm_m2) / divisor;
-    } else {
-        motb.m2_rpm = 0.0f;
-    }
-
-    uint32_t erpm_m3 = 0;
-    if (motors[2] != nullptr && motors[2]->getTelemetryErpm(&erpm_m3) == BidirDshotTelemetryType::ERPM) {
-        motb.m3_rpm = static_cast<float>(erpm_m3) / divisor;
-    } else {
-        motb.m3_rpm = 0.0f;
-    }
-
-    uint32_t erpm_m4 = 0;
-    if (motors[3] != nullptr && motors[3]->getTelemetryErpm(&erpm_m4) == BidirDshotTelemetryType::ERPM) {
-        motb.m4_rpm = static_cast<float>(erpm_m4) / divisor;
-    } else {
-        motb.m4_rpm = 0.0f;
-    }
-
-    return motb;
 }

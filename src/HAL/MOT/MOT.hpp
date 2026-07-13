@@ -9,9 +9,10 @@ public:
     MOT(MOTc cfg);
     ~MOT();
 
-    MOTb update(const ACTb& actb);
+    void update(const ACTb& actb);
 
 private:
     MOTc motc;
-    BidirDShotX1* motors[4];
+    DShotX4* dshot1;
+    DShotX4* dshot2;
 };

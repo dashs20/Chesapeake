@@ -15,17 +15,9 @@ struct RCRXb {
     float yaw_frac;
 };
 
-struct MOTb {
-    float m1_rpm;
-    float m2_rpm;
-    float m3_rpm;
-    float m4_rpm;
-};
-
 struct HALb {
     IMUb imub;
     RCRXb rcrxb;
-    MOTb motb;
     float vbat_volts;
     float execution_time_ms;
 };
