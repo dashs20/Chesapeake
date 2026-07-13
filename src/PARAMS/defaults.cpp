@@ -15,8 +15,8 @@ void load_default_config(MASTERc& config) {
     config.halc.rcrxc.pitch_ch = 2;
     config.halc.rcrxc.thr_ch = 3;
     config.halc.rcrxc.yaw_ch = 4;
-    config.halc.rcrxc.arm_ch = 5;
-    config.halc.rcrxc.mode_ch = 6;
+    config.halc.rcrxc.arm_ch = 6;
+    config.halc.rcrxc.mode_ch = 5;
 
     config.halc.batc.pin = 26;
     config.halc.batc.division_factor = 10.1f;
@@ -41,7 +41,7 @@ void load_default_config(MASTERc& config) {
     config.halc.serc.min_us = 1000;
     config.halc.serc.max_us = 2000;
 
-    config.gncc.looprate_hz = 250;
+    config.gncc.looprate_hz = 1000;
     config.gncc.allocator = ALLOCATOR::QUAD;
 
     config.gncc.navc.q_IMU2body = Eigen::Quaternionf::Identity();
