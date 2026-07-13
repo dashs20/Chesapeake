@@ -14,6 +14,7 @@ void DEBUG::update(const ALLb& allb_km1) {
         return;
     }
 
+    /*
     float ax = allb_km1.halb.imub.accel_body_mps2.x();
     float ay = allb_km1.halb.imub.accel_body_mps2.y();
     float az = allb_km1.halb.imub.accel_body_mps2.z();
@@ -27,7 +28,15 @@ void DEBUG::update(const ALLb& allb_km1) {
 
     float roll_lib = allb_km1.gncb.navb.euler_bodyz2up_rad.x() * 57.29577951f;
     float pitch_lib = allb_km1.gncb.navb.euler_bodyz2up_rad.y() * 57.29577951f;
+    */
 
-    Serial.printf("$DBG,%+07.2f,%+07.2f,%+07.2f,%+07.2f,%+07.2f,%+07.2f,%+07.2f,%+07.2f,%+07.2f,%+07.2f\n",
-                  ax, ay, az, gx, gy, gz, roll_lib, pitch_lib, roll_abs, pitch_abs);
+    float rx_roll = allb_km1.halb.rcrxb.roll_frac;
+    float rx_pitch = allb_km1.halb.rcrxb.pitch_frac;
+    float rx_yaw = allb_km1.halb.rcrxb.yaw_frac;
+    float rx_thr = allb_km1.halb.rcrxb.thr_frac;
+    float rx_arm = allb_km1.halb.rcrxb.arm_frac;
+    float rx_mode = allb_km1.halb.rcrxb.mode_frac;
+
+    Serial.printf("$DBG,%+07.2f,%+07.2f,%+07.2f,%+07.2f,%+07.2f,%+07.2f\n",
+                  rx_roll, rx_pitch, rx_yaw, rx_thr, rx_arm, rx_mode);
 }

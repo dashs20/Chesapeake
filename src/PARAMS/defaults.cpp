@@ -10,13 +10,13 @@ void load_default_config(MASTERc& config) {
     config.halc.motc.speed_kbd = 300;
     config.halc.motc.pole_pairs = 14;
 
-    config.halc.rcrxc.uart_id = 0;
-    config.halc.rcrxc.roll_ch = 0;
-    config.halc.rcrxc.pitch_ch = 1;
-    config.halc.rcrxc.thr_ch = 2;
-    config.halc.rcrxc.yaw_ch = 3;
-    config.halc.rcrxc.arm_ch = 4;
-    config.halc.rcrxc.mode_ch = 5;
+    config.halc.rcrxc.uart_id = 1;
+    config.halc.rcrxc.roll_ch = 1;
+    config.halc.rcrxc.pitch_ch = 2;
+    config.halc.rcrxc.thr_ch = 3;
+    config.halc.rcrxc.yaw_ch = 4;
+    config.halc.rcrxc.arm_ch = 5;
+    config.halc.rcrxc.mode_ch = 6;
 
     config.halc.batc.pin = 26;
     config.halc.batc.division_factor = 10.1f;
