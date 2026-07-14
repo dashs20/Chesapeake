@@ -7,9 +7,12 @@ RCRX::RCRX(RCRXc rcrxc, uint32_t looprate_hz)
       telemetry_dt_s(1.0f / rcrxc.telemetry_hz), 
       time_accumulator_s(0.0f) {
     if (rcrxc.uart_id == 1) {
+        Serial1.setTX(0);
+        Serial1.setRX(1);
         Serial1.begin(420000);
         port = &Serial1;
     } else if (rcrxc.uart_id == 2) {
+        // Serial2 defaults or custom pins if needed
         Serial2.begin(420000);
         port = &Serial2;
     }
