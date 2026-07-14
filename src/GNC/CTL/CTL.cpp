@@ -47,8 +47,8 @@ CTLb CTL::update(const ALLb& allb) {
         case FLIGHT_MODE::ANGLE: {
             if (time_accumulator_s >= angle_loop_dt_s) {
                 time_accumulator_s = 0.0f;
-                float roll_error_rad = allb.gncb.guib.euler_bodyz2up_rad.x() - allb.gncb.navb.euler_bodyz2up_rad.x();
-                float pitch_error_rad = allb.gncb.guib.euler_bodyz2up_rad.y() - allb.gncb.navb.euler_bodyz2up_rad.y();
+                float roll_error_rad = allb.gncb.navb.euler_bodyz2up_rad.x() - allb.gncb.guib.euler_bodyz2up_rad.x();
+                float pitch_error_rad = allb.gncb.navb.euler_bodyz2up_rad.y() - allb.gncb.guib.euler_bodyz2up_rad.y();
                 Eigen::Vector3f euler_error_rad(roll_error_rad, pitch_error_rad, 0.0f);
                 Eigen::Vector3f target_rates_xy_radps = angle_controller.update(euler_error_rad, Eigen::Vector3f::Zero());
                 target_rates_radps.x() = target_rates_xy_radps.x();
