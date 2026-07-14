@@ -13,16 +13,64 @@ extern HAL* hal_ptr;
 extern GNC* gnc_ptr;
 
 PARAMS::PARAMS() {
-    EEPROM.begin(sizeof(MASTERc));
+    if (!LittleFS.begin()) {
+        Serial.println("ERROR: LittleFS initialization failed! Formatting...");
+        LittleFS.format();
+        if (LittleFS.begin()) {
+            Serial.println("DEBUG: LittleFS formatted and mounted successfully.");
+        } else {
+            Serial.println("ERROR: LittleFS formatting/mount failed!");
+        }
+    } else {
+        Serial.println("DEBUG: LittleFS mounted successfully.");
+    }
 }
 
 PARAMS::~PARAMS() {}
 
 bool PARAMS::load(MASTERc& config) {
-    EEPROM.get(0, config);
+    if (!LittleFS.exists("/config.txt")) {
+        Serial.println("DEBUG: config.txt does not exist. Writing defaults...");
+        load_default_config(config);
+        save(config);
+        return true;
+    }
+
+    File file = LittleFS.open("/config.txt", "r");
+    if (!file) {
+        Serial.println("ERROR: Failed to open config.txt for reading! Loading defaults...");
+        load_default_config(config);
+        return false;
+    }
+
+    // Load defaults first so any parameters not specified in config.txt will have default values
+    load_default_config(config);
+
+    Serial.println("DEBUG: Loading config from config.txt on LittleFS...");
+    while (file.available()) {
+        String line = file.readStringUntil('\n');
+        line.trim();
+        if (line.length() == 0 || line.startsWith("#") || line.startsWith("//")) {
+            continue;
+        }
+        
+        char buf[128];
+        strncpy(buf, line.c_str(), sizeof(buf));
+        buf[sizeof(buf) - 1] = '\0';
+
+        char* cmd = std::strtok(buf, " ");
+        if (cmd != nullptr && std::strcmp(cmd, "set") == 0) {
+            char* param_name = std::strtok(nullptr, " =");
+            char* param_val = std::strtok(nullptr, " =");
+            if (param_name != nullptr && param_val != nullptr) {
+                set_parameter(config, param_name, param_val);
+            }
+        }
+    }
+    file.close();
     config.halc.imuc.spi_port = &SPI1;
-    Serial.printf("DEBUG: Loaded config. Magic = 0x%08X, Size = %u\n", config.magic, (unsigned int)sizeof(MASTERc));
-    return (config.magic == 0x4348455C);
+    Serial.println("DEBUG: Loaded config successfully from LittleFS.");
+    return true;
 }
 
 extern volatile bool system_ready;
@@ -30,11 +78,136 @@ extern volatile bool system_ready;
 void PARAMS::save(const MASTERc& config) {
     system_ready = false;
     delay(50);
-    MASTERc mutable_config = config;
-    mutable_config.magic = 0x4348455C;
-    EEPROM.put(0, mutable_config);
-    bool success = EEPROM.commit();
-    Serial.printf("DEBUG: EEPROM.commit() success = %d\n", success);
+    File file = LittleFS.open("/config.txt", "w");
+    if (!file) {
+        Serial.println("ERROR: Failed to open config.txt for writing!");
+        system_ready = true;
+        return;
+    }
+
+    file.printf("set mot_m1_pin = %d\n", config.halc.motc.m1_pin);
+    file.printf("set mot_m2_pin = %d\n", config.halc.motc.m2_pin);
+    file.printf("set mot_m3_pin = %d\n", config.halc.motc.m3_pin);
+    file.printf("set mot_m4_pin = %d\n", config.halc.motc.m4_pin);
+    file.printf("set mot_speed_kbd = %d\n", config.halc.motc.speed_kbd);
+    file.printf("set mot_pole_pairs = %d\n", config.halc.motc.pole_pairs);
+
+    file.printf("set rcrx_uart_id = %d\n", config.halc.rcrxc.uart_id);
+    file.printf("set rcrx_roll_ch = %d\n", config.halc.rcrxc.roll_ch);
+    file.printf("set rcrx_pitch_ch = %d\n", config.halc.rcrxc.pitch_ch);
+    file.printf("set rcrx_thr_ch = %d\n", config.halc.rcrxc.thr_ch);
+    file.printf("set rcrx_yaw_ch = %d\n", config.halc.rcrxc.yaw_ch);
+    file.printf("set rcrx_arm_ch = %d\n", config.halc.rcrxc.arm_ch);
+    file.printf("set rcrx_mode_ch = %d\n", config.halc.rcrxc.mode_ch);
+    file.printf("set rcrx_telemetry_hz = %.6f\n", config.halc.rcrxc.telemetry_hz);
+
+    file.printf("set bat_pin = %d\n", config.halc.batc.pin);
+    file.printf("set bat_division_factor = %.6f\n", config.halc.batc.division_factor);
+
+    file.printf("set imu_cs_pin = %d\n", config.halc.imuc.cs_pin);
+
+    // Map accel_fs
+    const char* accel_fs_str = "8G";
+    switch (config.halc.imuc.accel_fs) {
+        case LSM6DSV16X_ACC_FS::FS_2G: accel_fs_str = "2G"; break;
+        case LSM6DSV16X_ACC_FS::FS_4G: accel_fs_str = "4G"; break;
+        case LSM6DSV16X_ACC_FS::FS_8G: accel_fs_str = "8G"; break;
+        case LSM6DSV16X_ACC_FS::FS_16G: accel_fs_str = "16G"; break;
+    }
+    file.printf("set imu_accel_fs = %s\n", accel_fs_str);
+
+    // Map gyro_fs
+    const char* gyro_fs_str = "1000DPS";
+    switch (config.halc.imuc.gyro_fs) {
+        case LSM6DSV16X_GYRO_FS::FS_125DPS: gyro_fs_str = "125DPS"; break;
+        case LSM6DSV16X_GYRO_FS::FS_250DPS: gyro_fs_str = "250DPS"; break;
+        case LSM6DSV16X_GYRO_FS::FS_500DPS: gyro_fs_str = "500DPS"; break;
+        case LSM6DSV16X_GYRO_FS::FS_1000DPS: gyro_fs_str = "1000DPS"; break;
+        case LSM6DSV16X_GYRO_FS::FS_2000DPS: gyro_fs_str = "2000DPS"; break;
+        case LSM6DSV16X_GYRO_FS::FS_4000DPS: gyro_fs_str = "4000DPS"; break;
+    }
+    file.printf("set imu_gyro_fs = %s\n", gyro_fs_str);
+
+    // Map accel_odr
+    const char* accel_odr_str = "480Hz";
+    switch (config.halc.imuc.accel_odr) {
+        case LSM6DSV16X_ODR::OFF: accel_odr_str = "OFF"; break;
+        case LSM6DSV16X_ODR::ODR_1Hz875: accel_odr_str = "1.875Hz"; break;
+        case LSM6DSV16X_ODR::ODR_7Hz5: accel_odr_str = "7.5Hz"; break;
+        case LSM6DSV16X_ODR::ODR_15Hz: accel_odr_str = "15Hz"; break;
+        case LSM6DSV16X_ODR::ODR_30Hz: accel_odr_str = "30Hz"; break;
+        case LSM6DSV16X_ODR::ODR_60Hz: accel_odr_str = "60Hz"; break;
+        case LSM6DSV16X_ODR::ODR_120Hz: accel_odr_str = "120Hz"; break;
+        case LSM6DSV16X_ODR::ODR_240Hz: accel_odr_str = "240Hz"; break;
+        case LSM6DSV16X_ODR::ODR_480Hz: accel_odr_str = "480Hz"; break;
+        case LSM6DSV16X_ODR::ODR_960Hz: accel_odr_str = "960Hz"; break;
+        case LSM6DSV16X_ODR::ODR_1920Hz: accel_odr_str = "1920Hz"; break;
+        case LSM6DSV16X_ODR::ODR_3840Hz: accel_odr_str = "3840Hz"; break;
+        case LSM6DSV16X_ODR::ODR_7680Hz: accel_odr_str = "7680Hz"; break;
+    }
+    file.printf("set imu_accel_odr = %s\n", accel_odr_str);
+
+    // Map gyro_odr
+    const char* gyro_odr_str = "480Hz";
+    switch (config.halc.imuc.gyro_odr) {
+        case LSM6DSV16X_ODR::OFF: gyro_odr_str = "OFF"; break;
+        case LSM6DSV16X_ODR::ODR_1Hz875: gyro_odr_str = "1.875Hz"; break;
+        case LSM6DSV16X_ODR::ODR_7Hz5: gyro_odr_str = "7.5Hz"; break;
+        case LSM6DSV16X_ODR::ODR_15Hz: gyro_odr_str = "15Hz"; break;
+        case LSM6DSV16X_ODR::ODR_30Hz: gyro_odr_str = "30Hz"; break;
+        case LSM6DSV16X_ODR::ODR_60Hz: gyro_odr_str = "60Hz"; break;
+        case LSM6DSV16X_ODR::ODR_120Hz: gyro_odr_str = "120Hz"; break;
+        case LSM6DSV16X_ODR::ODR_240Hz: gyro_odr_str = "240Hz"; break;
+        case LSM6DSV16X_ODR::ODR_480Hz: gyro_odr_str = "480Hz"; break;
+        case LSM6DSV16X_ODR::ODR_960Hz: gyro_odr_str = "960Hz"; break;
+        case LSM6DSV16X_ODR::ODR_1920Hz: gyro_odr_str = "1920Hz"; break;
+        case LSM6DSV16X_ODR::ODR_3840Hz: gyro_odr_str = "3840Hz"; break;
+        case LSM6DSV16X_ODR::ODR_7680Hz: gyro_odr_str = "7680Hz"; break;
+    }
+    file.printf("set imu_gyro_odr = %s\n", gyro_odr_str);
+
+    file.printf("set ser_s1_pin = %d\n", config.halc.serc.s1_pin);
+    file.printf("set ser_s2_pin = %d\n", config.halc.serc.s2_pin);
+    file.printf("set ser_s3_pin = %d\n", config.halc.serc.s3_pin);
+    file.printf("set ser_s4_pin = %d\n", config.halc.serc.s4_pin);
+    file.printf("set ser_min_us = %d\n", config.halc.serc.min_us);
+    file.printf("set ser_max_us = %d\n", config.halc.serc.max_us);
+    file.printf("set led_pin = %d\n", config.halc.ledc.pin);
+    file.printf("set hal_telemetry_uart_id = %d\n", config.halc.telemetry_uart_id);
+    file.printf("set hal_telemetry_decimation = %d\n", config.halc.telemetry_decimation);
+
+    file.printf("set gnc_looprate_hz = %d\n", config.gncc.looprate_hz);
+    file.printf("set angle_loop_hz = %d\n", config.gncc.ctlc.angle_loop_hz);
+    file.printf("set roll_rate_kp = %.6f\n", config.gncc.ctlc.rate.roll.kp);
+    file.printf("set roll_rate_ki = %.6f\n", config.gncc.ctlc.rate.roll.ki);
+    file.printf("set roll_rate_kd = %.6f\n", config.gncc.ctlc.rate.roll.kd);
+    file.printf("set roll_rate_imax = %.6f\n", config.gncc.ctlc.rate.roll.i_max);
+    file.printf("set pitch_rate_kp = %.6f\n", config.gncc.ctlc.rate.pitch.kp);
+    file.printf("set pitch_rate_ki = %.6f\n", config.gncc.ctlc.rate.pitch.ki);
+    file.printf("set pitch_rate_kd = %.6f\n", config.gncc.ctlc.rate.pitch.kd);
+    file.printf("set pitch_rate_imax = %.6f\n", config.gncc.ctlc.rate.pitch.i_max);
+    file.printf("set yaw_rate_kp = %.6f\n", config.gncc.ctlc.rate.yaw.kp);
+    file.printf("set yaw_rate_ki = %.6f\n", config.gncc.ctlc.rate.yaw.ki);
+    file.printf("set yaw_rate_kd = %.6f\n", config.gncc.ctlc.rate.yaw.kd);
+    file.printf("set yaw_rate_imax = %.6f\n", config.gncc.ctlc.rate.yaw.i_max);
+
+    file.printf("set roll_ang_kp = %.6f\n", config.gncc.ctlc.angle.roll.kp);
+    file.printf("set pitch_ang_kp = %.6f\n", config.gncc.ctlc.angle.pitch.kp);
+    file.printf("set yaw_ang_kp = %.6f\n", config.gncc.ctlc.angle.yaw.kp);
+    file.printf("set blink_hz_disarmed = %.6f\n", config.gncc.allocc.blink_hz_disarmed);
+    file.printf("set blink_hz_rate = %.6f\n", config.gncc.allocc.blink_hz_rate);
+    file.printf("set blink_hz_angle = %.6f\n", config.gncc.allocc.blink_hz_angle);
+    file.printf("set gnc_nav_gyro_error = %.6f\n", config.gncc.navc.gyro_error_degps);
+    file.printf("set alloc_max_motor_frac = %.6f\n", config.gncc.allocc.max_motor_frac);
+    file.printf("set gnc_nav_imu_calc_accel_bias_x = %.6f\n", config.gncc.navc.imu_calc.accel_bias.x());
+    file.printf("set gnc_nav_imu_calc_accel_bias_y = %.6f\n", config.gncc.navc.imu_calc.accel_bias.y());
+    file.printf("set gnc_nav_imu_calc_accel_bias_z = %.6f\n", config.gncc.navc.imu_calc.accel_bias.z());
+    file.printf("set gnc_nav_imu_calc_gyro_bias_x = %.6f\n", config.gncc.navc.imu_calc.gyro_bias.x());
+    file.printf("set gnc_nav_imu_calc_gyro_bias_y = %.6f\n", config.gncc.navc.imu_calc.gyro_bias.y());
+    file.printf("set gnc_nav_imu_calc_gyro_bias_z = %.6f\n", config.gncc.navc.imu_calc.gyro_bias.z());
+
+    file.close();
+    Serial.println("DEBUG: Config saved successfully to /config.txt on LittleFS");
     system_ready = true;
 }
 

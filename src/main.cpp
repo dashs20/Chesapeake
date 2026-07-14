@@ -43,15 +43,10 @@ void setup() {
                   (F_CPU >= 240000000L) ? "1.20V" : (F_CPU >= 200000000L ? "1.15V" : "1.10V (stock)"));
 
     params_ptr = new PARAMS();
-    // TEMP DEBUG: Force-load default configuration on boot to bypass EEPROM stale layout issues
-    load_default_config(config_data);
-
-    /*
     if (!params_ptr->load(config_data)) {
         load_default_config(config_data);
         params_ptr->save(config_data);
     }
-    */
 
     cfg_app_ptr = new CFG_APP(config_data);
     hal_ptr = new HAL(config_data.halc, config_data.gncc.looprate_hz);
@@ -131,7 +126,7 @@ void loop() {
 
             params_ptr->save(config_data);
 
-            Serial.println("Calibration complete! Saved biases to EEPROM:");
+            Serial.println("Calibration complete! Saved biases to LittleFS config file:");
             Serial.printf("  Gyro Biases:  x=%.6f, y=%.6f, z=%.6f\n", gyro_bias.x(), gyro_bias.y(), gyro_bias.z());
             Serial.printf("  Accel Biases: x=%.6f, y=%.6f, z=%.6f\n", accel_bias.x(), accel_bias.y(), accel_bias.z());
 

@@ -1003,7 +1003,7 @@ function parseBinaryALLb(flatbufferPayload) {
                 
                 const cliOutput = document.getElementById("cli-output");
                 if (cliOutput) {
-                    cliOutput.textContent += "\n>>> Calibration complete! Biases saved to EEPROM. Reloading parameters...\n";
+                    cliOutput.textContent += "\n>>> Calibration complete! Biases saved to config file. Reloading parameters...\n";
                     cliOutput.scrollTop = cliOutput.scrollHeight;
                 }
                 reloadParams();

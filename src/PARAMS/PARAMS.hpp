@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MASTERc.hpp"
-#include <EEPROM.h>
+#include <LittleFS.h>
 
 class PARAMS {
 public:
