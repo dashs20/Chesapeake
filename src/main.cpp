@@ -23,6 +23,9 @@ static volatile bool shifted = false;
 volatile bool system_ready = false;
 
 void setup() {
+    // Delay 2 seconds on boot to let the ELRS receiver and power rails fully stabilize
+    delay(2000);
+
     #if F_CPU >= 240000000L
     vreg_set_voltage(VREG_VOLTAGE_1_20);
     delay(10);
@@ -42,7 +45,6 @@ void setup() {
     params_ptr = new PARAMS();
     // TEMP DEBUG: Force-load default configuration on boot to bypass EEPROM stale layout issues
     load_default_config(config_data);
-    params_ptr->save(config_data);
 
     /*
     if (!params_ptr->load(config_data)) {

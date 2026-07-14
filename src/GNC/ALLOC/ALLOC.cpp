@@ -55,10 +55,10 @@ ACTb ALLOC::allocate_quad(const ALLb& allb) {
     float yaw_effort_frac = allb.gncb.ctlb.axes_effort_frac.z();
 
     ACTb actb;
-    actb.m1_frac = throttle_frac - roll_effort_frac - pitch_effort_frac - yaw_effort_frac;
-    actb.m2_frac = throttle_frac - roll_effort_frac + pitch_effort_frac + yaw_effort_frac;
-    actb.m3_frac = throttle_frac + roll_effort_frac - pitch_effort_frac + yaw_effort_frac;
-    actb.m4_frac = throttle_frac + roll_effort_frac + pitch_effort_frac - yaw_effort_frac;
+    actb.m1_frac = throttle_frac - roll_effort_frac - pitch_effort_frac + yaw_effort_frac;
+    actb.m2_frac = throttle_frac - roll_effort_frac + pitch_effort_frac - yaw_effort_frac;
+    actb.m3_frac = throttle_frac + roll_effort_frac - pitch_effort_frac - yaw_effort_frac;
+    actb.m4_frac = throttle_frac + roll_effort_frac + pitch_effort_frac + yaw_effort_frac;
 
     actb.s1_deg = cfg_data.allocc.ser_default_ang_deg;
     actb.s2_deg = cfg_data.allocc.ser_default_ang_deg;

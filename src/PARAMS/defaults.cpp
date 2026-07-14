@@ -46,15 +46,6 @@ void load_default_config(MASTERc& config) {
     config.gncc.navc.imu_calc.gyro_bias = Eigen::Vector3f::Zero();
     config.gncc.navc.gyro_error_degps = 5.0f;
 
-    PID_SCALARc rate_pid;
-    rate_pid.kp = 0.1f;
-    rate_pid.ki = 0.0f;
-    rate_pid.kd = 0.0f;
-    rate_pid.i_max = 0.5f;
-    rate_pid.out_min = -1.0f;
-    rate_pid.out_max = 1.0f;
-    rate_pid.dt_s = 0.0f;
-
     PID_SCALARc angle_pid;
     angle_pid.kp = 0.01f;
     angle_pid.ki = 0.0f;
@@ -64,18 +55,28 @@ void load_default_config(MASTERc& config) {
     angle_pid.out_max = 1.0f;
     angle_pid.dt_s = 0.0f;
 
-    config.gncc.ctlc.angle_loop_hz = 500;
-    config.gncc.ctlc.rate.roll = rate_pid;
-    config.gncc.ctlc.rate.pitch = rate_pid;
+    PID_SCALARc rate_pid;
+    rate_pid.kp = 0.01f;
+    rate_pid.ki = 0.0f;
+    rate_pid.kd = 0.0f;
+    rate_pid.i_max = 0.5f;
+    rate_pid.out_min = -1.0f;
+    rate_pid.out_max = 1.0f;
+    rate_pid.dt_s = 0.0f;
 
     PID_SCALARc yaw_rate_pid;
-    yaw_rate_pid.kp = 0.01f;
+    yaw_rate_pid.kp = 0.001f;
     yaw_rate_pid.ki = 0.0f;
     yaw_rate_pid.kd = 0.0f;
     yaw_rate_pid.i_max = 0.5f;
     yaw_rate_pid.out_min = -1.0f;
     yaw_rate_pid.out_max = 1.0f;
     yaw_rate_pid.dt_s = 0.0f;
+
+    config.gncc.ctlc.angle_loop_hz = 500;
+    config.gncc.ctlc.rate.roll = rate_pid;
+    config.gncc.ctlc.rate.pitch = rate_pid;
+
     config.gncc.ctlc.rate.yaw = yaw_rate_pid;
     config.gncc.ctlc.angle.roll = angle_pid;
     config.gncc.ctlc.angle.pitch = angle_pid;
