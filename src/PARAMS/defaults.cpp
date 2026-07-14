@@ -44,7 +44,7 @@ void load_default_config(MASTERc& config) {
     config.gncc.looprate_hz = 1000;
     config.gncc.allocator = ALLOCATOR::QUAD;
 
-    config.gncc.navc.q_IMU2body = Eigen::Quaternionf::Identity();
+    config.gncc.navc.q_IMU2body = Eigen::Quaternionf(0.000000f, 0.707107f, 0.707107f, 0.000000f);
     config.gncc.navc.accel_bias = Eigen::Vector3f::Zero();
     config.gncc.navc.gyro_bias = Eigen::Vector3f::Zero();
     config.gncc.navc.gyro_error_degps = 5.0f;
@@ -99,7 +99,7 @@ void load_default_config(MASTERc& config) {
     config.halc.rpic.rate_divisor = 5;
 
     config.halc.debugc.enabled = true;
-    config.halc.debugc.decimation = 125;
+    config.halc.debugc.decimation = 10;
 
     config.gncc.vsmc.arm_threshold_frac = 0.8f;
     config.gncc.vsmc.mode_rate_threshold_frac = 0.3f;

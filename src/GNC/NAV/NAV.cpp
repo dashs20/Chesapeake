@@ -51,8 +51,8 @@ IMU_Compensated NAV::compensate_imu(const ALLb& allb) {
     accel_raw_mps2 -= cfg_data.navc.accel_bias;
     omega_raw_radps -= cfg_data.navc.gyro_bias;
  
-    Eigen::Vector3f accel_body_raw_mps2 = cfg_data.navc.q_IMU2body * accel_raw_mps2;
-    Eigen::Vector3f omega_body_radps = cfg_data.navc.q_IMU2body * omega_raw_radps;
+    Eigen::Vector3f accel_body_raw_mps2 = cfg_data.navc.q_IMU2body.conjugate() * accel_raw_mps2;
+    Eigen::Vector3f omega_body_radps = cfg_data.navc.q_IMU2body.conjugate() * omega_raw_radps;
  
     IMU_Compensated output;
     output.accel_CG_mps2 = accel_body_raw_mps2;

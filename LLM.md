@@ -55,6 +55,8 @@ Attribution: Include "Assisted by Gemini" in all relevant commit bodies.
 
 Serial Monitor: You are NOT allowed to open the serial monitor anymore. When you want to test, ask the USER and they will do it. Never run pio device monitor or any command to read from the serial port.
 
+Debug Editing: Whenever the debug telemetry (DEBUG.cpp) is edited for a new request, either uncomment an existing block that already matches the request, or comment out the active block and add a new block. Do not delete past telemetry blocks.
+
 Self-Correction: Immediately document any user correction in LLM.md following the established format.
 
 Correction Log:
