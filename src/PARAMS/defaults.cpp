@@ -56,7 +56,7 @@ void load_default_config(MASTERc& config) {
     rate_pid.dt_s = 0.0f;
 
     PID_SCALARc angle_pid;
-    angle_pid.kp = 0.1f;
+    angle_pid.kp = 0.01f;
     angle_pid.ki = 0.0f;
     angle_pid.kd = 0.0f;
     angle_pid.i_max = 0.0f;
@@ -67,7 +67,16 @@ void load_default_config(MASTERc& config) {
     config.gncc.ctlc.angle_loop_hz = 500;
     config.gncc.ctlc.rate.roll = rate_pid;
     config.gncc.ctlc.rate.pitch = rate_pid;
-    config.gncc.ctlc.rate.yaw = rate_pid;
+
+    PID_SCALARc yaw_rate_pid;
+    yaw_rate_pid.kp = 0.01f;
+    yaw_rate_pid.ki = 0.0f;
+    yaw_rate_pid.kd = 0.0f;
+    yaw_rate_pid.i_max = 0.5f;
+    yaw_rate_pid.out_min = -1.0f;
+    yaw_rate_pid.out_max = 1.0f;
+    yaw_rate_pid.dt_s = 0.0f;
+    config.gncc.ctlc.rate.yaw = yaw_rate_pid;
     config.gncc.ctlc.angle.roll = angle_pid;
     config.gncc.ctlc.angle.pitch = angle_pid;
     config.gncc.ctlc.angle.yaw = angle_pid;
