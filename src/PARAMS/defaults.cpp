@@ -35,6 +35,8 @@ void load_default_config(MASTERc& config) {
     config.halc.serc.s4_pin = 3;
     config.halc.serc.min_us = 1000;
     config.halc.serc.max_us = 2000;
+    config.halc.telemetry_uart_id = 0;
+    config.halc.telemetry_decimation = 10;
 
     config.gncc.looprate_hz = 1000;
     config.gncc.allocator = ALLOCATOR::QUAD;

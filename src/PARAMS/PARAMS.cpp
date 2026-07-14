@@ -119,6 +119,8 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("ser_max_us = "); Serial.println(config.halc.serc.max_us);
     Serial.print("led_pin = "); Serial.println(config.halc.ledc.pin);
     Serial.print("rcrx_telemetry_hz = "); Serial.println(config.halc.rcrxc.telemetry_hz);
+    Serial.print("hal_telemetry_uart_id = "); Serial.println(config.halc.telemetry_uart_id);
+    Serial.print("hal_telemetry_decimation = "); Serial.println(config.halc.telemetry_decimation);
 
     Serial.print("gnc_looprate_hz = "); Serial.println(config.gncc.looprate_hz);
     Serial.print("angle_loop_hz = "); Serial.println(config.gncc.ctlc.angle_loop_hz);
@@ -235,6 +237,10 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         }
     } else if (std::strcmp(name, "rcrx_telemetry_hz") == 0) {
         Serial.println(config.halc.rcrxc.telemetry_hz);
+    } else if (std::strcmp(name, "hal_telemetry_uart_id") == 0) {
+        Serial.println(config.halc.telemetry_uart_id);
+    } else if (std::strcmp(name, "hal_telemetry_decimation") == 0) {
+        Serial.println(config.halc.telemetry_decimation);
     } else if (std::strcmp(name, "ser_s1_pin") == 0) {
         Serial.println(config.halc.serc.s1_pin);
     } else if (std::strcmp(name, "ser_s2_pin") == 0) {
@@ -405,6 +411,10 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         else { Serial.println("Error: Invalid gyro ODR"); return; }
     } else if (std::strcmp(name, "rcrx_telemetry_hz") == 0) {
         config.halc.rcrxc.telemetry_hz = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "hal_telemetry_uart_id") == 0) {
+        config.halc.telemetry_uart_id = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "hal_telemetry_decimation") == 0) {
+        config.halc.telemetry_decimation = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "ser_s1_pin") == 0) {
         config.halc.serc.s1_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "ser_s2_pin") == 0) {

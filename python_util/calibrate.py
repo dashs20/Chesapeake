@@ -19,16 +19,16 @@ def parse_flatbuffer(payload):
     vector_len = struct.unpack('<I', payload[vector_start:vector_start+4])[0]
     return payload[vector_start+4 : vector_start+4+vector_len]
 
-def collect_samples(ser, n_samples):
+def collect_samples(ser, n_samples, telem_hz):
     samples = []
     buffer = bytearray()
     print(f"Collecting {n_samples} raw IMU samples. Keep the board flat and still...")
     
+    sleep_s = 1.0 / (2.0 * telem_hz)
     while len(samples) < n_samples:
         if ser.in_waiting > 0:
             buffer.extend(ser.read(ser.in_waiting))
             
-            # Scan buffer for packet header
             while True:
                 idx = buffer.find(b'\xAA\xBB\x01')
                 if idx == -1:
@@ -45,9 +45,6 @@ def collect_samples(ser, n_samples):
                 payload = buffer[idx+5 : idx+total_len]
                 struct_bytes = parse_flatbuffer(payload)
                 if struct_bytes is not None and len(struct_bytes) >= 24:
-                    # Unpack raw gyro (gx, gy, gz) and accel (ax, ay, az)
-                    # gx, gy, gz start at offset 0 (3 floats)
-                    # ax, ay, az start at offset 12 (3 floats)
                     gx, gy, gz = struct.unpack('<fff', struct_bytes[0:12])
                     ax, ay, az = struct.unpack('<fff', struct_bytes[12:24])
                     samples.append((gx, gy, gz, ax, ay, az))
@@ -55,10 +52,9 @@ def collect_samples(ser, n_samples):
                     if len(samples) % (n_samples // 10 or 1) == 0:
                         print(f"Progress: {len(samples)}/{n_samples} samples collected...")
                 
-                # Consume packet from buffer
                 buffer = buffer[idx+total_len:]
                 
-        time.sleep(0.005)
+        time.sleep(sleep_s)
     return samples
 
 def main():
@@ -66,13 +62,13 @@ def main():
     parser.add_argument("--port", required=True, help="Serial port of the flight controller (e.g. COM3 or /dev/ttyACM0)")
     parser.add_argument("--baud", type=int, default=115200, help="CLI communication baud rate")
     parser.add_argument("--samples", type=int, default=200, help="Number of samples to collect")
+    parser.add_argument("--telem-hz", type=float, default=10.0, help="Telemetry rate of the board in Hz")
     parser.add_argument("--force-zero", action="store_true", help="Unconditionally zero biases before calibration")
     args = parser.parse_args()
 
     print(f"Connecting to flight controller on {args.port} at {args.baud} baud...")
     ser = serial.Serial(args.port, args.baud, timeout=1)
     
-    # Enter CLI mode and ensure biases are zeroed
     if args.force_zero:
         print("Zeroing biases on the board pre-calibration...")
         ser.write(b"set gnc_nav_imu_calc_accel_bias_x = 0\n")
@@ -93,11 +89,9 @@ def main():
         time.sleep(5.0)
         ser = serial.Serial(args.port, args.baud, timeout=1)
 
-    # Empty serial read buffer
     ser.reset_input_buffer()
     
-    # Collect data
-    samples = collect_samples(ser, args.samples)
+    samples = collect_samples(ser, args.samples, args.telem_hz)
     
     # Process gyro data (average each axis)
     sum_gx = sum_gy = sum_gz = 0.0

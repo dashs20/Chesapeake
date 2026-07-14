@@ -93,4 +93,6 @@ struct HALc {
     SERc serc;
     LEDc ledc;
     RPIc rpic;
+    uint8_t telemetry_uart_id;
+    uint32_t telemetry_decimation;
 };

@@ -29,4 +29,5 @@ private:
     SER ser;
     LED led;
     RPI rpi;
+    uint32_t telemetry_counter;
 };

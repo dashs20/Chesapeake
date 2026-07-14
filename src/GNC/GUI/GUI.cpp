@@ -14,8 +14,11 @@ GUIb GUI::update(const ALLb& allb) {
 
     GUIb guib;
     switch (allb.gncb.vsmb.mode) {
-        case FLIGHT_MODE::RATE:
         case FLIGHT_MODE::ACT_TEST:
+            guib.omega_body_radps = Eigen::Vector3f::Zero();
+            guib.euler_bodyz2up_rad = Eigen::Vector2f::Zero();
+            break;
+        case FLIGHT_MODE::RATE:
             guib.omega_body_radps.x() = roll_expo_frac * cfg_data.guic.max_rate_radps;
             guib.omega_body_radps.y() = pitch_expo_frac * cfg_data.guic.max_rate_radps;
             guib.omega_body_radps.z() = yaw_expo_frac * cfg_data.guic.max_rate_radps;
