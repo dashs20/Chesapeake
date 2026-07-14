@@ -1,28 +1,14 @@
 #pragma once
 #include <Eigen/Dense>
 #include "../HAL/bus.hpp"
+#include "../CFG_APP/bus.hpp"
 
 // VSM BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-enum class STATE{DISARMED, RATE, ANGLE};
-enum class ATT_MODE{RATE, ANGLE};
+enum class FLIGHT_MODE { RATE, ANGLE, ACT_TEST };
 
 struct VSMb{
-    STATE state;
-    ATT_MODE att_mode;
-};
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-// ACT BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-struct ACTb{
-    float m1_frac;
-    float m2_frac;
-    float m3_frac;
-    float m4_frac;
-    float s1_deg;
-    float s2_deg;
-    float s3_deg;
-    float s4_deg;
-    float LED_blink_Hz;
+    bool armed;
+    FLIGHT_MODE mode;
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -48,12 +34,25 @@ struct GUIb {
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+struct CAL_FEEDBACKb {
+    bool calibration_done;
+    bool is_calibrating;
+    float calibration_progress_frac;
+    float accel_bias_x;
+    float accel_bias_y;
+    float accel_bias_z;
+    float gyro_bias_x;
+    float gyro_bias_y;
+    float gyro_bias_z;
+};
+
 struct GNCb{
     VSMb vsmb;
     ACTb actb;
     NAVb navb;
     CTLb ctlb;
     GUIb guib;
+    CAL_FEEDBACKb cal_feedback;
     float gnc_time_ms;
 };
 // --~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~-
@@ -61,4 +60,5 @@ struct GNCb{
 struct ALLb {
     HALb halb;
     GNCb gncb;
+    CFG_APPb cfg_appb;
 };

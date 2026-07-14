@@ -12,6 +12,12 @@
             <img src="chesapeake.png" alt="Chesapeake Logo" class="logo">
             <span class="title">CHESAPEAKE CONFIGURATOR</span>
         </div>
+        <div class="tabs-navigation">
+            <button class="tab-btn active" data-tab="status-panel">Status</button>
+            <button class="tab-btn" data-tab="console-panel">Console & CLI</button>
+            <button class="tab-btn" data-tab="params-panel">Parameters</button>
+            <button class="tab-btn" data-tab="test-panel">Actuator Test</button>
+        </div>
         <div class="connection-controls">
             <button id="btn-connect" class="btn">Connect</button>
             <span id="connection-status" class="status-indicator disconnected">Disconnected</span>
@@ -22,7 +28,172 @@
     </div>
 
     <div class="dashboard">
-        <div class="panel console-panel">
+        <div id="status-panel" class="panel tab-content active">
+            <h2>System Status</h2>
+            <div class="status-container" style="display: flex; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto;">
+                
+                <div class="status-summary-row" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div class="status-card">
+                        <span class="status-card-label">Arm State</span>
+                        <div id="badge-arm" class="status-badge badge-disarmed">DISARMED</div>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-card-label">Flight Mode</span>
+                        <div id="badge-mode" class="status-badge badge-disarmed">UNKNOWN</div>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-card-label">Battery Voltage</span>
+                        <div class="battery-status-container" style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                            <div class="battery-icon-outer" style="width: 40px; height: 20px; border: 2px solid #3f3f46; border-radius: 3px; padding: 2px; position: relative; background-color: #09090b;">
+                                <div id="battery-level-inner" style="height: 100%; width: 0%; background-color: #ef4444; border-radius: 1px; transition: width 0.3s, background-color 0.3s;"></div>
+                                <div class="battery-tip" style="width: 3px; height: 8px; background-color: #3f3f46; position: absolute; right: -5px; top: 4px; border-radius: 0 1px 1px 0;"></div>
+                            </div>
+                            <span id="label-vbat" style="font-family: monospace; font-size: 15px; font-weight: bold; color: #e4e4e7;">0.00V</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-section-card">
+                    <h3>Actuator Outputs</h3>
+                    <div class="status-actuators-grid">
+                        <div class="actuator-circle-item" id="circle-box-m1">
+                            <div class="actuator-circle" id="circle-m1">0%</div>
+                            <span class="actuator-label">Motor 1</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-m2">
+                            <div class="actuator-circle" id="circle-m2">0%</div>
+                            <span class="actuator-label">Motor 2</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-m3">
+                            <div class="actuator-circle" id="circle-m3">0%</div>
+                            <span class="actuator-label">Motor 3</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-m4">
+                            <div class="actuator-circle" id="circle-m4">0%</div>
+                            <span class="actuator-label">Motor 4</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-s1">
+                            <div class="actuator-circle" id="circle-s1">90°</div>
+                            <span class="actuator-label">Servo 1</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-s2">
+                            <div class="actuator-circle" id="circle-s2">90°</div>
+                            <span class="actuator-label">Servo 2</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-s3">
+                            <div class="actuator-circle" id="circle-s3">90°</div>
+                            <span class="actuator-label">Servo 3</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-s4">
+                            <div class="actuator-circle" id="circle-s4">90°</div>
+                            <span class="actuator-label">Servo 4</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-section-card">
+                    <h3>Rotated Gyro Rates</h3>
+                    <div class="gyro-rates-container" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div class="gyro-rate-row">
+                            <div class="gyro-rate-header">
+                                <span class="gyro-axis-label">Roll/X</span>
+                                <span id="label-rate-x" class="gyro-rate-val">0%</span>
+                            </div>
+                            <div class="gyro-bar-track">
+                                <div id="gyro-bar-x" class="gyro-bar-fill gyro-bar-x"></div>
+                                <div class="gyro-bar-center-line"></div>
+                            </div>
+                        </div>
+                        <div class="gyro-rate-row">
+                            <div class="gyro-rate-header">
+                                <span class="gyro-axis-label">Pitch/Y</span>
+                                <span id="label-rate-y" class="gyro-rate-val">0%</span>
+                            </div>
+                            <div class="gyro-bar-track">
+                                <div id="gyro-bar-y" class="gyro-bar-fill gyro-bar-y"></div>
+                                <div class="gyro-bar-center-line"></div>
+                            </div>
+                        </div>
+                        <div class="gyro-rate-row">
+                            <div class="gyro-rate-header">
+                                <span class="gyro-axis-label">Yaw/Z</span>
+                                <span id="label-rate-z" class="gyro-rate-val">0%</span>
+                            </div>
+                            <div class="gyro-bar-track">
+                                <div id="gyro-bar-z" class="gyro-bar-fill gyro-bar-z"></div>
+                                <div class="gyro-bar-center-line"></div>
+                            </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="status-section-card">
+                <h3>RC Receiver Channels</h3>
+                    <div class="rc-channels-container" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Throttle</span>
+                                <span id="label-rc-thr" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-thr" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 0;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Roll/X</span>
+                                <span id="label-rc-rol" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-rol" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 50%;"></div>
+                                <div style="position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background-color: #3f3f46;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Pitch/Y</span>
+                                <span id="label-rc-pit" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-pit" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 50%;"></div>
+                                <div style="position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background-color: #3f3f46;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Yaw/Z</span>
+                                <span id="label-rc-yaw" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-yaw" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 50%;"></div>
+                                <div style="position: absolute; left: 50%; top: 0; width: 1px; height: 100%; background-color: #3f3f46;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Arm Switch</span>
+                                <span id="label-rc-arm" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-arm" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 0;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Mode Switch</span>
+                                <span id="label-rc-mod" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-mod" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 0;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="console-panel" class="panel tab-content">
             <h2>Serial Monitor & CLI</h2>
             <div class="cli-container">
                 <div class="monitor-header">Serial Monitor</div>
@@ -36,7 +207,23 @@
             </div>
         </div>
 
-        <div class="panel params-panel">
+        <div id="test-panel" class="panel tab-content">
+            <h2>Actuator Test</h2>
+            <div class="test-controls" style="display: flex; flex-direction: column; gap: 15px; flex: 1;">
+                <div class="test-enable-row" style="display: flex; align-items: center; gap: 10px;">
+                    <button id="btn-toggle-test" class="btn btn-warning" disabled>Enable Test Mode</button>
+                    <span id="test-status" class="status-indicator disconnected">Test Disabled</span>
+                </div>
+                <div id="test-placeholder" class="params-placeholder">
+                    Connect and enable test mode to control actuators.
+                </div>
+                <div id="test-sliders" class="test-sliders-container" style="display: none; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1;">
+                    <!-- Dynamically populated sliders -->
+                </div>
+            </div>
+        </div>
+
+        <div id="params-panel" class="panel tab-content">
             <div class="panel-header">
                 <h2>Parameters</h2>
                 <div class="param-actions">

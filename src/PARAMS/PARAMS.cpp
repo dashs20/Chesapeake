@@ -12,7 +12,7 @@
 extern HAL* hal_ptr;
 extern GNC* gnc_ptr;
 
-PARAMS::PARAMS() : is_calibrating(false), calibration_counter(0), sum_ax(0.0f), sum_ay(0.0f), sum_az(0.0f), sum_gx(0.0f), sum_gy(0.0f), sum_gz(0.0f) {
+PARAMS::PARAMS() {
     EEPROM.begin(sizeof(MASTERc));
 }
 
@@ -38,18 +38,6 @@ void PARAMS::save(const MASTERc& config) {
     system_ready = true;
 }
 
-void PARAMS::print_help() {
-    Serial.println("Chesapeake CLI Help (For Chesapeake supported boards, like Bluecrab)");
-    Serial.println("Commands:");
-    Serial.println("  help                       - Show this help list");
-    Serial.println("  dump                       - Dump all parameter settings and current values");
-    Serial.println("  get <param>                - Print the current value of a parameter");
-    Serial.println("  set <param> = <value>      - Set a parameter in RAM (no spaces around '=')");
-    Serial.println("  save                       - Save RAM configuration to flash and reboot");
-    Serial.println("  defaults                   - Load default settings into RAM (requires save)");
-    Serial.println("  calibrate                  - Calibrate IMU/UKF flat and save biases");
-    Serial.println("  reboot                     - Reboot the flight controller");
-}
 
 void PARAMS::print_all(const MASTERc& config) {
     Serial.print("mot_m1_pin = "); Serial.println(config.halc.motc.m1_pin);
@@ -553,125 +541,4 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
     Serial.println("Parameter updated successfully in RAM");
 }
 
-void PARAMS::run_cli(MASTERc& config) {
-    if (is_calibrating) {
-        HALb bus = hal_ptr->get_bus();
-        sum_ax += bus.imub.accel_body_mps2.x() + config.halc.imuc.accel_bias_x_mps2;
-        sum_ay += bus.imub.accel_body_mps2.y() + config.halc.imuc.accel_bias_y_mps2;
-        sum_az += bus.imub.accel_body_mps2.z() + config.halc.imuc.accel_bias_z_mps2;
-        sum_gx += bus.imub.omega_body_radps.x() + config.halc.imuc.gyro_bias_x_radps;
-        sum_gy += bus.imub.omega_body_radps.y() + config.halc.imuc.gyro_bias_y_radps;
-        sum_gz += bus.imub.omega_body_radps.z() + config.halc.imuc.gyro_bias_z_radps;
-        calibration_counter++;
-        if (calibration_counter >= 200) {
-            is_calibrating = false;
-            float avg_ax = sum_ax / 200.0f;
-            float avg_ay = sum_ay / 200.0f;
-            float avg_az = sum_az / 200.0f;
-            float avg_gx = sum_gx / 200.0f;
-            float avg_gy = sum_gy / 200.0f;
-            float avg_gz = sum_gz / 200.0f;
-            float g = 9.80665f;
-            float diff_x = std::abs(std::abs(avg_ax) - g);
-            float diff_y = std::abs(std::abs(avg_ay) - g);
-            float diff_z = std::abs(std::abs(avg_az) - g);
-            float bias_ax = avg_ax;
-            float bias_ay = avg_ay;
-            float bias_az = avg_az;
-            float min_diff = diff_x;
-            if (diff_y < min_diff) {
-                min_diff = diff_y;
-            }
-            if (diff_z < min_diff) {
-                min_diff = diff_z;
-            }
-            if (min_diff == diff_x) {
-                bias_ax = avg_ax > 0.0f ? (avg_ax - g) : (avg_ax + g);
-            } else if (min_diff == diff_y) {
-                bias_ay = avg_ay > 0.0f ? (avg_ay - g) : (avg_ay + g);
-            } else {
-                bias_az = avg_az > 0.0f ? (avg_az - g) : (avg_az + g);
-            }
-            config.halc.imuc.accel_bias_x_mps2 = bias_ax;
-            config.halc.imuc.accel_bias_y_mps2 = bias_ay;
-            config.halc.imuc.accel_bias_z_mps2 = bias_az;
-            config.halc.imuc.gyro_bias_x_radps = avg_gx;
-            config.halc.imuc.gyro_bias_y_radps = avg_gy;
-            config.halc.imuc.gyro_bias_z_radps = avg_gz;
-            Serial.println("Calibration completed successfully! Saving and rebooting...");
-            save(config);
-            delay(100);
-            multicore_reset_core1();
-            rp2040.reboot();
-        }
-    }
-
-    static char buf[128];
-    static size_t idx = 0;
-
-    while (Serial.available()) {
-        char c = Serial.read();
-        if (c == '\r' || c == '\n') {
-            if (idx > 0) {
-                buf[idx] = '\0';
-                
-                char* cmd = std::strtok(buf, " ");
-                if (cmd != nullptr) {
-                    if (std::strcmp(cmd, "help") == 0) {
-                        print_help();
-                    } else if (std::strcmp(cmd, "dump") == 0) {
-                        print_all(config);
-                    } else if (std::strcmp(cmd, "defaults") == 0) {
-                        load_default_config(config);
-                        Serial.println("Loaded defaults in RAM. Write 'save' to commit to flash.");
-                    } else if (std::strcmp(cmd, "reboot") == 0) {
-                        Serial.println("Rebooting FC...");
-                        delay(100);
-                        multicore_reset_core1();
-                        rp2040.reboot();
-                    } else if (std::strcmp(cmd, "save") == 0) {
-                        save(config);
-                        Serial.println("Saved config to flash! Rebooting FC...");
-                        delay(100);
-                        multicore_reset_core1();
-                        rp2040.reboot();
-                    } else if (std::strcmp(cmd, "calibrate") == 0) {
-                        Serial.println("Starting IMU calibration... Keep the board flat and still.");
-                        if (gnc_ptr != nullptr) {
-                            gnc_ptr->reset_estimator();
-                        }
-                        sum_ax = 0.0f;
-                        sum_ay = 0.0f;
-                        sum_az = 0.0f;
-                        sum_gx = 0.0f;
-                        sum_gy = 0.0f;
-                        sum_gz = 0.0f;
-                        calibration_counter = 0;
-                        is_calibrating = true;
-                    } else if (std::strcmp(cmd, "get") == 0) {
-                        char* param_name = std::strtok(nullptr, " ");
-                        if (param_name != nullptr) {
-                            get_parameter(config, param_name);
-                        } else {
-                            Serial.println("Error: Missing parameter name");
-                        }
-                    } else if (std::strcmp(cmd, "set") == 0) {
-                        char* param_name = std::strtok(nullptr, " =");
-                        char* param_val = std::strtok(nullptr, " =");
-                        if (param_name != nullptr && param_val != nullptr) {
-                            set_parameter(config, param_name, param_val);
-                        } else {
-                            Serial.println("Error: Invalid set syntax. Use: set <param> = <value>");
-                        }
-                    } else {
-                        Serial.println("Error: Unknown command. Type 'help' for options.");
-                    }
-                }
-                idx = 0;
-            }
-        } else if (idx < sizeof(buf) - 1) {
-            buf[idx++] = c;
-        }
-    }
-}
 

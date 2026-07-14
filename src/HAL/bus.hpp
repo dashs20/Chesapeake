@@ -21,3 +21,15 @@ struct HALb {
     float vbat_volts;
     float execution_time_ms;
 };
+
+struct ACTb {
+    float m1_frac;
+    float m2_frac;
+    float m3_frac;
+    float m4_frac;
+    float s1_deg;
+    float s2_deg;
+    float s3_deg;
+    float s4_deg;
+    float LED_blink_Hz;
+};
