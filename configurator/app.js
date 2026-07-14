@@ -10,6 +10,10 @@ let modifiedParams = {};
 let serialBuffer = "";
 let pendingCommandType = null;
 
+let incomingBytesBuffer = new Uint8Array(0);
+let textDecoder = new TextDecoder();
+let textAccumulator = "";
+
 const dropdownOptions = {
     "imu_accel_fs": ["2G", "4G", "8G", "16G"],
     "imu_gyro_fs": ["125DPS", "250DPS", "500DPS", "1000DPS", "2000DPS", "4000DPS"],
@@ -179,7 +183,7 @@ function clearBoardUI() {
             bar.style.left = "50%";
         }
         if (label) {
-            label.textContent = "0.0°/s";
+            label.textContent = "0%";
         }
     });
 
@@ -187,9 +191,19 @@ function clearBoardUI() {
     rcChs.forEach(ch => {
         const bar = document.getElementById("rc-bar-" + ch);
         const label = document.getElementById("label-rc-" + ch);
-        if (bar) bar.style.width = "0%";
+        if (bar) {
+            bar.style.width = "0%";
+            if (ch === "rol" || ch === "pit" || ch === "yaw") {
+                bar.style.left = "50%";
+            } else {
+                bar.style.left = "0";
+            }
+        }
         if (label) label.textContent = "0%";
     });
+
+    incomingBytesBuffer = new Uint8Array(0);
+    textAccumulator = "";
 }
 
 async function writeRaw(text) {
@@ -199,13 +213,12 @@ async function writeRaw(text) {
 }
 
 async function readLoop() {
-    const decoder = new TextDecoder();
     try {
         while (isConnected && port && port.readable) {
             const { value, done } = await reader.read();
             if (done) break;
             if (value) {
-                handleIncomingChunk(decoder.decode(value));
+                processIncomingBytes(value);
             }
         }
     } catch (err) {
@@ -214,47 +227,121 @@ async function readLoop() {
     }
 }
 
-function handleIncomingChunk(chunk) {
-    serialBuffer += chunk;
-    let lineEndIdx;
-    let cliOutput = "";
-    let rawOutput = "";
-    while ((lineEndIdx = serialBuffer.indexOf("\n")) !== -1) {
-        const line = serialBuffer.substring(0, lineEndIdx);
-        serialBuffer = serialBuffer.substring(lineEndIdx + 1);
-        const trimmed = line.trim();
-        if (trimmed.startsWith("$DBG,")) {
-            rawOutput += line + "\n";
-            parseTelemetryLine(trimmed);
-            continue;
-        }
-        if (trimmed.startsWith("$")) {
-            continue;
-        }
-        cliOutput += line + "\n";
-        if (pendingCommandType === "dump") {
-            if (trimmed === "--- END OF DUMP ---") {
-                pendingCommandType = null;
-                if (reloadTimeout) {
-                    clearTimeout(reloadTimeout);
-                    reloadTimeout = null;
-                }
-                buildParametersUI();
-            } else {
-                const match = trimmed.match(/^([a-zA-Z0-9_]+)\s*=\s*([^\s]+)/);
-                if (match) {
-                    paramsCache[match[1]] = match[2];
-                }
+function processIncomingBytes(newBytes) {
+    const temp = new Uint8Array(incomingBytesBuffer.length + newBytes.length);
+    temp.set(incomingBytesBuffer);
+    temp.set(newBytes, incomingBytesBuffer.length);
+    incomingBytesBuffer = temp;
+
+    let scanIdx = 0;
+    while (scanIdx < incomingBytesBuffer.length) {
+        let foundHeader = false;
+        let headerIdx = -1;
+        
+        for (let i = scanIdx; i <= incomingBytesBuffer.length - 5; i++) {
+            if (incomingBytesBuffer[i] === 0xAA && 
+                incomingBytesBuffer[i+1] === 0xBB && 
+                incomingBytesBuffer[i+2] === 0x01) {
+                foundHeader = true;
+                headerIdx = i;
+                break;
             }
         }
+
+        if (foundHeader) {
+            const len = incomingBytesBuffer[headerIdx+3] | (incomingBytesBuffer[headerIdx+4] << 8);
+            
+            if (len === 320) {
+                const totalPacketLen = 5 + len + 2;
+                
+                if (headerIdx + totalPacketLen <= incomingBytesBuffer.length) {
+                    const payload = incomingBytesBuffer.slice(headerIdx + 5, headerIdx + 5 + len);
+                    const checksum = incomingBytesBuffer[headerIdx + 5 + len] | (incomingBytesBuffer[headerIdx + 5 + len + 1] << 8);
+                    
+                    const computed = calculateFletcher16(payload);
+                    if (computed === checksum) {
+                        if (headerIdx > 0) {
+                            const textBytes = incomingBytesBuffer.slice(0, headerIdx);
+                            flushTextBytes(textBytes);
+                        }
+                        
+                        parseBinaryALLb(payload);
+                        
+                        incomingBytesBuffer = incomingBytesBuffer.slice(headerIdx + totalPacketLen);
+                        scanIdx = 0;
+                        continue;
+                    } else {
+                        scanIdx = headerIdx + 1;
+                        continue;
+                    }
+                } else {
+                    if (headerIdx > 0) {
+                        const textBytes = incomingBytesBuffer.slice(0, headerIdx);
+                        flushTextBytes(textBytes);
+                        incomingBytesBuffer = incomingBytesBuffer.slice(headerIdx);
+                    }
+                    break;
+                }
+            } else {
+                scanIdx = headerIdx + 1;
+                continue;
+            }
+        } else {
+            let lastNewlineIdx = -1;
+            for (let i = incomingBytesBuffer.length - 1; i >= 0; i--) {
+                if (incomingBytesBuffer[i] === 10) {
+                    lastNewlineIdx = i;
+                    break;
+                }
+            }
+
+            if (lastNewlineIdx !== -1) {
+                const textBytes = incomingBytesBuffer.slice(0, lastNewlineIdx + 1);
+                flushTextBytes(textBytes);
+                incomingBytesBuffer = incomingBytesBuffer.slice(lastNewlineIdx + 1);
+            } else if (incomingBytesBuffer.length > 1000) {
+                flushTextBytes(incomingBytesBuffer);
+                incomingBytesBuffer = new Uint8Array(0);
+            }
+            break;
+        }
     }
-    if (rawOutput) {
-        appendSerialMonitor(rawOutput);
+}
+
+function flushTextBytes(bytes) {
+    textAccumulator += textDecoder.decode(bytes, { stream: true });
+    let lineEndIdx;
+    while ((lineEndIdx = textAccumulator.indexOf("\n")) !== -1) {
+        const line = textAccumulator.substring(0, lineEndIdx + 1);
+        textAccumulator = textAccumulator.substring(lineEndIdx + 1);
+        handleIncomingTextLine(line);
     }
-    if (cliOutput) {
-        const output = document.getElementById("cli-output");
-        output.textContent += cliOutput;
+}
+
+function handleIncomingTextLine(line) {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("$")) {
+        return;
+    }
+    const output = document.getElementById("cli-output");
+    if (output) {
+        output.textContent += line;
         output.scrollTop = output.scrollHeight;
+    }
+    if (pendingCommandType === "dump") {
+        if (trimmed === "--- END OF DUMP ---") {
+            pendingCommandType = null;
+            if (reloadTimeout) {
+                clearTimeout(reloadTimeout);
+                reloadTimeout = null;
+            }
+            buildParametersUI();
+        } else {
+            const match = trimmed.match(/^([a-zA-Z0-9_]+)\s*=\s*([^\s]+)/);
+            if (match) {
+                paramsCache[match[1]] = match[2];
+            }
+        }
     }
 }
 
@@ -583,46 +670,71 @@ function initTabs() {
     });
 }
 
-function parseTelemetryLine(line) {
-    const parts = line.split(",");
-    const data = {};
-    for (let i = 1; i < parts.length; i += 2) {
-        if (i + 1 < parts.length) {
-            data[parts[i]] = parts[i+1];
-        }
+function calculateFletcher16(data) {
+    let sum1 = 0;
+    let sum2 = 0;
+    for (let i = 0; i < data.length; ++i) {
+        sum1 = (sum1 + data[i]) % 255;
+        sum2 = (sum2 + sum1) % 255;
     }
+    return (sum2 << 8) | sum1;
+}
+
+function parseBinaryALLb(payload) {
+    const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+
+    const vbat = view.getFloat32(48, true);
+
+    const rcArm = view.getFloat32(24, true);
+    const rcMod = view.getFloat32(28, true);
+    const rcThr = view.getFloat32(32, true);
+    const rcRol = view.getFloat32(36, true);
+    const rcPit = view.getFloat32(40, true);
+    const rcYaw = view.getFloat32(44, true);
+
+    const armed = view.getUint8(64) === 1;
+    const mode = view.getUint32(68, true);
+
+    const m1 = view.getFloat32(72, true);
+    const m2 = view.getFloat32(76, true);
+    const m3 = view.getFloat32(80, true);
+    const m4 = view.getFloat32(84, true);
+    const s1 = view.getFloat32(88, true);
+    const s2 = view.getFloat32(92, true);
+    const s3 = view.getFloat32(96, true);
+    const s4 = view.getFloat32(100, true);
+
+    const gx = view.getFloat32(112, true) * 57.29577951;
+    const gy = view.getFloat32(116, true) * 57.29577951;
+    const gz = view.getFloat32(120, true) * 57.29577951;
 
     const badgeArm = document.getElementById("badge-arm");
-    if (badgeArm && data.ARMED !== undefined) {
-        const isArmed = data.ARMED === "1";
-        badgeArm.textContent = isArmed ? "ARMED" : "DISARMED";
-        badgeArm.className = isArmed ? "status-badge badge-armed" : "status-badge badge-disarmed";
+    if (badgeArm) {
+        badgeArm.textContent = armed ? "ARMED" : "DISARMED";
+        badgeArm.className = armed ? "status-badge badge-armed" : "status-badge badge-disarmed";
     }
 
     const badgeMode = document.getElementById("badge-mode");
-    if (badgeMode && data.MODE !== undefined) {
+    if (badgeMode) {
         let modeText = "UNKNOWN";
-        if (data.MODE === "0") modeText = "RATE";
-        else if (data.MODE === "1") modeText = "ANGLE";
-        else if (data.MODE === "2") modeText = "ACTUATOR TEST";
+        if (mode === 0) modeText = "RATE";
+        else if (mode === 1) modeText = "ANGLE";
+        else if (mode === 2) modeText = "ACTUATOR TEST";
         badgeMode.textContent = modeText;
-        badgeMode.className = data.MODE === "2" ? "status-badge badge-armed" : "status-badge badge-disarmed";
+        badgeMode.className = mode === 2 ? "status-badge badge-armed" : "status-badge badge-disarmed";
     }
 
     const levelInner = document.getElementById("battery-level-inner");
     const labelVbat = document.getElementById("label-vbat");
-    if (levelInner && labelVbat && data.VBAT !== undefined) {
-        const vbat = parseFloat(data.VBAT);
+    if (levelInner && labelVbat) {
         labelVbat.textContent = vbat.toFixed(2) + "V";
-        
         const frac = Math.max(0.0, Math.min(1.0, (vbat - 21.6) / 3.6));
         levelInner.style.width = (frac * 100) + "%";
-        
         const hue = frac * 120;
         levelInner.style.backgroundColor = `hsl(${hue}, 100%, 45%)`;
     }
 
-    function updateCircle(id, value, isFraction) {
+    function updateCircle(id, val, isFraction) {
         const el = document.getElementById("circle-" + id);
         const box = document.getElementById("circle-box-" + id);
         if (!el || !box) return;
@@ -635,7 +747,6 @@ function parseTelemetryLine(line) {
         }
         box.style.display = "flex";
 
-        const val = parseFloat(value);
         let pct = 0;
         if (isFraction) {
             pct = val;
@@ -649,32 +760,32 @@ function parseTelemetryLine(line) {
         }
         
         pct = Math.max(0.0, Math.min(1.0, pct));
-        
         const hue = (1.0 - pct) * 120;
         el.style.borderColor = `hsl(${hue}, 100%, 45%)`;
         el.style.boxShadow = `0 0 8px hsl(${hue}, 100%, 45%, 0.3)`;
     }
 
-    if (data.M1 !== undefined) updateCircle("m1", data.M1, true);
-    if (data.M2 !== undefined) updateCircle("m2", data.M2, true);
-    if (data.M3 !== undefined) updateCircle("m3", data.M3, true);
-    if (data.M4 !== undefined) updateCircle("m4", data.M4, true);
+    updateCircle("m1", m1, true);
+    updateCircle("m2", m2, true);
+    updateCircle("m3", m3, true);
+    updateCircle("m4", m4, true);
+    updateCircle("s1", s1, false);
+    updateCircle("s2", s2, false);
+    updateCircle("s3", s3, false);
+    updateCircle("s4", s4, false);
 
-    if (data.S1 !== undefined) updateCircle("s1", data.S1, false);
-    if (data.S2 !== undefined) updateCircle("s2", data.S2, false);
-    if (data.S3 !== undefined) updateCircle("s3", data.S3, false);
-    if (data.S4 !== undefined) updateCircle("s4", data.S4, false);
-
-    function updateGyroBar(axis, valStr) {
+    function updateGyroBar(axis, rateVal) {
         const bar = document.getElementById("gyro-bar-" + axis);
         const label = document.getElementById("label-rate-" + axis);
         if (!bar || !label) return;
 
-        const val = parseFloat(valStr);
-        label.textContent = val.toFixed(1) + "°/s";
-
         const maxRate = 500.0;
-        const clampedVal = Math.max(-maxRate, Math.min(maxRate, val));
+        const clampedVal = Math.max(-maxRate, Math.min(maxRate, rateVal));
+        
+        const pctVal = Math.round((clampedVal / maxRate) * 100);
+        const sign = pctVal > 0 ? "+" : "";
+        label.textContent = sign + pctVal + "%";
+
         const pct = (clampedVal / maxRate) * 50;
 
         if (pct >= 0) {
@@ -686,25 +797,41 @@ function parseTelemetryLine(line) {
         }
     }
 
-    function updateRcBar(ch, valStr) {
+    updateGyroBar("x", gx);
+    updateGyroBar("y", gy);
+    updateGyroBar("z", gz);
+
+    function updateRcBar(ch, val) {
         const bar = document.getElementById("rc-bar-" + ch);
         const label = document.getElementById("label-rc-" + ch);
         if (!bar || !label) return;
 
-        const val = parseFloat(valStr);
-        const pct = Math.max(0.0, Math.min(1.0, val));
-        bar.style.width = (pct * 100) + "%";
-        label.textContent = Math.round(pct * 100) + "%";
+        if (ch === "rol" || ch === "pit" || ch === "yaw") {
+            const clampedVal = Math.max(-1.0, Math.min(1.0, val));
+            const pctVal = Math.round(clampedVal * 100);
+            const sign = pctVal > 0 ? "+" : "";
+            label.textContent = sign + pctVal + "%";
+
+            const pct = clampedVal * 50;
+            if (pct >= 0) {
+                bar.style.width = pct + "%";
+                bar.style.left = "50%";
+            } else {
+                bar.style.width = Math.abs(pct) + "%";
+                bar.style.left = (50 - Math.abs(pct)) + "%";
+            }
+        } else {
+            const pct = Math.max(0.0, Math.min(1.0, val));
+            bar.style.width = (pct * 100) + "%";
+            bar.style.left = "0";
+            label.textContent = Math.round(pct * 100) + "%";
+        }
     }
 
-    if (data.GX !== undefined) updateGyroBar("x", data.GX);
-    if (data.GY !== undefined) updateGyroBar("y", data.GY);
-    if (data.GZ !== undefined) updateGyroBar("z", data.GZ);
-
-    if (data.RC_THR !== undefined) updateRcBar("thr", data.RC_THR);
-    if (data.RC_ROL !== undefined) updateRcBar("rol", data.RC_ROL);
-    if (data.RC_PIT !== undefined) updateRcBar("pit", data.RC_PIT);
-    if (data.RC_YAW !== undefined) updateRcBar("yaw", data.RC_YAW);
-    if (data.RC_ARM !== undefined) updateRcBar("arm", data.RC_ARM);
-    if (data.RC_MOD !== undefined) updateRcBar("mod", data.RC_MOD);
+    updateRcBar("thr", rcThr);
+    updateRcBar("rol", rcRol);
+    updateRcBar("pit", rcPit);
+    updateRcBar("yaw", rcYaw);
+    updateRcBar("arm", rcArm);
+    updateRcBar("mod", rcMod);
 }

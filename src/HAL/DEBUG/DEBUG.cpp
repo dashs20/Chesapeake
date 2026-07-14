@@ -1,4 +1,5 @@
 #include "DEBUG.hpp"
+#include "../packager.hpp"
 
 DEBUG::DEBUG(DEBUGc cfg) : debugc(cfg), counter(0) {}
 
@@ -11,6 +12,14 @@ void DEBUG::update(const ALLb& allb_km1) {
 
     counter++;
     if (debugc.decimation > 0 && (counter % debugc.decimation) != 0) {
+        return;
+    }
+    if (Serial) {
+        uint8_t buffer[350];
+        size_t len = Packager::package_allb(allb_km1, buffer, sizeof(buffer));
+        if (len > 0) {
+            Serial.write(buffer, len);
+        }
         return;
     }
 

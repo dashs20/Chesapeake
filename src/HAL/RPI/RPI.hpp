@@ -15,6 +15,4 @@ private:
     RPIc rpic;
     Stream* port;
     uint32_t loop_count;
-
-    uint16_t calculate_fletcher16(const uint8_t* data, size_t length);
 };
