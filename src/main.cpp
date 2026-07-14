@@ -7,6 +7,8 @@
 #include "HAL/HAL.hpp"
 #include "GNC/GNC.hpp"
 
+
+
 PARAMS* params_ptr = nullptr;
 CFG_APP* cfg_app_ptr = nullptr;
 HAL* hal_ptr = nullptr;
@@ -69,6 +71,52 @@ void loop() {
         yield();
     }
 #endif
+
+    static bool is_calibrating = false;
+    static int calibration_samples = 0;
+    static Eigen::Vector3f gyro_sum(0.0f, 0.0f, 0.0f);
+    static Eigen::Vector3f accel_sum(0.0f, 0.0f, 0.0f);
+
+    if (allb_k.cfg_appb.calibrate_requested && !is_calibrating) {
+        cfg_app_ptr->clear_calibrate_request();
+        allb_k.cfg_appb.calibrate_requested = false;
+        is_calibrating = true;
+        calibration_samples = 0;
+        gyro_sum = Eigen::Vector3f::Zero();
+        accel_sum = Eigen::Vector3f::Zero();
+        Serial.println("Starting calibration loop... Keep the board flat and still.");
+    }
+
+    if (is_calibrating) {
+        gyro_sum += allb_k.halb.imub.omega_body_radps;
+        accel_sum += allb_k.halb.imub.accel_body_mps2;
+        calibration_samples++;
+
+        allb_k.cfg_appb.is_calibrating = true;
+        allb_k.cfg_appb.calibration_progress_frac = static_cast<float>(calibration_samples) / 500.0f;
+
+        if (calibration_samples >= 500) {
+            is_calibrating = false;
+            
+            Eigen::Vector3f gyro_bias = gyro_sum / 500.0f;
+            Eigen::Vector3f accel_raw_avg = accel_sum / 500.0f;
+            
+            Eigen::Vector3f bias_sensor = accel_raw_avg - accel_raw_avg.normalized() * 9.80665f;
+            Eigen::Vector3f accel_bias = config_data.gncc.navc.q_IMU2body.conjugate() * bias_sensor;
+
+            config_data.gncc.navc.imu_calc.gyro_bias = gyro_bias;
+            config_data.gncc.navc.imu_calc.accel_bias = accel_bias;
+
+            params_ptr->save(config_data);
+
+            Serial.println("Calibration complete! Saved biases to EEPROM:");
+            Serial.printf("  Gyro Biases:  x=%.6f, y=%.6f, z=%.6f\n", gyro_bias.x(), gyro_bias.y(), gyro_bias.z());
+            Serial.printf("  Accel Biases: x=%.6f, y=%.6f, z=%.6f\n", accel_bias.x(), accel_bias.y(), accel_bias.z());
+
+            allb_k.cfg_appb.is_calibrating = false;
+            allb_k.cfg_appb.calibration_progress_frac = 1.0f;
+        }
+    }
 
     if (gnc_done && !shifted) {
         allb_km1 = allb_k;
