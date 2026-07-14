@@ -199,6 +199,7 @@ void PARAMS::save(const MASTERc& config) {
     file.printf("set blink_hz_angle = %.6f\n", config.gncc.allocc.blink_hz_angle);
     file.printf("set gnc_nav_gyro_error = %.6f\n", config.gncc.navc.gyro_error_degps);
     file.printf("set alloc_max_motor_frac = %.6f\n", config.gncc.allocc.max_motor_frac);
+    file.printf("set gnc_allocator = %s\n", (config.gncc.allocator == ALLOCATOR::QUAD) ? "QUAD" : "UNKNOWN");
     file.printf("set gnc_nav_imu_calc_accel_bias_x = %.6f\n", config.gncc.navc.imu_calc.accel_bias.x());
     file.printf("set gnc_nav_imu_calc_accel_bias_y = %.6f\n", config.gncc.navc.imu_calc.accel_bias.y());
     file.printf("set gnc_nav_imu_calc_accel_bias_z = %.6f\n", config.gncc.navc.imu_calc.accel_bias.z());
@@ -318,6 +319,7 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("blink_hz_angle = "); Serial.println(config.gncc.allocc.blink_hz_angle);
     Serial.print("gnc_nav_gyro_error = "); Serial.println(config.gncc.navc.gyro_error_degps);
     Serial.print("alloc_max_motor_frac = "); Serial.println(config.gncc.allocc.max_motor_frac, 6);
+    Serial.print("gnc_allocator = "); Serial.println((config.gncc.allocator == ALLOCATOR::QUAD) ? "QUAD" : "UNKNOWN");
     Serial.print("gnc_nav_imu_calc_accel_bias_x = "); Serial.println(config.gncc.navc.imu_calc.accel_bias.x(), 6);
     Serial.print("gnc_nav_imu_calc_accel_bias_y = "); Serial.println(config.gncc.navc.imu_calc.accel_bias.y(), 6);
     Serial.print("gnc_nav_imu_calc_accel_bias_z = "); Serial.println(config.gncc.navc.imu_calc.accel_bias.z(), 6);
@@ -430,6 +432,8 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.halc.ledc.pin);
     } else if (std::strcmp(name, "alloc_max_motor_frac") == 0) {
         Serial.println(config.gncc.allocc.max_motor_frac, 6);
+    } else if (std::strcmp(name, "gnc_allocator") == 0) {
+        Serial.println((config.gncc.allocator == ALLOCATOR::QUAD) ? "QUAD" : "UNKNOWN");
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
         Serial.println(config.gncc.allocc.blink_hz_disarmed);
     } else if (std::strcmp(name, "blink_hz_rate") == 0) {
@@ -604,6 +608,10 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.halc.ledc.pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "alloc_max_motor_frac") == 0) {
         config.gncc.allocc.max_motor_frac = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_allocator") == 0) {
+        if (std::strcmp(value, "QUAD") == 0) {
+            config.gncc.allocator = ALLOCATOR::QUAD;
+        }
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
         config.gncc.allocc.blink_hz_disarmed = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "blink_hz_rate") == 0) {

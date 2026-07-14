@@ -44,6 +44,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-calibrate").addEventListener("click", startCalibration);
     document.getElementById("btn-zero-biases").addEventListener("click", zeroBiases);
     document.getElementById("btn-toggle-test").addEventListener("click", toggleActuatorTest);
+    document.getElementById("select-allocator").addEventListener("change", (e) => {
+        handleParamChange("gnc_allocator", e.target.value);
+    });
     document.getElementById("cli-input").addEventListener("keypress", (e) => {
         if (e.key === "Enter") sendCliCommand();
     });
@@ -134,7 +137,7 @@ async function cleanupSerialPort() {
 function updateConnectionUI(connected) {
     const btn = document.getElementById("btn-connect");
     const status = document.getElementById("connection-status");
-    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "btn-zero-biases", "btn-calibrate", "cli-input", "btn-send-cli", "btn-toggle-test"];
+    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "btn-zero-biases", "btn-calibrate", "cli-input", "btn-send-cli", "btn-toggle-test", "select-allocator"];
     btn.textContent = connected ? "Disconnect" : "Connect";
     btn.className = connected ? "btn btn-connected" : "btn";
     status.textContent = connected ? "Connected" : "Disconnected";
@@ -158,6 +161,18 @@ function clearBoardUI() {
         placeholder.textContent = "Connect to view and edit flight parameters.";
         placeholder.style.display = "block";
     }
+
+    const selAlloc = document.getElementById("select-allocator");
+    if (selAlloc) {
+        selAlloc.value = "QUAD";
+        selAlloc.disabled = true;
+    }
+    ["m1", "m2", "m3", "m4"].forEach(id => {
+        const elText = document.getElementById(`val-alloc-${id}`);
+        const elCircle = document.getElementById(`circle-alloc-${id}`);
+        if (elText) elText.textContent = "0.000000";
+        if (elCircle) elCircle.style.fillOpacity = 0.1;
+    });
 
     const pidKeys = [
         "roll_rate_kp", "roll_rate_ki", "roll_rate_kd", "roll_rate_imax",
@@ -534,6 +549,14 @@ function buildParametersUI() {
             }
         }
     });
+
+    const selAlloc = document.getElementById("select-allocator");
+    if (selAlloc) {
+        if (paramsCache["gnc_allocator"]) {
+            selAlloc.value = paramsCache["gnc_allocator"];
+        }
+        selAlloc.disabled = false;
+    }
 
     checkBiases();
 }
@@ -1193,6 +1216,21 @@ function parseBinaryALLb(flatbufferPayload) {
     if (chartInstance) {
         chartInstance.addData(cgx, gx, cgy, gy, cgz, gz);
     }
+
+    // Update Allocate Tab Motor Graphics
+    const updateMotorIndicator = (id, val) => {
+        const elText = document.getElementById(`val-alloc-${id}`);
+        const elCircle = document.getElementById(`circle-alloc-${id}`);
+        if (elText) elText.textContent = val.toFixed(6);
+        if (elCircle) {
+            const opacity = 0.1 + 0.8 * Math.max(0.0, Math.min(1.0, val));
+            elCircle.style.fillOpacity = opacity;
+        }
+    };
+    updateMotorIndicator("m1", m1);
+    updateMotorIndicator("m2", m2);
+    updateMotorIndicator("m3", m3);
+    updateMotorIndicator("m4", m4);
 
     return true;
     } catch (e) {

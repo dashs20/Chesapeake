@@ -18,6 +18,7 @@
             <button class="tab-btn" data-tab="console-panel">Console & CLI</button>
             <button class="tab-btn" data-tab="pid-panel">PID Tuning</button>
             <button class="tab-btn" data-tab="test-panel">Actuator Test</button>
+            <button class="tab-btn" data-tab="allocate-panel">Allocate</button>
         </div>
         <div class="connection-controls">
             <button id="btn-connect" class="btn">Connect</button>
@@ -492,6 +493,102 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        <div id="allocate-panel" class="panel tab-content">
+            <div class="panel-header">
+                <h2>Actuator Allocation</h2>
+                <div class="allocator-select-container" style="display: flex; align-items: center; gap: 10px;">
+                    <label for="select-allocator" style="font-size: 13px; font-weight: bold; color: #a1a1aa;">Active Allocator:</label>
+                    <select id="select-allocator" class="param-select" style="background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 5px; border-radius: 4px; font-size: 13px;" disabled>
+                        <option value="QUAD">Quadcopter (X)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="params-container" style="display: flex; flex-direction: column; flex: 1; overflow: hidden; align-items: center; justify-content: center; min-height: 450px; background-color: #09090b; border: 1px solid #27272a; border-radius: 8px; margin-top: 15px; padding: 20px;">
+                <!-- Quadcopter X Graphic Container -->
+                <div id="quad-graphic-container" style="width: 100%; max-width: 500px; height: 100%; max-height: 500px; display: block; position: relative;">
+                    <svg viewBox="0 0 500 500" width="100%" height="100%" style="display: block;">
+                        <!-- Coordinate System Indicator (top-left) -->
+                        <g id="coord-system" transform="translate(45, 45)">
+                            <!-- X axis (Forward) -->
+                            <line x1="0" y1="40" x2="0" y2="0" stroke="#ef4444" stroke-width="2" />
+                            <polygon points="0,0 -3,6 3,6" fill="#ef4444" />
+                            <text x="0" y="-6" font-size="10" fill="#ef4444" text-anchor="middle" font-weight="600">X (Fwd)</text>
+                            
+                            <!-- Y axis (Right) -->
+                            <line x1="0" y1="40" x2="40" y2="40" stroke="#3b82f6" stroke-width="2" />
+                            <polygon points="40,40 34,37 34,43" fill="#3b82f6" />
+                            <text x="45" y="43" font-size="10" fill="#3b82f6" text-anchor="start" font-weight="600">Y (Right)</text>
+                            
+                            <!-- Z axis (Down) -->
+                            <circle cx="0" cy="40" r="6" fill="none" stroke="#10b981" stroke-width="1.5" />
+                            <line x1="-4" y1="36" x2="4" y2="44" stroke="#10b981" stroke-width="1" />
+                            <line x1="4" y1="36" x2="-4" y2="44" stroke="#10b981" stroke-width="1" />
+                            <text x="9" y="43" font-size="10" fill="#10b981" text-anchor="start" font-weight="600">Z (Down)</text>
+                        </g>
+
+                        <!-- Diagonal Arms -->
+                        <line x1="250" y1="250" x2="130" y2="130" stroke="#27272a" stroke-width="8" stroke-linecap="round" />
+                        <line x1="250" y1="250" x2="370" y2="130" stroke="#27272a" stroke-width="8" stroke-linecap="round" />
+                        <line x1="250" y1="250" x2="130" y2="370" stroke="#27272a" stroke-width="8" stroke-linecap="round" />
+                        <line x1="250" y1="250" x2="370" y2="370" stroke="#27272a" stroke-width="8" stroke-linecap="round" />
+
+                        <!-- Center Body -->
+                        <circle cx="250" cy="250" r="35" fill="#18181b" stroke="#3f3f46" stroke-width="3" />
+                        <!-- Forward Indicator (Triangle pointing up) -->
+                        <polygon points="250,225 240,245 260,245" fill="#ef4444" />
+                        <text x="250" y="270" font-size="11" fill="#a1a1aa" text-anchor="middle" font-weight="600">FRONT</text>
+
+                        <!-- Motor 2 (Top-Left, CCW) -->
+                        <g transform="translate(130, 130)">
+                            <circle id="circle-alloc-m2" cx="0" cy="0" r="28" fill="#ef4444" fill-opacity="0.1" stroke="#ef4444" stroke-width="2.5" />
+                            <text x="0" y="4" font-size="12" fill="#e4e4e7" font-weight="bold" text-anchor="middle">M2</text>
+                            <!-- CCW Arrow -->
+                            <path d="M 18,0 A 18,18 0 1,0 0,-18" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <polygon points="0,-18 5,-21 5,-15" fill="#ef4444" />
+                            <text x="0" y="-35" font-size="11" fill="#ef4444" font-weight="bold" text-anchor="middle">CCW</text>
+                            <!-- Actuator Command Frac Text -->
+                            <text id="val-alloc-m2" x="0" y="-50" font-family="monospace" font-size="12" fill="#ef4444" font-weight="bold" text-anchor="middle">0.000000</text>
+                        </g>
+
+                        <!-- Motor 4 (Top-Right, CW) -->
+                        <g transform="translate(370, 130)">
+                            <circle id="circle-alloc-m4" cx="0" cy="0" r="28" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-width="2.5" />
+                            <text x="0" y="4" font-size="12" fill="#e4e4e7" font-weight="bold" text-anchor="middle">M4</text>
+                            <!-- CW Arrow -->
+                            <path d="M -18,0 A 18,18 0 1,1 0,-18" fill="none" stroke="#10b981" stroke-width="2" />
+                            <polygon points="0,-18 -5,-21 -5,-15" fill="#10b981" />
+                            <text x="0" y="-35" font-size="11" fill="#10b981" font-weight="bold" text-anchor="middle">CW</text>
+                            <!-- Actuator Command Frac Text -->
+                            <text id="val-alloc-m4" x="0" y="-50" font-family="monospace" font-size="12" fill="#10b981" font-weight="bold" text-anchor="middle">0.000000</text>
+                        </g>
+
+                        <!-- Motor 1 (Bottom-Left, CW) -->
+                        <g transform="translate(130, 370)">
+                            <circle id="circle-alloc-m1" cx="0" cy="0" r="28" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-width="2.5" />
+                            <text x="0" y="4" font-size="12" fill="#e4e4e7" font-weight="bold" text-anchor="middle">M1</text>
+                            <!-- CW Arrow -->
+                            <path d="M -18,0 A 18,18 0 1,1 0,-18" fill="none" stroke="#10b981" stroke-width="2" />
+                            <polygon points="0,-18 -5,-21 -5,-15" fill="#10b981" />
+                            <text x="0" y="-35" font-size="11" fill="#10b981" font-weight="bold" text-anchor="middle">CW</text>
+                            <!-- Actuator Command Frac Text -->
+                            <text id="val-alloc-m1" x="0" y="-50" font-family="monospace" font-size="12" fill="#10b981" font-weight="bold" text-anchor="middle">0.000000</text>
+                        </g>
+
+                        <!-- Motor 3 (Bottom-Right, CCW) -->
+                        <g transform="translate(370, 370)">
+                            <circle id="circle-alloc-m3" cx="0" cy="0" r="28" fill="#ef4444" fill-opacity="0.1" stroke="#ef4444" stroke-width="2.5" />
+                            <text x="0" y="4" font-size="12" fill="#e4e4e7" font-weight="bold" text-anchor="middle">M3</text>
+                            <!-- CCW Arrow -->
+                            <path d="M 18,0 A 18,18 0 1,0 0,-18" fill="none" stroke="#ef4444" stroke-width="2" />
+                            <polygon points="0,-18 5,-21 5,-15" fill="#ef4444" />
+                            <text x="0" y="-35" font-size="11" fill="#ef4444" font-weight="bold" text-anchor="middle">CCW</text>
+                            <!-- Actuator Command Frac Text -->
+                            <text id="val-alloc-m3" x="0" y="-50" font-family="monospace" font-size="12" fill="#ef4444" font-weight="bold" text-anchor="middle">0.000000</text>
+                        </g>
+                    </svg>
                 </div>
             </div>
         </div>
