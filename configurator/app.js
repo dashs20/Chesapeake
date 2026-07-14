@@ -330,7 +330,7 @@ function processIncomingBytes(newBytes) {
                         continue;
                     }
                 } else {
-                    if (len !== 312 && len !== 260) {
+                    if (len !== 328 && len !== 312 && len !== 260) {
                         scanIdx = headerIdx + 1;
                         continue;
                     }
