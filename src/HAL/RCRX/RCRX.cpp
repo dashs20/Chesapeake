@@ -62,7 +62,7 @@ RCRXb RCRX::update(const HALb& halb) {
     float mode_us = static_cast<float>(crsf.getChannel(rcrxc.mode_ch));
 
     rcrxb.roll_frac = std::clamp((roll_us - 1500.0f) / 500.0f, -1.0f, 1.0f);
-    rcrxb.pitch_frac = std::clamp((pitch_us - 1500.0f) / 500.0f, -1.0f, 1.0f);
+    rcrxb.pitch_frac = -std::clamp((pitch_us - 1500.0f) / 500.0f, -1.0f, 1.0f);
     rcrxb.yaw_frac = std::clamp((yaw_us - 1500.0f) / 500.0f, -1.0f, 1.0f);
 
     rcrxb.thr_frac = std::clamp((thr_us - 1000.0f) / 1000.0f, 0.0f, 1.0f);

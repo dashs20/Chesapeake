@@ -22,6 +22,7 @@ let smoothedTimeNav = 0;
 let smoothedTimeCtl = 0;
 let smoothedTimeAlloc = 0;
 let smoothedTimeIdle = 0;
+let chartInstance = null;
 
 let incomingBytesBuffer = new Uint8Array(0);
 let textDecoder = new TextDecoder();
@@ -49,6 +50,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     document.getElementById("btn-send-cli").addEventListener("click", sendCliCommand);
     initTabs();
+    
+    const canvas = document.getElementById("control-rate-chart");
+    if (canvas) {
+        chartInstance = new TelemetryChart("control-rate-chart");
+    }
 });
 
 async function toggleConnection() {
@@ -841,6 +847,7 @@ function parseBinaryALLb(flatbufferPayload) {
         let halTime = 0.0, gncTime = 0.0;
         let timeImu = 0.0, timeRcrx = 0.0, timeMotors = 0.0, timeServos = 0.0;
         let timeNav = 0.0, timeCtl = 0.0, timeAlloc = 0.0;
+        let cgx = 0, cgy = 0, cgz = 0;
 
         if (payloadLength === 304) {
             vbat = structView.getFloat32(48, true);
@@ -882,6 +889,10 @@ function parseBinaryALLb(flatbufferPayload) {
             timeCtl = structView.getFloat32(232, true);
             timeAlloc = structView.getFloat32(236, true);
 
+            cgx = structView.getFloat32(212, true) * 57.29577951;
+            cgy = structView.getFloat32(216, true) * 57.29577951;
+            cgz = structView.getFloat32(220, true) * 57.29577951;
+
             isCalibrating = structView.getUint8(244) === 1;
             progress = structView.getFloat32(248, true);
         } else if (payloadLength === 288) {
@@ -916,6 +927,10 @@ function parseBinaryALLb(flatbufferPayload) {
             halTime = structView.getFloat32(52, true);
             gncTime = structView.getFloat32(208, true);
 
+            cgx = structView.getFloat32(196, true) * 57.29577951;
+            cgy = structView.getFloat32(200, true) * 57.29577951;
+            cgz = structView.getFloat32(204, true) * 57.29577951;
+
             isCalibrating = structView.getUint8(228) === 1;
             progress = structView.getFloat32(232, true);
         } else {
@@ -949,6 +964,10 @@ function parseBinaryALLb(flatbufferPayload) {
 
             halTime = structView.getFloat32(52, true);
             gncTime = structView.getFloat32(184, true);
+
+            cgx = structView.getFloat32(172, true) * 57.29577951;
+            cgy = structView.getFloat32(176, true) * 57.29577951;
+            cgz = structView.getFloat32(180, true) * 57.29577951;
 
             isCalibrating = structView.getUint8(188) === 1;
             progress = structView.getFloat32(192, true);
@@ -1196,9 +1215,138 @@ function parseBinaryALLb(flatbufferPayload) {
     updateRcBar("arm", rcArm);
     updateRcBar("mod", rcMod);
 
+    // Update Control Rates Telemetry labels
+    const setRateText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = Math.round(val);
+    };
+    setRateText("txt-rate-cmd-x", cgx);
+    setRateText("txt-rate-meas-x", gx);
+    setRateText("txt-rate-cmd-y", cgy);
+    setRateText("txt-rate-meas-y", gy);
+    setRateText("txt-rate-cmd-z", cgz);
+    setRateText("txt-rate-meas-z", gz);
+
+    if (chartInstance) {
+        chartInstance.addData(cgx, gx, cgy, gy, cgz, gz);
+    }
+
     return true;
     } catch (e) {
         console.error("Error parsing ALLb packet: ", e);
         return false;
+    }
+}
+
+class TelemetryChart {
+    constructor(canvasId) {
+        this.canvas = document.getElementById(canvasId);
+        this.ctx = this.canvas.getContext('2d');
+        this.historySize = 150;
+        this.data = {
+            rollSetpoint: new Array(this.historySize).fill(0),
+            rollMeasured: new Array(this.historySize).fill(0),
+            pitchSetpoint: new Array(this.historySize).fill(0),
+            pitchMeasured: new Array(this.historySize).fill(0),
+            yawSetpoint: new Array(this.historySize).fill(0),
+            yawMeasured: new Array(this.historySize).fill(0)
+        };
+    }
+    
+    addData(rsp, rmeas, psp, pmeas, ysp, ymeas) {
+        this.data.rollSetpoint.push(rsp);
+        this.data.rollSetpoint.shift();
+        this.data.rollMeasured.push(rmeas);
+        this.data.rollMeasured.shift();
+        this.data.pitchSetpoint.push(psp);
+        this.data.pitchSetpoint.shift();
+        this.data.pitchMeasured.push(pmeas);
+        this.data.pitchMeasured.shift();
+        this.data.yawSetpoint.push(ysp);
+        this.data.yawSetpoint.shift();
+        this.data.yawMeasured.push(ymeas);
+        this.data.yawMeasured.shift();
+        this.draw();
+    }
+    
+    draw() {
+        const dpr = window.devicePixelRatio || 1;
+        const rect = this.canvas.getBoundingClientRect();
+        
+        if (this.canvas.width !== rect.width * dpr || this.canvas.height !== rect.height * dpr) {
+            this.canvas.width = rect.width * dpr;
+            this.canvas.height = rect.height * dpr;
+            this.ctx.scale(dpr, dpr);
+        }
+        
+        const width = rect.width;
+        const height = rect.height;
+        this.ctx.clearRect(0, 0, width, height);
+        
+        // Draw grid lines
+        this.ctx.strokeStyle = '#1f1f23';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        for (let i = 1; i < 4; i++) {
+            const y = (height / 4) * i;
+            this.ctx.moveTo(0, y);
+            this.ctx.lineTo(width, y);
+        }
+        this.ctx.stroke();
+        
+        // Find max absolute value to scale
+        let maxVal = 50;
+        const allArrays = Object.values(this.data);
+        for (const arr of allArrays) {
+            for (const val of arr) {
+                if (Math.abs(val) > maxVal) {
+                    maxVal = Math.abs(val);
+                }
+            }
+        }
+        maxVal = Math.ceil(maxVal / 10) * 10;
+        
+        // Draw zero line
+        const zeroY = height / 2;
+        this.ctx.strokeStyle = '#27272a';
+        this.ctx.lineWidth = 1.5;
+        this.ctx.beginPath();
+        this.ctx.moveTo(0, zeroY);
+        this.ctx.lineTo(width, zeroY);
+        this.ctx.stroke();
+        
+        const drawLine = (dataArray, color, isDashed = false) => {
+            this.ctx.strokeStyle = color;
+            this.ctx.lineWidth = isDashed ? 1.5 : 2;
+            if (isDashed) {
+                this.ctx.setLineDash([4, 4]);
+            } else {
+                this.ctx.setLineDash([]);
+            }
+            this.ctx.beginPath();
+            for (let i = 0; i < this.historySize; i++) {
+                const x = (width / (this.historySize - 1)) * i;
+                const y = zeroY - (dataArray[i] / maxVal) * (zeroY * 0.9);
+                if (i === 0) {
+                    this.ctx.moveTo(x, y);
+                } else {
+                    this.ctx.lineTo(x, y);
+                }
+            }
+            this.ctx.stroke();
+        };
+        
+        drawLine(this.data.rollSetpoint, '#f87171', true);
+        drawLine(this.data.rollMeasured, '#ef4444', false);
+        drawLine(this.data.pitchSetpoint, '#60a5fa', true);
+        drawLine(this.data.pitchMeasured, '#3b82f6', false);
+        drawLine(this.data.yawSetpoint, '#34d399', true);
+        drawLine(this.data.yawMeasured, '#10b981', false);
+        
+        this.ctx.fillStyle = '#a1a1aa';
+        this.ctx.font = '10px sans-serif';
+        this.ctx.fillText(`+${maxVal}°/s`, 8, 14);
+        this.ctx.fillText(`-${maxVal}°/s`, 8, height - 8);
+        this.ctx.fillText('0°/s', 8, zeroY - 4);
     }
 }

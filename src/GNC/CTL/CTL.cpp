@@ -41,14 +41,14 @@ CTLb CTL::update(const ALLb& allb) {
         case FLIGHT_MODE::RATE: {
             Eigen::Vector3f omega_body_setpoint_radps = allb.gncb.guib.omega_body_radps;
             Eigen::Vector3f omega_body_measurement_radps = allb.gncb.navb.omega_body_radps;
-            ctlb.axes_effort_frac = rate_controller.update(omega_body_measurement_radps, omega_body_setpoint_radps);
+            ctlb.axes_effort_frac = rate_controller.update(omega_body_setpoint_radps, omega_body_measurement_radps);
             break;
         }
         case FLIGHT_MODE::ANGLE: {
             if (time_accumulator_s >= angle_loop_dt_s) {
                 time_accumulator_s = 0.0f;
-                float roll_error_rad = allb.gncb.navb.euler_bodyz2up_rad.x() - allb.gncb.guib.euler_bodyz2up_rad.x();
-                float pitch_error_rad = allb.gncb.navb.euler_bodyz2up_rad.y() - allb.gncb.guib.euler_bodyz2up_rad.y();
+                float roll_error_rad = allb.gncb.guib.euler_bodyz2up_rad.x() - allb.gncb.navb.euler_bodyz2up_rad.x();
+                float pitch_error_rad = allb.gncb.guib.euler_bodyz2up_rad.y() - allb.gncb.navb.euler_bodyz2up_rad.y();
                 Eigen::Vector3f euler_error_rad(roll_error_rad, pitch_error_rad, 0.0f);
                 Eigen::Vector3f target_rates_xy_radps = angle_controller.update(euler_error_rad, Eigen::Vector3f::Zero());
                 target_rates_radps.x() = target_rates_xy_radps.x();
@@ -56,7 +56,7 @@ CTLb CTL::update(const ALLb& allb) {
                 target_rates_radps.z() = allb.gncb.guib.omega_body_radps.z();
             }
             Eigen::Vector3f omega_body_measurement_radps = allb.gncb.navb.omega_body_radps;
-            ctlb.axes_effort_frac = rate_controller.update(omega_body_measurement_radps, target_rates_radps);
+            ctlb.axes_effort_frac = rate_controller.update(target_rates_radps, omega_body_measurement_radps);
             break;
         }
         default:
