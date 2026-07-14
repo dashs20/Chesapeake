@@ -29,8 +29,8 @@ void setup() {
         params_ptr->save(config_data);
     }
 
-    cfg_app_ptr = new CFG_APP();
-    hal_ptr = new HAL(config_data.halc);
+    cfg_app_ptr = new CFG_APP(config_data);
+    hal_ptr = new HAL(config_data.halc, config_data.gncc.looprate_hz);
     gnc_ptr = new GNC(config_data.gncc);
 
     allb_km1.halb = hal_ptr->update(allb_km1);
@@ -73,21 +73,6 @@ void loop() {
     if (gnc_done && !shifted) {
         allb_km1 = allb_k;
         shifted = true;
-    }
-
-    if (allb_k.gncb.cal_feedback.calibration_done) {
-        cfg_app_ptr->clear_calibrate_request();
-        allb_k.cfg_appb.calibrate_requested = false;
-        config_data.halc.imuc.accel_bias_x_mps2 += allb_k.gncb.cal_feedback.accel_bias_x;
-        config_data.halc.imuc.accel_bias_y_mps2 += allb_k.gncb.cal_feedback.accel_bias_y;
-        config_data.halc.imuc.accel_bias_z_mps2 += allb_k.gncb.cal_feedback.accel_bias_z;
-        config_data.halc.imuc.gyro_bias_x_radps += allb_k.gncb.cal_feedback.gyro_bias_x;
-        config_data.halc.imuc.gyro_bias_y_radps += allb_k.gncb.cal_feedback.gyro_bias_y;
-        config_data.halc.imuc.gyro_bias_z_radps += allb_k.gncb.cal_feedback.gyro_bias_z;
-        params_ptr->save(config_data);
-        delay(100);
-        multicore_reset_core1();
-        rp2040.reboot();
     }
 
     if (allb_k.cfg_appb.defaults_requested) {

@@ -3,7 +3,7 @@
 #include <cstring>
 #include <cstdlib>
 
-CFG_APP::CFG_APP() {
+CFG_APP::CFG_APP(const MASTERc& config) {
     cfg_appb.calibrate_requested = false;
     cfg_appb.reboot_requested = false;
     cfg_appb.save_requested = false;
@@ -15,18 +15,18 @@ CFG_APP::CFG_APP() {
     cfg_appb.act_test.commands.m2_frac = 0.0f;
     cfg_appb.act_test.commands.m3_frac = 0.0f;
     cfg_appb.act_test.commands.m4_frac = 0.0f;
-    cfg_appb.act_test.commands.s1_deg = 90.0f;
-    cfg_appb.act_test.commands.s2_deg = 90.0f;
-    cfg_appb.act_test.commands.s3_deg = 90.0f;
-    cfg_appb.act_test.commands.s4_deg = 90.0f;
+    cfg_appb.act_test.commands.s1_deg = config.gncc.allocc.ser_default_ang_deg;
+    cfg_appb.act_test.commands.s2_deg = config.gncc.allocc.ser_default_ang_deg;
+    cfg_appb.act_test.commands.s3_deg = config.gncc.allocc.ser_default_ang_deg;
+    cfg_appb.act_test.commands.s4_deg = config.gncc.allocc.ser_default_ang_deg;
     cfg_appb.act_test.commands.LED_blink_Hz = 0.0f;
 }
 
 CFG_APP::~CFG_APP() {}
 
 CFG_APPb CFG_APP::update(const ALLb& allb, MASTERc& config, PARAMS& params) {
-    cfg_appb.is_calibrating = allb.gncb.cal_feedback.is_calibrating;
-    cfg_appb.calibration_progress_frac = allb.gncb.cal_feedback.calibration_progress_frac;
+    cfg_appb.is_calibrating = false;
+    cfg_appb.calibration_progress_frac = 0.0f;
 
     static char buf[128];
     static size_t idx = 0;

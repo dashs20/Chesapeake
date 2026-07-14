@@ -69,10 +69,10 @@ ACTb ALLOC::allocate_quad(const ALLb& allb) {
 }
 
 ACTb ALLOC::clamp_actuators(const ALLb& allb, ACTb actb, float min_motor_frac) {
-    actb.m1_frac = std::max(min_motor_frac, std::min(1.0f, actb.m1_frac));
-    actb.m2_frac = std::max(min_motor_frac, std::min(1.0f, actb.m2_frac));
-    actb.m3_frac = std::max(min_motor_frac, std::min(1.0f, actb.m3_frac));
-    actb.m4_frac = std::max(min_motor_frac, std::min(1.0f, actb.m4_frac));
+    actb.m1_frac = std::max(min_motor_frac, std::min(cfg_data.allocc.max_motor_frac, actb.m1_frac));
+    actb.m2_frac = std::max(min_motor_frac, std::min(cfg_data.allocc.max_motor_frac, actb.m2_frac));
+    actb.m3_frac = std::max(min_motor_frac, std::min(cfg_data.allocc.max_motor_frac, actb.m3_frac));
+    actb.m4_frac = std::max(min_motor_frac, std::min(cfg_data.allocc.max_motor_frac, actb.m4_frac));
 
     actb.s1_deg = std::max(cfg_data.allocc.ser_min_ang_deg, std::min(cfg_data.allocc.ser_max_ang_deg, actb.s1_deg));
     actb.s2_deg = std::max(cfg_data.allocc.ser_min_ang_deg, std::min(cfg_data.allocc.ser_max_ang_deg, actb.s2_deg));

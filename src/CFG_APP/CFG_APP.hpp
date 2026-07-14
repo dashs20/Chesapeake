@@ -5,7 +5,7 @@
 
 class CFG_APP {
 public:
-    CFG_APP();
+    CFG_APP(const MASTERc& config);
     ~CFG_APP();
 
     CFG_APPb update(const ALLb& allb, MASTERc& config, PARAMS& params);

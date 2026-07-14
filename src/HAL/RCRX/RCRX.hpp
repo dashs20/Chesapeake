@@ -6,7 +6,7 @@
 
 class RCRX {
 public:
-    RCRX(RCRXc rcrxc);
+    RCRX(RCRXc rcrxc, uint32_t looprate_hz);
     ~RCRX();
 
     RCRXb update(const HALb& halb);
@@ -15,5 +15,7 @@ private:
     RCRXc rcrxc;
     Stream* port = nullptr;
     AlfredoCRSF crsf;
-    uint32_t last_telemetry_ms = 0;
+    float dt_s;
+    float telemetry_dt_s;
+    float time_accumulator_s;
 };

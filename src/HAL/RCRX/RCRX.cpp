@@ -1,7 +1,11 @@
 #include "RCRX.hpp"
 #include <algorithm>
 
-RCRX::RCRX(RCRXc rcrxc) : rcrxc(rcrxc) {
+RCRX::RCRX(RCRXc rcrxc, uint32_t looprate_hz) 
+    : rcrxc(rcrxc), 
+      dt_s(1.0f / static_cast<float>(looprate_hz)), 
+      telemetry_dt_s(1.0f / rcrxc.telemetry_hz), 
+      time_accumulator_s(0.0f) {
     if (rcrxc.uart_id == 1) {
         Serial1.begin(420000);
         port = &Serial1;
@@ -36,9 +40,9 @@ RCRXb RCRX::update(const HALb& halb) {
         return rcrxb;
     }
 
-    uint32_t current_time_ms = millis();
-    if (current_time_ms - last_telemetry_ms >= 100) {
-        last_telemetry_ms = current_time_ms;
+    time_accumulator_s += dt_s;
+    if (time_accumulator_s >= telemetry_dt_s) {
+        time_accumulator_s = 0.0f;
         crsf_sensor_battery_t battery_payload;
         battery_payload.voltage = htobe16(static_cast<uint16_t>(halb.vbat_volts * 10.0f));
         battery_payload.current = htobe16(0);

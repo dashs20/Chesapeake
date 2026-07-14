@@ -51,6 +51,7 @@ struct RCRXc {
     uint8_t yaw_ch;
     uint8_t arm_ch;
     uint8_t mode_ch;
+    float telemetry_hz;
 };
 
 struct BATc {
@@ -65,12 +66,6 @@ struct IMUc {
     LSM6DSV16X_GYRO_FS gyro_fs;
     LSM6DSV16X_ODR accel_odr;
     LSM6DSV16X_ODR gyro_odr;
-    float accel_bias_x_mps2;
-    float accel_bias_y_mps2;
-    float accel_bias_z_mps2;
-    float gyro_bias_x_radps;
-    float gyro_bias_y_radps;
-    float gyro_bias_z_radps;
 };
 
 struct SERc {
@@ -87,17 +82,7 @@ struct LEDc {
 };
 
 struct RPIc {
-    bool enabled;
-    uint8_t uart_id;
-    uint32_t baudrate;
-    uint8_t tx_pin;
-    uint8_t rx_pin;
-    uint8_t rate_divisor;
-};
-
-struct DEBUGc {
-    bool enabled;
-    uint32_t decimation;
+    // dummy config
 };
 
 struct HALc {
@@ -108,5 +93,4 @@ struct HALc {
     SERc serc;
     LEDc ledc;
     RPIc rpic;
-    DEBUGc debugc;
 };
