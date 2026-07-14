@@ -20,6 +20,16 @@ PARAMS::PARAMS() {
     cfg_appb.defaults_requested = false;
     cfg_appb.is_calibrating = false;
     cfg_appb.calibration_progress_frac = 0.0f;
+    cfg_appb.act_test.enabled = false;
+    cfg_appb.act_test.commands.m1_frac = 0.0f;
+    cfg_appb.act_test.commands.m2_frac = 0.0f;
+    cfg_appb.act_test.commands.m3_frac = 0.0f;
+    cfg_appb.act_test.commands.m4_frac = 0.0f;
+    cfg_appb.act_test.commands.s1_deg = 90.0f;
+    cfg_appb.act_test.commands.s2_deg = 90.0f;
+    cfg_appb.act_test.commands.s3_deg = 90.0f;
+    cfg_appb.act_test.commands.s4_deg = 90.0f;
+    cfg_appb.act_test.commands.LED_blink_Hz = 0.0f;
 }
 
 PARAMS::~PARAMS() {}
@@ -587,6 +597,32 @@ void PARAMS::run_cli(MASTERc& config) {
                     } else if (std::strcmp(cmd, "calibrate") == 0) {
                         cfg_appb.calibrate_requested = true;
                         Serial.println("Calibration requested... Keep the board flat and still.");
+                    } else if (std::strcmp(cmd, "act_test") == 0) {
+                        char* enabled_str = std::strtok(nullptr, " ");
+                        char* m1_str = std::strtok(nullptr, " ");
+                        char* m2_str = std::strtok(nullptr, " ");
+                        char* m3_str = std::strtok(nullptr, " ");
+                        char* m4_str = std::strtok(nullptr, " ");
+                        char* s1_str = std::strtok(nullptr, " ");
+                        char* s2_str = std::strtok(nullptr, " ");
+                        char* s3_str = std::strtok(nullptr, " ");
+                        char* s4_str = std::strtok(nullptr, " ");
+                        char* led_str = std::strtok(nullptr, " ");
+                        if (enabled_str != nullptr && m1_str != nullptr && m2_str != nullptr && m3_str != nullptr && m4_str != nullptr &&
+                            s1_str != nullptr && s2_str != nullptr && s3_str != nullptr && s4_str != nullptr && led_str != nullptr) {
+                            cfg_appb.act_test.enabled = (std::atoi(enabled_str) != 0);
+                            cfg_appb.act_test.commands.m1_frac = static_cast<float>(std::strtod(m1_str, nullptr));
+                            cfg_appb.act_test.commands.m2_frac = static_cast<float>(std::strtod(m2_str, nullptr));
+                            cfg_appb.act_test.commands.m3_frac = static_cast<float>(std::strtod(m3_str, nullptr));
+                            cfg_appb.act_test.commands.m4_frac = static_cast<float>(std::strtod(m4_str, nullptr));
+                            cfg_appb.act_test.commands.s1_deg = static_cast<float>(std::strtod(s1_str, nullptr));
+                            cfg_appb.act_test.commands.s2_deg = static_cast<float>(std::strtod(s2_str, nullptr));
+                            cfg_appb.act_test.commands.s3_deg = static_cast<float>(std::strtod(s3_str, nullptr));
+                            cfg_appb.act_test.commands.s4_deg = static_cast<float>(std::strtod(s4_str, nullptr));
+                            cfg_appb.act_test.commands.LED_blink_Hz = static_cast<float>(std::strtod(led_str, nullptr));
+                        } else {
+                            Serial.println("Error: Invalid act_test syntax.");
+                        }
                     } else if (std::strcmp(cmd, "get") == 0) {
                         char* param_name = std::strtok(nullptr, " ");
                         if (param_name != nullptr) {

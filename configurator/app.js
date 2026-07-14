@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-reboot").addEventListener("click", rebootBoard);
     document.getElementById("btn-defaults").addEventListener("click", resetToDefaults);
     document.getElementById("btn-calibrate").addEventListener("click", startCalibration);
+    document.getElementById("btn-toggle-test").addEventListener("click", toggleActuatorTest);
     document.getElementById("param-search").addEventListener("input", filterParameters);
     document.getElementById("cli-input").addEventListener("keypress", (e) => {
         if (e.key === "Enter") sendCliCommand();
@@ -71,6 +72,9 @@ async function connect() {
 }
 
 async function disconnect() {
+    if (isTestModeEnabled) {
+        toggleActuatorTest();
+    }
     isConnected = false;
     updateConnectionUI(false);
     clearBoardUI();
@@ -106,7 +110,7 @@ async function cleanupSerialPort() {
 function updateConnectionUI(connected) {
     const btn = document.getElementById("btn-connect");
     const status = document.getElementById("connection-status");
-    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "btn-calibrate", "cli-input", "btn-send-cli", "param-search"];
+    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "btn-calibrate", "cli-input", "btn-send-cli", "param-search", "btn-toggle-test"];
     btn.textContent = connected ? "Disconnect" : "Connect";
     btn.className = connected ? "btn btn-connected" : "btn";
     status.textContent = connected ? "Connected" : "Disconnected";
@@ -343,4 +347,169 @@ async function startCalibration() {
         document.getElementById("btn-calibrate").textContent = "Calibrate";
         document.getElementById("btn-calibrate").disabled = false;
     }
+}
+
+let isTestModeEnabled = false;
+let testInterval = null;
+let actuatorTestValues = { m1: 0, m2: 0, m3: 0, m4: 0, s1: 90, s2: 90, s3: 90, s4: 90 };
+
+function toggleActuatorTest() {
+    if (!isConnected) return;
+    
+    isTestModeEnabled = !isTestModeEnabled;
+    const btn = document.getElementById("btn-toggle-test");
+    const status = document.getElementById("test-status");
+    const placeholder = document.getElementById("test-placeholder");
+    const slidersContainer = document.getElementById("test-sliders");
+    
+    if (isTestModeEnabled) {
+        btn.textContent = "Disable Test Mode";
+        btn.className = "btn btn-connected";
+        status.textContent = "Test Active";
+        status.className = "status-indicator connected";
+        placeholder.style.display = "none";
+        slidersContainer.style.display = "flex";
+        
+        buildTestSlidersUI();
+        sendActuatorTestData();
+        testInterval = setInterval(sendActuatorTestData, 50);
+    } else {
+        btn.textContent = "Enable Test Mode";
+        btn.className = "btn btn-warning";
+        status.textContent = "Test Disabled";
+        status.className = "status-indicator disconnected";
+        placeholder.style.display = "block";
+        slidersContainer.style.display = "none";
+        
+        if (testInterval) {
+            clearInterval(testInterval);
+            testInterval = null;
+        }
+        
+        const s1_def = parseFloat(paramsCache["ser_default_ang_deg"] || 90).toFixed(2);
+        const s2_def = parseFloat(paramsCache["ser_default_ang_deg"] || 90).toFixed(2);
+        const s3_def = parseFloat(paramsCache["ser_default_ang_deg"] || 90).toFixed(2);
+        const s4_def = parseFloat(paramsCache["ser_default_ang_deg"] || 90).toFixed(2);
+        writeRaw(`act_test 0 0.0000 0.0000 0.0000 0.0000 ${s1_def} ${s2_def} ${s3_def} ${s4_def} 0.0\n`);
+    }
+}
+
+function buildTestSlidersUI() {
+    const container = document.getElementById("test-sliders");
+    container.innerHTML = "";
+    
+    const actuators = [
+        { id: "m1", name: "Motor 1 (Pin " + paramsCache["mot_m1_pin"] + ")", type: "motor", pinKey: "mot_m1_pin", min: 0, max: 100, unit: "%", def: 0 },
+        { id: "m2", name: "Motor 2 (Pin " + paramsCache["mot_m2_pin"] + ")", type: "motor", pinKey: "mot_m2_pin", min: 0, max: 100, unit: "%", def: 0 },
+        { id: "m3", name: "Motor 3 (Pin " + paramsCache["mot_m3_pin"] + ")", type: "motor", pinKey: "mot_m3_pin", min: 0, max: 100, unit: "%", def: 0 },
+        { id: "m4", name: "Motor 4 (Pin " + paramsCache["mot_m4_pin"] + ")", type: "motor", pinKey: "mot_m4_pin", min: 0, max: 100, unit: "%", def: 0 },
+        { id: "s1", name: "Servo 1 (Pin " + paramsCache["ser_s1_pin"] + ")", type: "servo", pinKey: "ser_s1_pin", min: parseFloat(paramsCache["ser_min_ang_deg"] || 0), max: parseFloat(paramsCache["ser_max_ang_deg"] || 180), unit: "°", def: parseFloat(paramsCache["ser_default_ang_deg"] || 90) },
+        { id: "s2", name: "Servo 2 (Pin " + paramsCache["ser_s2_pin"] + ")", type: "servo", pinKey: "ser_s2_pin", min: parseFloat(paramsCache["ser_min_ang_deg"] || 0), max: parseFloat(paramsCache["ser_max_ang_deg"] || 180), unit: "°", def: parseFloat(paramsCache["ser_default_ang_deg"] || 90) },
+        { id: "s3", name: "Servo 3 (Pin " + paramsCache["ser_s3_pin"] + ")", type: "servo", pinKey: "ser_s3_pin", min: parseFloat(paramsCache["ser_min_ang_deg"] || 0), max: parseFloat(paramsCache["ser_max_ang_deg"] || 180), unit: "°", def: parseFloat(paramsCache["ser_default_ang_deg"] || 90) },
+        { id: "s4", name: "Servo 4 (Pin " + paramsCache["ser_s4_pin"] + ")", type: "servo", pinKey: "ser_s4_pin", min: parseFloat(paramsCache["ser_min_ang_deg"] || 0), max: parseFloat(paramsCache["ser_max_ang_deg"] || 180), unit: "°", def: parseFloat(paramsCache["ser_default_ang_deg"] || 90) }
+    ];
+    
+    actuators.forEach(act => {
+        const pin = parseInt(paramsCache[act.pinKey] || "255");
+        const isDisabled = (pin === 255 || isNaN(pin));
+        
+        if (actuatorTestValues[act.id] === undefined || !isTestModeEnabled) {
+            actuatorTestValues[act.id] = act.def;
+        }
+        
+        const row = document.createElement("div");
+        row.className = "test-slider-row";
+        if (isDisabled) {
+            row.style.opacity = "0.35";
+        }
+        
+        const header = document.createElement("div");
+        header.className = "test-slider-header";
+        
+        const nameSpan = document.createElement("span");
+        nameSpan.className = "test-slider-name";
+        nameSpan.textContent = act.name;
+        header.appendChild(nameSpan);
+        
+        const valSpan = document.createElement("span");
+        valSpan.className = "test-slider-val";
+        valSpan.id = "val-" + act.id;
+        valSpan.textContent = actuatorTestValues[act.id] + act.unit;
+        header.appendChild(valSpan);
+        
+        row.appendChild(header);
+        
+        const controlDiv = document.createElement("div");
+        controlDiv.className = "test-slider-control";
+        
+        const btnMinus = document.createElement("button");
+        btnMinus.className = "btn btn-small";
+        btnMinus.textContent = "-1%";
+        btnMinus.disabled = isDisabled || !isTestModeEnabled;
+        btnMinus.addEventListener("click", () => {
+            adjustSlider(act, -1);
+        });
+        controlDiv.appendChild(btnMinus);
+        
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.className = "test-slider-input";
+        slider.min = act.min;
+        slider.max = act.max;
+        slider.step = act.type === "motor" ? 1 : 0.5;
+        slider.value = actuatorTestValues[act.id];
+        slider.disabled = isDisabled || !isTestModeEnabled;
+        slider.id = "slider-" + act.id;
+        
+        slider.addEventListener("input", (e) => {
+            const parsedVal = parseFloat(e.target.value);
+            actuatorTestValues[act.id] = parsedVal;
+            valSpan.textContent = parsedVal + act.unit;
+        });
+        controlDiv.appendChild(slider);
+        
+        const btnPlus = document.createElement("button");
+        btnPlus.className = "btn btn-small";
+        btnPlus.textContent = "+1%";
+        btnPlus.disabled = isDisabled || !isTestModeEnabled;
+        btnPlus.addEventListener("click", () => {
+            adjustSlider(act, 1);
+        });
+        controlDiv.appendChild(btnPlus);
+        
+        row.appendChild(controlDiv);
+        container.appendChild(row);
+    });
+}
+
+function adjustSlider(act, direction) {
+    const slider = document.getElementById("slider-" + act.id);
+    const valSpan = document.getElementById("val-" + act.id);
+    if (!slider || !valSpan) return;
+    
+    const range = act.max - act.min;
+    const step = range * 0.01;
+    let val = parseFloat(slider.value) + (direction * step);
+    val = Math.max(act.min, Math.min(act.max, val));
+    val = Math.round(val * 10) / 10;
+    
+    slider.value = val;
+    actuatorTestValues[act.id] = val;
+    valSpan.textContent = val + act.unit;
+}
+
+async function sendActuatorTestData() {
+    if (!isConnected || !isTestModeEnabled) return;
+    
+    const m1 = (actuatorTestValues.m1 / 100.0).toFixed(4);
+    const m2 = (actuatorTestValues.m2 / 100.0).toFixed(4);
+    const m3 = (actuatorTestValues.m3 / 100.0).toFixed(4);
+    const m4 = (actuatorTestValues.m4 / 100.0).toFixed(4);
+    const s1 = actuatorTestValues.s1.toFixed(2);
+    const s2 = actuatorTestValues.s2.toFixed(2);
+    const s3 = actuatorTestValues.s3.toFixed(2);
+    const s4 = actuatorTestValues.s4.toFixed(2);
+    const led = "5.0";
+    
+    await writeRaw(`act_test 1 ${m1} ${m2} ${m3} ${m4} ${s1} ${s2} ${s3} ${s4} ${led}\n`);
 }

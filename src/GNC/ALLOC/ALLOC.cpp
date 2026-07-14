@@ -5,17 +5,20 @@ ALLOC::ALLOC(GNCc cfg) : cfg_data(cfg) {}
 
 ACTb ALLOC::update(const ALLb& allb) {
     ACTb actb;
-    if (allb.gncb.vsmb.state == STATE::DISARMED) {
+    if (allb.gncb.vsmb.state == STATE::ACT_TEST) {
+        actb = allb.cfg_appb.act_test.commands;
+        actb = clamp_actuators(allb, actb);
+    } else if (allb.gncb.vsmb.state == STATE::DISARMED) {
         actb.m1_frac = 0.0f;
         actb.m2_frac = 0.0f;
         actb.m3_frac = 0.0f;
         actb.m4_frac = 0.0f;
- 
+
         actb.s1_deg = cfg_data.allocc.ser_default_ang_deg;
         actb.s2_deg = cfg_data.allocc.ser_default_ang_deg;
         actb.s3_deg = cfg_data.allocc.ser_default_ang_deg;
         actb.s4_deg = cfg_data.allocc.ser_default_ang_deg;
- 
+
         actb = clamp_actuators(allb, actb);
     } else {
         actb = run_allocator(allb);
@@ -64,7 +67,7 @@ ACTb ALLOC::allocate_quad(const ALLb& allb) {
 }
  
 ACTb ALLOC::clamp_actuators(const ALLb& allb, ACTb actb) {
-    float minimum_motor_fraction_frac = (allb.gncb.vsmb.state == STATE::DISARMED) ? 0.0f : cfg_data.allocc.min_motor_frac;
+    float minimum_motor_fraction_frac = (allb.gncb.vsmb.state == STATE::DISARMED || allb.gncb.vsmb.state == STATE::ACT_TEST) ? 0.0f : cfg_data.allocc.min_motor_frac;
 
     actb.m1_frac = std::max(minimum_motor_fraction_frac, std::min(1.0f, actb.m1_frac));
     actb.m2_frac = std::max(minimum_motor_fraction_frac, std::min(1.0f, actb.m2_frac));
@@ -87,6 +90,8 @@ float ALLOC::determine_blink_hz(STATE state) {
             return cfg_data.allocc.blink_hz_rate;
         case STATE::ANGLE:
             return cfg_data.allocc.blink_hz_angle;
+        case STATE::ACT_TEST:
+            return 5.0f;
         default:
             return 0.0f;
     }

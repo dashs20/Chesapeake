@@ -22,6 +22,23 @@ struct HALb {
     float execution_time_ms;
 };
 
+struct ACTb {
+    float m1_frac;
+    float m2_frac;
+    float m3_frac;
+    float m4_frac;
+    float s1_deg;
+    float s2_deg;
+    float s3_deg;
+    float s4_deg;
+    float LED_blink_Hz;
+};
+
+struct ACT_TESTb {
+    bool enabled;
+    ACTb commands;
+};
+
 struct CFG_APPb {
     bool calibrate_requested;
     bool reboot_requested;
@@ -29,4 +46,5 @@ struct CFG_APPb {
     bool defaults_requested;
     bool is_calibrating;
     float calibration_progress_frac;
+    ACT_TESTb act_test;
 };

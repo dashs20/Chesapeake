@@ -242,3 +242,48 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
+
+.test-slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 10px;
+    background-color: #0c0c0e;
+    border: 1px solid #202023;
+    border-radius: 4px;
+}
+
+.test-slider-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.test-slider-name {
+    color: #e4e4e7;
+    font-family: monospace;
+}
+
+.test-slider-val {
+    color: #f59e0b;
+    font-family: monospace;
+}
+
+.test-slider-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.test-slider-input {
+    flex: 1;
+    accent-color: #f59e0b;
+    cursor: pointer;
+}
+
+.btn-small {
+    padding: 3px 8px;
+    font-size: 11px;
+}
+

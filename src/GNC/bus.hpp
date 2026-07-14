@@ -3,26 +3,12 @@
 #include "../HAL/bus.hpp"
 
 // VSM BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-enum class STATE{DISARMED, RATE, ANGLE};
+enum class STATE{DISARMED, RATE, ANGLE, ACT_TEST};
 enum class ATT_MODE{RATE, ANGLE};
 
 struct VSMb{
     STATE state;
     ATT_MODE att_mode;
-};
-// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-// ACT BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-struct ACTb{
-    float m1_frac;
-    float m2_frac;
-    float m3_frac;
-    float m4_frac;
-    float s1_deg;
-    float s2_deg;
-    float s3_deg;
-    float s4_deg;
-    float LED_blink_Hz;
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

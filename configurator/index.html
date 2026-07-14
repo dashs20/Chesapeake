@@ -36,6 +36,22 @@
             </div>
         </div>
 
+        <div class="panel test-panel">
+            <h2>Actuator Test</h2>
+            <div class="test-controls" style="display: flex; flex-direction: column; gap: 15px; flex: 1;">
+                <div class="test-enable-row" style="display: flex; align-items: center; gap: 10px;">
+                    <button id="btn-toggle-test" class="btn btn-warning" disabled>Enable Test Mode</button>
+                    <span id="test-status" class="status-indicator disconnected">Test Disabled</span>
+                </div>
+                <div id="test-placeholder" class="params-placeholder">
+                    Connect and enable test mode to control actuators.
+                </div>
+                <div id="test-sliders" class="test-sliders-container" style="display: none; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1;">
+                    <!-- Dynamically populated sliders -->
+                </div>
+            </div>
+        </div>
+
         <div class="panel params-panel">
             <div class="panel-header">
                 <h2>Parameters</h2>

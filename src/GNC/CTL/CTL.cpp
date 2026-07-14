@@ -27,7 +27,7 @@ CTL::CTL(GNCc cfg)
 }
 
 CTLb CTL::update(const ALLb& allb) {
-    if (allb.gncb.vsmb.state == STATE::DISARMED) {
+    if (allb.gncb.vsmb.state == STATE::DISARMED || allb.gncb.vsmb.state == STATE::ACT_TEST) {
         rate_controller.reset();
         angle_controller.reset();
         return CTLb{Eigen::Vector3f::Zero()};

@@ -19,6 +19,9 @@ void VSM::setup_vehicle_mode_machine() {
     State<STATE, ALLb> disarmed_state;
     disarmed_state.id = STATE::DISARMED;
     disarmed_state.exit_paths = {
+        { STATE::ACT_TEST, [](const ALLb& g) {
+            return g.cfg_appb.act_test.enabled;
+        }},
         { STATE::RATE, [arm_threshold_frac, rate_threshold_frac](const ALLb& g) {
             return g.halb.rcrxb.arm_frac > arm_threshold_frac && g.halb.rcrxb.mode_frac < rate_threshold_frac;
         }},
@@ -30,6 +33,9 @@ void VSM::setup_vehicle_mode_machine() {
     State<STATE, ALLb> rate_state;
     rate_state.id = STATE::RATE;
     rate_state.exit_paths = {
+        { STATE::ACT_TEST, [](const ALLb& g) {
+            return g.cfg_appb.act_test.enabled;
+        }},
         { STATE::DISARMED, [arm_threshold_frac](const ALLb& g) {
             return g.halb.rcrxb.arm_frac <= arm_threshold_frac;
         }},
@@ -41,6 +47,9 @@ void VSM::setup_vehicle_mode_machine() {
     State<STATE, ALLb> angle_state;
     angle_state.id = STATE::ANGLE;
     angle_state.exit_paths = {
+        { STATE::ACT_TEST, [](const ALLb& g) {
+            return g.cfg_appb.act_test.enabled;
+        }},
         { STATE::DISARMED, [arm_threshold_frac](const ALLb& g) {
             return g.halb.rcrxb.arm_frac <= arm_threshold_frac;
         }},
@@ -49,9 +58,18 @@ void VSM::setup_vehicle_mode_machine() {
         }}
     };
 
+    State<STATE, ALLb> act_test_state;
+    act_test_state.id = STATE::ACT_TEST;
+    act_test_state.exit_paths = {
+        { STATE::DISARMED, [](const ALLb& g) {
+            return !g.cfg_appb.act_test.enabled;
+        }}
+    };
+
     vehicle_mode_machine.add_state(disarmed_state);
     vehicle_mode_machine.add_state(rate_state);
     vehicle_mode_machine.add_state(angle_state);
+    vehicle_mode_machine.add_state(act_test_state);
 }
 
 void VSM::setup_attitude_mode_machine() {
