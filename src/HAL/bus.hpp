@@ -21,3 +21,12 @@ struct HALb {
     float vbat_volts;
     float execution_time_ms;
 };
+
+struct CFG_APPb {
+    bool calibrate_requested;
+    bool reboot_requested;
+    bool save_requested;
+    bool defaults_requested;
+    bool is_calibrating;
+    float calibration_progress_frac;
+};

@@ -31,7 +31,9 @@ void setup() {
     gnc_ptr = new GNC(config_data.gncc);
 
     allb_km1.halb = hal_ptr->update(allb_km1);
+    allb_km1.cfg_appb = params_ptr->cfg_appb;
     allb_k.halb = allb_km1.halb;
+    allb_k.cfg_appb = allb_km1.cfg_appb;
 
     gnc_done = false;
     shifted = false;
@@ -42,6 +44,7 @@ void loop() {
     uint32_t start_time_us = micros();
 
     params_ptr->run_cli(config_data);
+    allb_k.cfg_appb = params_ptr->cfg_appb;
 
     uint32_t hal_start = micros();
     allb_k.halb = hal_ptr->update(allb_km1);
@@ -68,6 +71,47 @@ void loop() {
     if (gnc_done && !shifted) {
         allb_km1 = allb_k;
         shifted = true;
+    }
+
+    params_ptr->cfg_appb.is_calibrating = allb_k.gncb.cal_feedback.is_calibrating;
+    params_ptr->cfg_appb.calibration_progress_frac = allb_k.gncb.cal_feedback.calibration_progress_frac;
+
+    if (allb_k.gncb.cal_feedback.calibration_done) {
+        params_ptr->cfg_appb.calibrate_requested = false;
+        allb_k.cfg_appb.calibrate_requested = false;
+        config_data.halc.imuc.accel_bias_x_mps2 += allb_k.gncb.cal_feedback.accel_bias_x;
+        config_data.halc.imuc.accel_bias_y_mps2 += allb_k.gncb.cal_feedback.accel_bias_y;
+        config_data.halc.imuc.accel_bias_z_mps2 += allb_k.gncb.cal_feedback.accel_bias_z;
+        config_data.halc.imuc.gyro_bias_x_radps += allb_k.gncb.cal_feedback.gyro_bias_x;
+        config_data.halc.imuc.gyro_bias_y_radps += allb_k.gncb.cal_feedback.gyro_bias_y;
+        config_data.halc.imuc.gyro_bias_z_radps += allb_k.gncb.cal_feedback.gyro_bias_z;
+        params_ptr->save(config_data);
+        delay(100);
+        multicore_reset_core1();
+        rp2040.reboot();
+    }
+
+    if (allb_k.cfg_appb.defaults_requested) {
+        params_ptr->cfg_appb.defaults_requested = false;
+        allb_k.cfg_appb.defaults_requested = false;
+        load_default_config(config_data);
+    }
+
+    if (allb_k.cfg_appb.save_requested) {
+        params_ptr->cfg_appb.save_requested = false;
+        allb_k.cfg_appb.save_requested = false;
+        params_ptr->save(config_data);
+        delay(100);
+        multicore_reset_core1();
+        rp2040.reboot();
+    }
+
+    if (allb_k.cfg_appb.reboot_requested) {
+        params_ptr->cfg_appb.reboot_requested = false;
+        allb_k.cfg_appb.reboot_requested = false;
+        delay(100);
+        multicore_reset_core1();
+        rp2040.reboot();
     }
 
     shifted = false;

@@ -49,6 +49,7 @@ void DEBUG::update(const ALLb& allb_km1) {
                   state_str, thr, roll, pitch, yaw, arm, mode);
     */
 
+    /*
     // This block displays the current vehicle state machine (VSM) status and the rotated IMU body rates in deg/s
     float imu_roll_degps = allb_km1.gncb.navb.omega_body_radps.x() * 57.29577951f;
     float imu_pitch_degps = allb_km1.gncb.navb.omega_body_radps.y() * 57.29577951f;
@@ -56,8 +57,8 @@ void DEBUG::update(const ALLb& allb_km1) {
 
     Serial.printf("$DBG,STATE: %d | IMU_ROLL: %+07.2f | IMU_PITCH: %+07.2f | IMU_YAW: %+07.2f\n",
                   static_cast<int>(allb_km1.gncb.vsmb.state), imu_roll_degps, imu_pitch_degps, imu_yaw_degps);
+    */
 
-    /*
     // This block displays the current vehicle state machine (VSM) status and the raw, un-rotated IMU gyroscope rates in deg/s (X, Y, Z axes)
     float raw_x_degps = allb_km1.halb.imub.omega_body_radps.x() * 57.29577951f;
     float raw_y_degps = allb_km1.halb.imub.omega_body_radps.y() * 57.29577951f;
@@ -65,5 +66,4 @@ void DEBUG::update(const ALLb& allb_km1) {
 
     Serial.printf("$DBG,STATE: %d | IMU_X: %+07.2f | IMU_Y: %+07.2f | IMU_Z: %+07.2f\n",
                   static_cast<int>(allb_km1.gncb.vsmb.state), raw_x_degps, raw_y_degps, raw_z_degps);
-    */
 }

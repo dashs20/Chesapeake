@@ -48,12 +48,25 @@ struct GUIb {
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+struct CAL_FEEDBACKb {
+    bool calibration_done;
+    bool is_calibrating;
+    float calibration_progress_frac;
+    float accel_bias_x;
+    float accel_bias_y;
+    float accel_bias_z;
+    float gyro_bias_x;
+    float gyro_bias_y;
+    float gyro_bias_z;
+};
+
 struct GNCb{
     VSMb vsmb;
     ACTb actb;
     NAVb navb;
     CTLb ctlb;
     GUIb guib;
+    CAL_FEEDBACKb cal_feedback;
     float gnc_time_ms;
 };
 // --~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~-
@@ -61,4 +74,5 @@ struct GNCb{
 struct ALLb {
     HALb halb;
     GNCb gncb;
+    CFG_APPb cfg_appb;
 };
