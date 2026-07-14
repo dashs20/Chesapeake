@@ -19,42 +19,42 @@ def parse_flatbuffer(payload):
     vector_len = struct.unpack('<I', payload[vector_start:vector_start+4])[0]
     return payload[vector_start+4 : vector_start+4+vector_len]
 
-def collect_samples(ser, n_samples, telem_hz):
+def collect_samples(ser, n_samples):
     samples = []
     buffer = bytearray()
     print(f"Collecting {n_samples} raw IMU samples. Keep the board flat and still...")
     
-    sleep_s = 1.0 / (2.0 * telem_hz)
     while len(samples) < n_samples:
-        if ser.in_waiting > 0:
-            buffer.extend(ser.read(ser.in_waiting))
+        data = ser.read(max(1, ser.in_waiting))
+        if not data:
+            continue
+        buffer.extend(data)
+        
+        while True:
+            idx = buffer.find(b'\xAA\xBB\x01')
+            if idx == -1:
+                break
+            if len(buffer) < idx + 5:
+                break
             
-            while True:
-                idx = buffer.find(b'\xAA\xBB\x01')
-                if idx == -1:
-                    break
-                if len(buffer) < idx + 5:
-                    break
+            fb_len = struct.unpack('<H', buffer[idx+3:idx+5])[0]
+            total_len = 5 + fb_len
+            
+            if len(buffer) < idx + total_len:
+                break
+            
+            payload = buffer[idx+5 : idx+total_len]
+            struct_bytes = parse_flatbuffer(payload)
+            if struct_bytes is not None and len(struct_bytes) >= 24:
+                gx, gy, gz = struct.unpack('<fff', struct_bytes[0:12])
+                ax, ay, az = struct.unpack('<fff', struct_bytes[12:24])
+                samples.append((gx, gy, gz, ax, ay, az))
                 
-                fb_len = struct.unpack('<H', buffer[idx+3:idx+5])[0]
-                total_len = 5 + fb_len
-                
-                if len(buffer) < idx + total_len:
-                    break
-                
-                payload = buffer[idx+5 : idx+total_len]
-                struct_bytes = parse_flatbuffer(payload)
-                if struct_bytes is not None and len(struct_bytes) >= 24:
-                    gx, gy, gz = struct.unpack('<fff', struct_bytes[0:12])
-                    ax, ay, az = struct.unpack('<fff', struct_bytes[12:24])
-                    samples.append((gx, gy, gz, ax, ay, az))
-                    
-                    if len(samples) % (n_samples // 10 or 1) == 0:
-                        print(f"Progress: {len(samples)}/{n_samples} samples collected...")
-                
-                buffer = buffer[idx+total_len:]
-                
-        time.sleep(sleep_s)
+                if len(samples) % (n_samples // 10 or 1) == 0:
+                    print(f"Progress: {len(samples)}/{n_samples} samples collected...")
+            
+            buffer = buffer[idx+total_len:]
+            
     return samples
 
 def main():
@@ -62,7 +62,6 @@ def main():
     parser.add_argument("--port", required=True, help="Serial port of the flight controller (e.g. COM3 or /dev/ttyACM0)")
     parser.add_argument("--baud", type=int, default=115200, help="CLI communication baud rate")
     parser.add_argument("--samples", type=int, default=200, help="Number of samples to collect")
-    parser.add_argument("--telem-hz", type=float, default=10.0, help="Telemetry rate of the board in Hz")
     parser.add_argument("--force-zero", action="store_true", help="Unconditionally zero biases before calibration")
     args = parser.parse_args()
 
@@ -91,7 +90,7 @@ def main():
 
     ser.reset_input_buffer()
     
-    samples = collect_samples(ser, args.samples, args.telem_hz)
+    samples = collect_samples(ser, args.samples)
     
     # Process gyro data (average each axis)
     sum_gx = sum_gy = sum_gz = 0.0
