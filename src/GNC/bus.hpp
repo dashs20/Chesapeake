@@ -41,6 +41,9 @@ struct GNCb{
     CTLb ctlb;
     GUIb guib;
     float gnc_time_ms;
+    float time_nav_us;
+    float time_ctl_us;
+    float time_alloc_us;
 };
 // --~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~--~-
 

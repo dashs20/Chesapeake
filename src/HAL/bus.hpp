@@ -20,6 +20,10 @@ struct HALb {
     RCRXb rcrxb;
     float vbat_volts;
     float execution_time_ms;
+    float time_imu_us;
+    float time_rcrx_us;
+    float time_motors_us;
+    float time_servos_us;
 };
 
 struct ACTb {

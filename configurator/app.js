@@ -9,6 +9,19 @@ let paramsCache = {};
 let modifiedParams = {};
 let serialBuffer = "";
 let pendingCommandType = null;
+let calibrationState = "idle";
+let smoothedTotalTime = 0;
+let smoothedHalTime = 0;
+let smoothedGncTime = 0;
+let lastLoopTimeUpdate = 0;
+let smoothedTimeImu = 0;
+let smoothedTimeRcrx = 0;
+let smoothedTimeMotors = 0;
+let smoothedTimeServos = 0;
+let smoothedTimeNav = 0;
+let smoothedTimeCtl = 0;
+let smoothedTimeAlloc = 0;
+let smoothedTimeIdle = 0;
 
 let incomingBytesBuffer = new Uint8Array(0);
 let textDecoder = new TextDecoder();
@@ -125,6 +138,11 @@ function updateConnectionUI(connected) {
         const el = document.getElementById(id);
         if (el) el.disabled = !connected;
     });
+    
+    const testPlaceholder = document.getElementById("test-placeholder");
+    if (testPlaceholder) {
+        testPlaceholder.textContent = connected ? "Enable test mode to control actuators." : "Connect and enable test mode to control actuators.";
+    }
 }
 
 function clearBoardUI() {
@@ -165,6 +183,33 @@ function clearBoardUI() {
     }
     const labelVbat = document.getElementById("label-vbat");
     if (labelVbat) labelVbat.textContent = "0.00V";
+    const labelLoopTime = document.getElementById("label-loop-time");
+    if (labelLoopTime) {
+        labelLoopTime.textContent = "0.00ms";
+        labelLoopTime.removeAttribute("title");
+    }
+    
+    smoothedTotalTime = 0;
+    smoothedHalTime = 0;
+    smoothedGncTime = 0;
+    smoothedTimeImu = 0;
+    smoothedTimeRcrx = 0;
+    smoothedTimeMotors = 0;
+    smoothedTimeServos = 0;
+    smoothedTimeNav = 0;
+    smoothedTimeCtl = 0;
+    smoothedTimeAlloc = 0;
+    smoothedTimeIdle = 0;
+    
+    const timeFields = ["imu", "rcrx", "nav", "ctl", "alloc", "motors", "servos", "idle"];
+    timeFields.forEach(f => {
+        const bar = document.getElementById("bar-time-" + f);
+        const txt = document.getElementById("txt-time-" + f);
+        if (bar) bar.style.width = "0%";
+        if (txt) txt.textContent = "0.0 us";
+    });
+    const txtTotal = document.getElementById("txt-time-total-avg");
+    if (txtTotal) txtTotal.textContent = "0.00ms active";
     const batteryInner = document.getElementById("battery-level-inner");
     if (batteryInner) {
         batteryInner.style.width = "0%";
@@ -182,16 +227,16 @@ function clearBoardUI() {
         }
     });
 
-    const axes = ["x", "y", "z"];
-    axes.forEach(axis => {
-        const bar = document.getElementById("gyro-bar-" + axis);
-        const label = document.getElementById("label-rate-" + axis);
+    const imuIds = ["gx", "gy", "gz", "ax", "ay", "az"];
+    imuIds.forEach(id => {
+        const bar = document.getElementById("imu-bar-" + id);
+        const label = document.getElementById("label-val-" + id);
         if (bar) {
-            bar.style.width = "0%";
-            bar.style.left = "50%";
+            bar.style.height = "0%";
+            bar.style.bottom = "50%";
         }
         if (label) {
-            label.textContent = "0%";
+            label.textContent = id.startsWith("g") ? "0°/s" : "0m/s²";
         }
     });
 
@@ -265,17 +310,30 @@ function processIncomingBytes(newBytes) {
                 if (headerIdx + totalPacketLen <= incomingBytesBuffer.length) {
                     const payload = incomingBytesBuffer.slice(headerIdx + 5, headerIdx + 5 + len);
                     
-                    if (headerIdx > 0) {
-                        const textBytes = incomingBytesBuffer.slice(0, headerIdx);
-                        flushTextBytes(textBytes);
+                    let parseSuccess = false;
+                    try {
+                        parseSuccess = parseBinaryALLb(payload);
+                    } catch (e) {
+                        parseSuccess = false;
                     }
                     
-                    parseBinaryALLb(payload);
-                    
-                    incomingBytesBuffer = incomingBytesBuffer.slice(headerIdx + totalPacketLen);
-                    scanIdx = 0;
-                    continue;
+                    if (parseSuccess) {
+                        if (headerIdx > 0) {
+                            const textBytes = incomingBytesBuffer.slice(0, headerIdx);
+                            flushTextBytes(textBytes);
+                        }
+                        incomingBytesBuffer = incomingBytesBuffer.slice(headerIdx + totalPacketLen);
+                        scanIdx = 0;
+                        continue;
+                    } else {
+                        scanIdx = headerIdx + 1;
+                        continue;
+                    }
                 } else {
+                    if (len !== 312 && len !== 260) {
+                        scanIdx = headerIdx + 1;
+                        continue;
+                    }
                     if (headerIdx > 0) {
                         const textBytes = incomingBytesBuffer.slice(0, headerIdx);
                         flushTextBytes(textBytes);
@@ -542,12 +600,14 @@ async function startCalibration() {
     if (!isConnected) return;
     document.getElementById("btn-calibrate").disabled = true;
     document.getElementById("btn-calibrate").textContent = "Calibrating...";
+    calibrationState = "waiting";
     try {
         await writeRaw("calibrate\n");
     } catch (err) {
         alert("Failed to send calibration command: " + err.message);
         document.getElementById("btn-calibrate").textContent = "Calibrate";
         document.getElementById("btn-calibrate").disabled = false;
+        calibrationState = "idle";
     }
 }
 
@@ -744,47 +804,155 @@ function calculateFletcher16(data) {
 }
 
 function parseBinaryALLb(flatbufferPayload) {
-    const view = new DataView(flatbufferPayload.buffer, flatbufferPayload.byteOffset, flatbufferPayload.byteLength);
+    try {
+        if (flatbufferPayload.byteLength < 8) return false;
 
-    // Extract vector of bytes from the FlatBuffer:
-    const rootOffset = view.getInt32(0, true);
-    const vtableOffset = view.getInt32(rootOffset, true);
-    const vtableStart = rootOffset - vtableOffset;
-    const fieldOffset = view.getUint16(vtableStart + 4, true);
-    if (fieldOffset === 0) {
-        console.error("FlatBuffer payload field not found");
-        return;
-    }
-    const vectorStart = rootOffset + fieldOffset + view.getInt32(rootOffset + fieldOffset, true);
-    const payloadLength = view.getInt32(vectorStart, true);
-    
-    // Now create a DataView for the raw struct inside the FlatBuffer:
-    const structView = new DataView(flatbufferPayload.buffer, flatbufferPayload.byteOffset + vectorStart + 4, payloadLength);
+        const view = new DataView(flatbufferPayload.buffer, flatbufferPayload.byteOffset, flatbufferPayload.byteLength);
 
-    const vbat = structView.getFloat32(48, true);
+        const rootOffset = view.getInt32(0, true);
+        if (rootOffset < 0 || rootOffset >= flatbufferPayload.byteLength) return false;
 
-    const rcArm = structView.getFloat32(24, true);
-    const rcMod = structView.getFloat32(28, true);
-    const rcThr = structView.getFloat32(32, true);
-    const rcRol = structView.getFloat32(36, true);
-    const rcPit = structView.getFloat32(40, true);
-    const rcYaw = structView.getFloat32(44, true);
+        const vtableOffset = view.getInt32(rootOffset, true);
+        const vtableStart = rootOffset - vtableOffset;
+        if (vtableStart < 0 || vtableStart + 6 > flatbufferPayload.byteLength) return false;
 
-    const armed = structView.getUint8(64) === 1;
-    const mode = structView.getUint32(68, true);
+        const fieldOffset = view.getUint16(vtableStart + 4, true);
+        if (fieldOffset === 0 || rootOffset + fieldOffset + 4 > flatbufferPayload.byteLength) return false;
 
-    const m1 = structView.getFloat32(72, true);
-    const m2 = structView.getFloat32(76, true);
-    const m3 = structView.getFloat32(80, true);
-    const m4 = structView.getFloat32(84, true);
-    const s1 = structView.getFloat32(88, true);
-    const s2 = structView.getFloat32(92, true);
-    const s3 = structView.getFloat32(96, true);
-    const s4 = structView.getFloat32(100, true);
+        const vectorStart = rootOffset + fieldOffset + view.getInt32(rootOffset + fieldOffset, true);
+        if (vectorStart < 0 || vectorStart + 4 > flatbufferPayload.byteLength) return false;
 
-    const gx = structView.getFloat32(112, true) * 57.29577951;
-    const gy = structView.getFloat32(116, true) * 57.29577951;
-    const gz = structView.getFloat32(120, true) * 57.29577951;
+        const payloadLength = view.getInt32(vectorStart, true);
+        if (payloadLength !== 304 && payloadLength !== 288 && payloadLength !== 236) {
+            return false;
+        }
+
+        if (vectorStart + 4 + payloadLength > flatbufferPayload.byteLength) return false;
+        
+        // Now create a DataView for the raw struct inside the FlatBuffer:
+        const structView = new DataView(flatbufferPayload.buffer, flatbufferPayload.byteOffset + vectorStart + 4, payloadLength);
+
+        let vbat, rcArm, rcMod, rcThr, rcRol, rcPit, rcYaw;
+        let armed, mode;
+        let m1, m2, m3, m4, s1, s2, s3, s4;
+        let gx, gy, gz;
+        let ax, ay, az;
+        let isCalibrating = false, progress = 0.0;
+        let halTime = 0.0, gncTime = 0.0;
+        let timeImu = 0.0, timeRcrx = 0.0, timeMotors = 0.0, timeServos = 0.0;
+        let timeNav = 0.0, timeCtl = 0.0, timeAlloc = 0.0;
+
+        if (payloadLength === 304) {
+            vbat = structView.getFloat32(48, true);
+            rcArm = structView.getFloat32(24, true);
+            rcMod = structView.getFloat32(28, true);
+            rcThr = structView.getFloat32(32, true);
+            rcRol = structView.getFloat32(36, true);
+            rcPit = structView.getFloat32(40, true);
+            rcYaw = structView.getFloat32(44, true);
+            
+            armed = structView.getUint8(80) === 1;
+            mode = structView.getUint32(84, true);
+
+            m1 = structView.getFloat32(88, true);
+            m2 = structView.getFloat32(92, true);
+            m3 = structView.getFloat32(96, true);
+            m4 = structView.getFloat32(100, true);
+            s1 = structView.getFloat32(104, true);
+            s2 = structView.getFloat32(108, true);
+            s3 = structView.getFloat32(112, true);
+            s4 = structView.getFloat32(116, true);
+
+            gx = structView.getFloat32(128, true) * 57.29577951;
+            gy = structView.getFloat32(132, true) * 57.29577951;
+            gz = structView.getFloat32(136, true) * 57.29577951;
+
+            ax = structView.getFloat32(12, true);
+            ay = structView.getFloat32(16, true);
+            az = structView.getFloat32(20, true);
+
+            halTime = structView.getFloat32(52, true);
+            timeImu = structView.getFloat32(56, true);
+            timeRcrx = structView.getFloat32(60, true);
+            timeMotors = structView.getFloat32(64, true);
+            timeServos = structView.getFloat32(68, true);
+
+            gncTime = structView.getFloat32(224, true);
+            timeNav = structView.getFloat32(228, true);
+            timeCtl = structView.getFloat32(232, true);
+            timeAlloc = structView.getFloat32(236, true);
+
+            isCalibrating = structView.getUint8(244) === 1;
+            progress = structView.getFloat32(248, true);
+        } else if (payloadLength === 288) {
+            vbat = structView.getFloat32(48, true);
+            rcArm = structView.getFloat32(24, true);
+            rcMod = structView.getFloat32(28, true);
+            rcThr = structView.getFloat32(32, true);
+            rcRol = structView.getFloat32(36, true);
+            rcPit = structView.getFloat32(40, true);
+            rcYaw = structView.getFloat32(44, true);
+            
+            armed = structView.getUint8(64) === 1;
+            mode = structView.getUint32(68, true);
+
+            m1 = structView.getFloat32(72, true);
+            m2 = structView.getFloat32(76, true);
+            m3 = structView.getFloat32(80, true);
+            m4 = structView.getFloat32(84, true);
+            s1 = structView.getFloat32(88, true);
+            s2 = structView.getFloat32(92, true);
+            s3 = structView.getFloat32(96, true);
+            s4 = structView.getFloat32(100, true);
+
+            gx = structView.getFloat32(112, true) * 57.29577951;
+            gy = structView.getFloat32(116, true) * 57.29577951;
+            gz = structView.getFloat32(120, true) * 57.29577951;
+
+            ax = structView.getFloat32(12, true);
+            ay = structView.getFloat32(16, true);
+            az = structView.getFloat32(20, true);
+
+            halTime = structView.getFloat32(52, true);
+            gncTime = structView.getFloat32(208, true);
+
+            isCalibrating = structView.getUint8(228) === 1;
+            progress = structView.getFloat32(232, true);
+        } else {
+            vbat = structView.getFloat32(48, true);
+            rcArm = structView.getFloat32(24, true);
+            rcMod = structView.getFloat32(28, true);
+            rcThr = structView.getFloat32(32, true);
+            rcRol = structView.getFloat32(36, true);
+            rcPit = structView.getFloat32(40, true);
+            rcYaw = structView.getFloat32(44, true);
+            
+            armed = structView.getUint8(56) === 1;
+            mode = structView.getUint32(60, true);
+
+            m1 = structView.getFloat32(64, true);
+            m2 = structView.getFloat32(68, true);
+            m3 = structView.getFloat32(72, true);
+            m4 = structView.getFloat32(76, true);
+            s1 = structView.getFloat32(80, true);
+            s2 = structView.getFloat32(84, true);
+            s3 = structView.getFloat32(88, true);
+            s4 = structView.getFloat32(92, true);
+
+            gx = structView.getFloat32(100, true) * 57.29577951;
+            gy = structView.getFloat32(104, true) * 57.29577951;
+            gz = structView.getFloat32(108, true) * 57.29577951;
+
+            ax = structView.getFloat32(12, true);
+            ay = structView.getFloat32(16, true);
+            az = structView.getFloat32(20, true);
+
+            halTime = structView.getFloat32(52, true);
+            gncTime = structView.getFloat32(184, true);
+
+            isCalibrating = structView.getUint8(188) === 1;
+            progress = structView.getFloat32(192, true);
+        }
 
     const badgeArm = document.getElementById("badge-arm");
     if (badgeArm) {
@@ -802,6 +970,28 @@ function parseBinaryALLb(flatbufferPayload) {
         badgeMode.className = mode === 2 ? "status-badge badge-armed" : "status-badge badge-disarmed";
     }
 
+    const btnCalibrate = document.getElementById("btn-calibrate");
+    if (btnCalibrate) {
+        if (isCalibrating) {
+            calibrationState = "running";
+            btnCalibrate.disabled = true;
+            btnCalibrate.textContent = `Calibrating (${Math.round(progress * 100)}%)...`;
+        } else {
+            if (calibrationState === "running") {
+                calibrationState = "idle";
+                btnCalibrate.textContent = "Calibrate";
+                btnCalibrate.disabled = false;
+                
+                const cliOutput = document.getElementById("cli-output");
+                if (cliOutput) {
+                    cliOutput.textContent += "\n>>> Calibration complete! Biases saved to EEPROM. Reloading parameters...\n";
+                    cliOutput.scrollTop = cliOutput.scrollHeight;
+                }
+                reloadParams();
+            }
+        }
+    }
+
     const levelInner = document.getElementById("battery-level-inner");
     const labelVbat = document.getElementById("label-vbat");
     if (levelInner && labelVbat) {
@@ -810,6 +1000,94 @@ function parseBinaryALLb(flatbufferPayload) {
         levelInner.style.width = (frac * 100) + "%";
         const hue = frac * 120;
         levelInner.style.backgroundColor = `hsl(${hue}, 100%, 45%)`;
+    }
+
+    const labelLoopTime = document.getElementById("label-loop-time");
+    if (labelLoopTime) {
+        const totalTime = halTime + gncTime;
+        const alpha = 0.95;
+        if (smoothedTotalTime === 0) {
+            smoothedTotalTime = totalTime;
+            smoothedHalTime = halTime;
+            smoothedGncTime = gncTime;
+            
+            smoothedTimeImu = timeImu;
+            smoothedTimeRcrx = timeRcrx;
+            smoothedTimeMotors = timeMotors;
+            smoothedTimeServos = timeServos;
+            smoothedTimeNav = timeNav;
+            smoothedTimeCtl = timeCtl;
+            smoothedTimeAlloc = timeAlloc;
+        } else {
+            smoothedTotalTime = smoothedTotalTime * alpha + totalTime * (1 - alpha);
+            smoothedHalTime = smoothedHalTime * alpha + halTime * (1 - alpha);
+            smoothedGncTime = smoothedGncTime * alpha + gncTime * (1 - alpha);
+            
+            smoothedTimeImu = smoothedTimeImu * alpha + timeImu * (1 - alpha);
+            smoothedTimeRcrx = smoothedTimeRcrx * alpha + timeRcrx * (1 - alpha);
+            smoothedTimeMotors = smoothedTimeMotors * alpha + timeMotors * (1 - alpha);
+            smoothedTimeServos = smoothedTimeServos * alpha + timeServos * (1 - alpha);
+            smoothedTimeNav = smoothedTimeNav * alpha + timeNav * (1 - alpha);
+            smoothedTimeCtl = smoothedTimeCtl * alpha + timeCtl * (1 - alpha);
+            smoothedTimeAlloc = smoothedTimeAlloc * alpha + timeAlloc * (1 - alpha);
+        }
+
+        const looprateHz = parseFloat(paramsCache["looprate_hz"] || "1000");
+        const looprateUs = 1000000.0 / looprateHz;
+        const activeTimeUs = timeImu + timeRcrx + timeNav + timeCtl + timeAlloc + timeMotors + timeServos;
+        const idleTimeUs = Math.max(0, looprateUs - activeTimeUs);
+
+        if (smoothedTimeIdle === 0) {
+            smoothedTimeIdle = idleTimeUs;
+        } else {
+            smoothedTimeIdle = smoothedTimeIdle * alpha + idleTimeUs * (1 - alpha);
+        }
+
+        const now = performance.now();
+        if (now - lastLoopTimeUpdate > 250) {
+            labelLoopTime.textContent = smoothedTotalTime.toFixed(2) + "ms";
+            labelLoopTime.title = `HAL: ${smoothedHalTime.toFixed(2)}ms, GNC: ${smoothedGncTime.toFixed(2)}ms (Average)`;
+            
+            // Update detailed timing texts
+            const setTimingText = (id, valUs) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = valUs.toFixed(1) + " us";
+            };
+            setTimingText("txt-time-imu", smoothedTimeImu);
+            setTimingText("txt-time-rcrx", smoothedTimeRcrx);
+            setTimingText("txt-time-nav", smoothedTimeNav);
+            setTimingText("txt-time-ctl", smoothedTimeCtl);
+            setTimingText("txt-time-alloc", smoothedTimeAlloc);
+            setTimingText("txt-time-motors", smoothedTimeMotors);
+            setTimingText("txt-time-servos", smoothedTimeServos);
+            setTimingText("txt-time-idle", smoothedTimeIdle);
+            
+            const txtTotal = document.getElementById("txt-time-total-avg");
+            if (txtTotal) {
+                const activeMs = (smoothedTimeImu + smoothedTimeRcrx + smoothedTimeNav + smoothedTimeCtl + smoothedTimeAlloc + smoothedTimeMotors + smoothedTimeServos) / 1000.0;
+                txtTotal.textContent = activeMs.toFixed(2) + "ms active";
+            }
+
+            // Update stacked budget bar widths
+            const totalBudgetUs = Math.max(looprateUs, smoothedTimeImu + smoothedTimeRcrx + smoothedTimeNav + smoothedTimeCtl + smoothedTimeAlloc + smoothedTimeMotors + smoothedTimeServos + smoothedTimeIdle);
+            const setBarWidth = (id, valUs) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const pct = (valUs / totalBudgetUs) * 100;
+                    el.style.width = pct.toFixed(2) + "%";
+                }
+            };
+            setBarWidth("bar-time-imu", smoothedTimeImu);
+            setBarWidth("bar-time-rcrx", smoothedTimeRcrx);
+            setBarWidth("bar-time-nav", smoothedTimeNav);
+            setBarWidth("bar-time-ctl", smoothedTimeCtl);
+            setBarWidth("bar-time-alloc", smoothedTimeAlloc);
+            setBarWidth("bar-time-motors", smoothedTimeMotors);
+            setBarWidth("bar-time-servos", smoothedTimeServos);
+            setBarWidth("bar-time-idle", smoothedTimeIdle);
+
+            lastLoopTimeUpdate = now;
+        }
     }
 
     function updateCircle(id, val, isFraction) {
@@ -852,32 +1130,37 @@ function parseBinaryALLb(flatbufferPayload) {
     updateCircle("s3", s3, false);
     updateCircle("s4", s4, false);
 
-    function updateGyroBar(axis, rateVal) {
-        const bar = document.getElementById("gyro-bar-" + axis);
-        const label = document.getElementById("label-rate-" + axis);
+    function updateImuBar(type, axis, val) {
+        const id = type === "gyro" ? "g" + axis : "a" + axis;
+        const bar = document.getElementById("imu-bar-" + id);
+        const label = document.getElementById("label-val-" + id);
         if (!bar || !label) return;
 
-        const maxRate = 500.0;
-        const clampedVal = Math.max(-maxRate, Math.min(maxRate, rateVal));
+        const maxScale = type === "gyro" ? 500.0 : 20.0;
+        const unit = type === "gyro" ? "°/s" : "m/s²";
+        const clampedVal = Math.max(-maxScale, Math.min(maxScale, val));
         
-        const pctVal = Math.round((clampedVal / maxRate) * 100);
-        const sign = pctVal > 0 ? "+" : "";
-        label.textContent = sign + pctVal + "%";
+        const roundedVal = type === "gyro" ? Math.round(val) : parseFloat(val.toFixed(1));
+        const sign = roundedVal > 0 ? "+" : "";
+        label.textContent = sign + roundedVal + unit;
 
-        const pct = (clampedVal / maxRate) * 50;
+        const pct = (clampedVal / maxScale) * 50;
 
         if (pct >= 0) {
-            bar.style.width = pct + "%";
-            bar.style.left = "50%";
+            bar.style.height = pct + "%";
+            bar.style.bottom = "50%";
         } else {
-            bar.style.width = Math.abs(pct) + "%";
-            bar.style.left = (50 - Math.abs(pct)) + "%";
+            bar.style.height = Math.abs(pct) + "%";
+            bar.style.bottom = (50 - Math.abs(pct)) + "%";
         }
     }
 
-    updateGyroBar("x", gx);
-    updateGyroBar("y", gy);
-    updateGyroBar("z", gz);
+    updateImuBar("gyro", "x", gx);
+    updateImuBar("gyro", "y", gy);
+    updateImuBar("gyro", "z", gz);
+    updateImuBar("accel", "x", ax);
+    updateImuBar("accel", "y", ay);
+    updateImuBar("accel", "z", az);
 
     function updateRcBar(ch, val) {
         const bar = document.getElementById("rc-bar-" + ch);
@@ -912,4 +1195,10 @@ function parseBinaryALLb(flatbufferPayload) {
     updateRcBar("yaw", rcYaw);
     updateRcBar("arm", rcArm);
     updateRcBar("mod", rcMod);
+
+    return true;
+    } catch (e) {
+        console.error("Error parsing ALLb packet: ", e);
+        return false;
+    }
 }

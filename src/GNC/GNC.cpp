@@ -25,9 +25,20 @@ void GNC::update_dual_core(ALLb& allb_k, const ALLb& allb_km1) {
 GNCb GNC::update_dual_core_internal(const ALLb& allb_km1) {
     GNCb gncb;
     gncb.vsmb = vsm.update(allb_km1);
+
+    uint32_t t_start = micros();
     gncb.navb = nav.update(allb_km1);
+    gncb.time_nav_us = static_cast<float>(micros() - t_start);
+
     gncb.guib = gui.update(allb_km1);
+
+    t_start = micros();
     gncb.ctlb = ctl.update(allb_km1);
+    gncb.time_ctl_us = static_cast<float>(micros() - t_start);
+
+    t_start = micros();
     gncb.actb = alloc.update(allb_km1);
+    gncb.time_alloc_us = static_cast<float>(micros() - t_start);
+
     return gncb;
 }

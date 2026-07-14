@@ -14,6 +14,7 @@
         </div>
         <div class="tabs-navigation">
             <button class="tab-btn active" data-tab="status-panel">Status</button>
+            <button class="tab-btn" data-tab="timing-panel">Timing</button>
             <button class="tab-btn" data-tab="console-panel">Console & CLI</button>
             <button class="tab-btn" data-tab="params-panel">Parameters</button>
             <button class="tab-btn" data-tab="test-panel">Actuator Test</button>
@@ -51,6 +52,10 @@
                             </div>
                             <span id="label-vbat" style="font-family: monospace; font-size: 15px; font-weight: bold; color: #e4e4e7;">0.00V</span>
                         </div>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-card-label">Loop Time</span>
+                        <div id="label-loop-time" style="font-family: monospace; font-size: 15px; font-weight: bold; color: #e4e4e7; margin-top: 5px;">0.00ms</div>
                     </div>
                 </div>
 
@@ -90,43 +95,65 @@
                             <span class="actuator-label">Servo 4</span>
                         </div>
                     </div>
-                </div>
-
-                <div class="status-section-card">
-                    <h3>Rotated Gyro Rates</h3>
-                    <div class="gyro-rates-container" style="display: flex; flex-direction: column; gap: 15px;">
-                        <div class="gyro-rate-row">
-                            <div class="gyro-rate-header">
-                                <span class="gyro-axis-label">Roll/X</span>
-                                <span id="label-rate-x" class="gyro-rate-val">0%</span>
+                </div>                <div class="status-section-card" style="grid-column: span 1;">
+                    <h3>IMU Sensor Telemetry</h3>
+                    <div class="imu-bars-container" style="display: flex; justify-content: space-around; align-items: stretch; height: 180px; padding: 10px 0;">
+                        <!-- Gyro X -->
+                        <div class="imu-bar-item" style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1;">
+                            <span id="label-val-gx" style="font-family: monospace; font-size: 10px; font-weight: bold; color: #e4e4e7; min-height: 15px;">0°/s</span>
+                            <div class="imu-bar-track" style="width: 10px; flex: 1; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="imu-bar-gx" style="width: 100%; height: 0%; background-color: #ef4444; position: absolute; bottom: 50%;"></div>
+                                <div style="position: absolute; left: 0; right: 0; bottom: 50%; height: 1px; background-color: #3f3f46; z-index: 1;"></div>
                             </div>
-                            <div class="gyro-bar-track">
-                                <div id="gyro-bar-x" class="gyro-bar-fill gyro-bar-x"></div>
-                                <div class="gyro-bar-center-line"></div>
-                            </div>
+                            <span class="imu-bar-label" style="font-size: 11px; font-weight: 600; color: #a1a1aa;">Gyro X</span>
                         </div>
-                        <div class="gyro-rate-row">
-                            <div class="gyro-rate-header">
-                                <span class="gyro-axis-label">Pitch/Y</span>
-                                <span id="label-rate-y" class="gyro-rate-val">0%</span>
+                        <!-- Gyro Y -->
+                        <div class="imu-bar-item" style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1;">
+                            <span id="label-val-gy" style="font-family: monospace; font-size: 10px; font-weight: bold; color: #e4e4e7; min-height: 15px;">0°/s</span>
+                            <div class="imu-bar-track" style="width: 10px; flex: 1; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="imu-bar-gy" style="width: 100%; height: 0%; background-color: #3b82f6; position: absolute; bottom: 50%;"></div>
+                                <div style="position: absolute; left: 0; right: 0; bottom: 50%; height: 1px; background-color: #3f3f46; z-index: 1;"></div>
                             </div>
-                            <div class="gyro-bar-track">
-                                <div id="gyro-bar-y" class="gyro-bar-fill gyro-bar-y"></div>
-                                <div class="gyro-bar-center-line"></div>
-                            </div>
+                            <span class="imu-bar-label" style="font-size: 11px; font-weight: 600; color: #a1a1aa;">Gyro Y</span>
                         </div>
-                        <div class="gyro-rate-row">
-                            <div class="gyro-rate-header">
-                                <span class="gyro-axis-label">Yaw/Z</span>
-                                <span id="label-rate-z" class="gyro-rate-val">0%</span>
+                        <!-- Gyro Z -->
+                        <div class="imu-bar-item" style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1;">
+                            <span id="label-val-gz" style="font-family: monospace; font-size: 10px; font-weight: bold; color: #e4e4e7; min-height: 15px;">0°/s</span>
+                            <div class="imu-bar-track" style="width: 10px; flex: 1; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="imu-bar-gz" style="width: 100%; height: 0%; background-color: #10b981; position: absolute; bottom: 50%;"></div>
+                                <div style="position: absolute; left: 0; right: 0; bottom: 50%; height: 1px; background-color: #3f3f46; z-index: 1;"></div>
                             </div>
-                            <div class="gyro-bar-track">
-                                <div id="gyro-bar-z" class="gyro-bar-fill gyro-bar-z"></div>
-                                <div class="gyro-bar-center-line"></div>
+                            <span class="imu-bar-label" style="font-size: 11px; font-weight: 600; color: #a1a1aa;">Gyro Z</span>
+                        </div>
+                        <!-- Accel X -->
+                        <div class="imu-bar-item" style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1;">
+                            <span id="label-val-ax" style="font-family: monospace; font-size: 10px; font-weight: bold; color: #e4e4e7; min-height: 15px;">0m/s²</span>
+                            <div class="imu-bar-track" style="width: 10px; flex: 1; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="imu-bar-ax" style="width: 100%; height: 0%; background-color: #f59e0b; position: absolute; bottom: 50%;"></div>
+                                <div style="position: absolute; left: 0; right: 0; bottom: 50%; height: 1px; background-color: #3f3f46; z-index: 1;"></div>
                             </div>
+                            <span class="imu-bar-label" style="font-size: 11px; font-weight: 600; color: #a1a1aa;">Acc X</span>
+                        </div>
+                        <!-- Accel Y -->
+                        <div class="imu-bar-item" style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1;">
+                            <span id="label-val-ay" style="font-family: monospace; font-size: 10px; font-weight: bold; color: #e4e4e7; min-height: 15px;">0m/s²</span>
+                            <div class="imu-bar-track" style="width: 10px; flex: 1; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="imu-bar-ay" style="width: 100%; height: 0%; background-color: #8b5cf6; position: absolute; bottom: 50%;"></div>
+                                <div style="position: absolute; left: 0; right: 0; bottom: 50%; height: 1px; background-color: #3f3f46; z-index: 1;"></div>
+                            </div>
+                            <span class="imu-bar-label" style="font-size: 11px; font-weight: 600; color: #a1a1aa;">Acc Y</span>
+                        </div>
+                        <!-- Accel Z -->
+                        <div class="imu-bar-item" style="display: flex; flex-direction: column; align-items: center; gap: 8px; flex: 1;">
+                            <span id="label-val-az" style="font-family: monospace; font-size: 10px; font-weight: bold; color: #e4e4e7; min-height: 15px;">0m/s²</span>
+                            <div class="imu-bar-track" style="width: 10px; flex: 1; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="imu-bar-az" style="width: 100%; height: 0%; background-color: #ec4899; position: absolute; bottom: 50%;"></div>
+                                <div style="position: absolute; left: 0; right: 0; bottom: 50%; height: 1px; background-color: #3f3f46; z-index: 1;"></div>
+                            </div>
+                            <span class="imu-bar-label" style="font-size: 11px; font-weight: 600; color: #a1a1aa;">Acc Z</span>
+                        </div>
                     </div>
                 </div>
-            </div>
 
             <div class="status-section-card">
                 <h3>RC Receiver Channels</h3>
@@ -191,6 +218,100 @@
                     </div>
                 </div>
 
+            </div>
+        </div>
+
+        <div id="timing-panel" class="panel tab-content">
+            <h2>Real-Time Loop Budget & Timing</h2>
+            <div class="timing-container" style="display: flex; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto;">
+                
+                <div class="status-section-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0;">Loop Budget (1ms @ 1000Hz Target)</h3>
+                        <span id="txt-time-total-avg" style="font-family: monospace; font-size: 16px; font-weight: bold; color: #e4e4e7;">0.00ms active</span>
+                    </div>
+                    
+                    <div class="timing-budget-bar" style="display: flex; height: 36px; background-color: #09090b; border: 1px solid #27272a; border-radius: 6px; overflow: hidden; position: relative; margin-bottom: 15px;">
+                        <div id="bar-time-imu" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out;" title="IMU Read"></div>
+                        <div id="bar-time-rcrx" style="height: 100%; width: 0%; background-color: #3b82f6; transition: width 0.05s ease-out;" title="RC RX Read"></div>
+                        <div id="bar-time-nav" style="height: 100%; width: 0%; background-color: #10b981; transition: width 0.05s ease-out;" title="GNC Navigation"></div>
+                        <div id="bar-time-ctl" style="height: 100%; width: 0%; background-color: #f59e0b; transition: width 0.05s ease-out;" title="GNC Control"></div>
+                        <div id="bar-time-alloc" style="height: 100%; width: 0%; background-color: #8b5cf6; transition: width 0.05s ease-out;" title="Actuator Alloc"></div>
+                        <div id="bar-time-motors" style="height: 100%; width: 0%; background-color: #ec4899; transition: width 0.05s ease-out;" title="Motor Write"></div>
+                        <div id="bar-time-servos" style="height: 100%; width: 0%; background-color: #14b8a6; transition: width 0.05s ease-out;" title="Servo Write"></div>
+                        <div id="bar-time-idle" style="height: 100%; width: 0%; background-color: #27272a; transition: width 0.05s ease-out;" title="Idle / Clamping"></div>
+                    </div>
+                </div>
+
+                <div class="status-section-card">
+                    <h3 style="margin-bottom: 15px;">Detailed Breakdown</h3>
+                    <div class="timing-breakdown-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px;">
+                        <!-- IMU Read -->
+                        <div class="timing-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background-color: #121214; border: 1px solid #27272a; border-radius: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ef4444;"></div>
+                                <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">IMU Read</span>
+                            </div>
+                            <span id="txt-time-imu" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0.0 us</span>
+                        </div>
+                        <!-- RC RX Read -->
+                        <div class="timing-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background-color: #121214; border: 1px solid #27272a; border-radius: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #3b82f6;"></div>
+                                <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">RC RX Read</span>
+                            </div>
+                            <span id="txt-time-rcrx" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0.0 us</span>
+                        </div>
+                        <!-- GNC Navigation -->
+                        <div class="timing-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background-color: #121214; border: 1px solid #27272a; border-radius: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #10b981;"></div>
+                                <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">GNC Navigation</span>
+                            </div>
+                            <span id="txt-time-nav" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0.0 us</span>
+                        </div>
+                        <!-- GNC Control -->
+                        <div class="timing-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background-color: #121214; border: 1px solid #27272a; border-radius: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #f59e0b;"></div>
+                                <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">GNC Control</span>
+                            </div>
+                            <span id="txt-time-ctl" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0.0 us</span>
+                        </div>
+                        <!-- GNC Mixer/Alloc -->
+                        <div class="timing-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background-color: #121214; border: 1px solid #27272a; border-radius: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #8b5cf6;"></div>
+                                <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">GNC Mixer/Alloc</span>
+                            </div>
+                            <span id="txt-time-alloc" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0.0 us</span>
+                        </div>
+                        <!-- Motor Write -->
+                        <div class="timing-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background-color: #121214; border: 1px solid #27272a; border-radius: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #ec4899;"></div>
+                                <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">Motor Write</span>
+                            </div>
+                            <span id="txt-time-motors" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0.0 us</span>
+                        </div>
+                        <!-- Servo Write -->
+                        <div class="timing-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background-color: #121214; border: 1px solid #27272a; border-radius: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #14b8a6;"></div>
+                                <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">Servo Write</span>
+                            </div>
+                            <span id="txt-time-servos" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0.0 us</span>
+                        </div>
+                        <!-- Idle Clamping -->
+                        <div class="timing-item" style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background-color: #121214; border: 1px solid #27272a; border-radius: 6px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <div style="width: 12px; height: 12px; border-radius: 50%; background-color: #27272a;"></div>
+                                <span style="font-size: 13px; font-weight: 600; color: #a1a1aa;">Idle Clamping</span>
+                            </div>
+                            <span id="txt-time-idle" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0.0 us</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
