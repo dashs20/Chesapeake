@@ -44,7 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-calibrate").addEventListener("click", startCalibration);
     document.getElementById("btn-zero-biases").addEventListener("click", zeroBiases);
     document.getElementById("btn-toggle-test").addEventListener("click", toggleActuatorTest);
-    document.getElementById("param-search").addEventListener("input", filterParameters);
     document.getElementById("cli-input").addEventListener("keypress", (e) => {
         if (e.key === "Enter") sendCliCommand();
     });
@@ -135,7 +134,7 @@ async function cleanupSerialPort() {
 function updateConnectionUI(connected) {
     const btn = document.getElementById("btn-connect");
     const status = document.getElementById("connection-status");
-    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "btn-zero-biases", "btn-calibrate", "cli-input", "btn-send-cli", "param-search", "btn-toggle-test"];
+    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "btn-zero-biases", "btn-calibrate", "cli-input", "btn-send-cli", "btn-toggle-test"];
     btn.textContent = connected ? "Disconnect" : "Connect";
     btn.className = connected ? "btn btn-connected" : "btn";
     status.textContent = connected ? "Connected" : "Disconnected";
@@ -155,11 +154,31 @@ function clearBoardUI() {
     paramsCache = {};
     modifiedParams = {};
     const placeholder = document.getElementById("params-loading");
-    placeholder.textContent = "Connect to view and edit flight parameters.";
-    placeholder.style.display = "block";
-    const grid = document.getElementById("params-grid");
-    grid.style.display = "none";
-    grid.innerHTML = "";
+    if (placeholder) {
+        placeholder.textContent = "Connect to view and edit flight parameters.";
+        placeholder.style.display = "block";
+    }
+
+    const pidKeys = [
+        "roll_rate_kp", "roll_rate_ki", "roll_rate_kd", "roll_rate_imax",
+        "pitch_rate_kp", "pitch_rate_ki", "pitch_rate_kd", "pitch_rate_imax",
+        "yaw_rate_kp", "yaw_rate_ki", "yaw_rate_kd", "yaw_rate_imax",
+        "roll_ang_kp", "pitch_ang_kp", "yaw_ang_kp"
+    ];
+
+    pidKeys.forEach(key => {
+        const slider = document.getElementById(`slider-${key}`);
+        const valText = document.getElementById(`val-${key}`);
+        if (slider) {
+            slider.value = slider.min;
+            slider.disabled = true;
+        }
+        if (valText) {
+            valText.value = "";
+            valText.disabled = true;
+        }
+    });
+
     const monitor = document.getElementById("serial-monitor");
     if (monitor) monitor.textContent = "";
     const output = document.getElementById("cli-output");
@@ -426,9 +445,24 @@ async function reloadParams() {
     modifiedParams = {};
     pendingCommandType = "dump";
     const placeholder = document.getElementById("params-loading");
-    placeholder.textContent = "Loading parameters from flight controller...";
-    placeholder.style.display = "block";
-    document.getElementById("params-grid").style.display = "none";
+    if (placeholder) {
+        placeholder.textContent = "Loading parameters from flight controller...";
+        placeholder.style.display = "block";
+    }
+
+    const pidKeys = [
+        "roll_rate_kp", "roll_rate_ki", "roll_rate_kd", "roll_rate_imax",
+        "pitch_rate_kp", "pitch_rate_ki", "pitch_rate_kd", "pitch_rate_imax",
+        "yaw_rate_kp", "yaw_rate_ki", "yaw_rate_kd", "yaw_rate_imax",
+        "roll_ang_kp", "pitch_ang_kp", "yaw_ang_kp"
+    ];
+    pidKeys.forEach(key => {
+        const slider = document.getElementById(`slider-${key}`);
+        const valText = document.getElementById(`val-${key}`);
+        if (slider) slider.disabled = true;
+        if (valText) valText.disabled = true;
+    });
+
     if (reloadTimeout) clearTimeout(reloadTimeout);
     await writeRaw("dump\n");
     reloadTimeout = setTimeout(() => {
@@ -440,48 +474,67 @@ async function reloadParams() {
 }
 
 function buildParametersUI() {
-    const grid = document.getElementById("params-grid");
     const placeholder = document.getElementById("params-loading");
-    grid.innerHTML = "";
     if (Object.keys(paramsCache).length === 0) {
-        placeholder.textContent = "Failed to load parameters. Try reloading.";
+        if (placeholder) {
+            placeholder.textContent = "Failed to load parameters. Try reloading.";
+            placeholder.style.display = "block";
+        }
         return;
     }
-    placeholder.style.display = "none";
-    grid.style.display = "flex";
-    for (const key of Object.keys(paramsCache).sort()) {
-        const row = document.createElement("div");
-        row.className = "param-row";
-        const label = document.createElement("span");
-        label.className = "param-name";
-        label.textContent = key;
-        row.appendChild(label);
-        const val = paramsCache[key];
-        if (dropdownOptions[key]) {
-            const select = document.createElement("select");
-            select.className = "param-select";
-            dropdownOptions[key].forEach(opt => {
-                const option = document.createElement("option");
-                option.value = opt;
-                option.textContent = opt;
-                if (opt === val) option.selected = true;
-                select.appendChild(option);
-            });
-            select.addEventListener("change", (e) => {
-                handleParamChange(key, e.target.value);
-            });
-            row.appendChild(select);
-        } else {
-            const input = document.createElement("input");
-            input.className = "param-input";
-            input.value = val;
-            input.addEventListener("input", (e) => {
-                handleParamChange(key, e.target.value);
-            });
-            row.appendChild(input);
-        }
-        grid.appendChild(row);
+    if (placeholder) {
+        placeholder.style.display = "none";
     }
+
+    const pidKeys = [
+        "roll_rate_kp", "roll_rate_ki", "roll_rate_kd", "roll_rate_imax",
+        "pitch_rate_kp", "pitch_rate_ki", "pitch_rate_kd", "pitch_rate_imax",
+        "yaw_rate_kp", "yaw_rate_ki", "yaw_rate_kd", "yaw_rate_imax",
+        "roll_ang_kp", "pitch_ang_kp", "yaw_ang_kp"
+    ];
+
+    pidKeys.forEach(key => {
+        const val = parseFloat(paramsCache[key] || 0);
+        const slider = document.getElementById(`slider-${key}`);
+        const valText = document.getElementById(`val-${key}`);
+        if (slider && valText) {
+            slider.value = val;
+            slider.disabled = false;
+            
+            const isKd = key.endsWith("_kd");
+            const places = isKd ? 5 : 4;
+            valText.value = val.toFixed(places);
+            valText.disabled = false;
+            
+            if (!slider.dataset.listenerAdded) {
+                slider.addEventListener("input", (e) => {
+                    const currentVal = parseFloat(e.target.value);
+                    valText.value = currentVal.toFixed(places);
+                    handleParamChange(key, currentVal.toString());
+                });
+                slider.dataset.listenerAdded = "true";
+            }
+
+            if (!valText.dataset.listenerAdded) {
+                valText.addEventListener("change", (e) => {
+                    let currentVal = parseFloat(e.target.value);
+                    if (isNaN(currentVal)) {
+                        currentVal = parseFloat(slider.value);
+                    }
+                    const min = parseFloat(slider.min);
+                    const max = parseFloat(slider.max);
+                    if (currentVal < min) currentVal = min;
+                    if (currentVal > max) currentVal = max;
+
+                    slider.value = currentVal;
+                    valText.value = currentVal.toFixed(places);
+                    handleParamChange(key, currentVal.toString());
+                });
+                valText.dataset.listenerAdded = "true";
+            }
+        }
+    });
+
     checkBiases();
 }
 
@@ -554,13 +607,7 @@ function handleParamChange(key, val) {
     }
 }
 
-function filterParameters(e) {
-    const query = e.target.value.toLowerCase();
-    document.querySelectorAll(".param-row").forEach(row => {
-        const name = row.querySelector(".param-name").textContent.toLowerCase();
-        row.style.display = name.includes(query) ? "flex" : "none";
-    });
-}
+// filterParameters removed
 
 async function saveParamsToBoard() {
     const keys = Object.keys(modifiedParams);
