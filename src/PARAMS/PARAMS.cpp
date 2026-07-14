@@ -29,24 +29,24 @@ PARAMS::PARAMS() {
 PARAMS::~PARAMS() {}
 
 bool PARAMS::load(MASTERc& config) {
-    if (!LittleFS.exists("/config.txt")) {
-        Serial.println("DEBUG: config.txt does not exist. Writing defaults...");
+    if (!LittleFS.exists("/config_v2.txt")) {
+        Serial.println("DEBUG: config_v2.txt does not exist. Writing defaults...");
         load_default_config(config);
         save(config);
         return true;
     }
 
-    File file = LittleFS.open("/config.txt", "r");
+    File file = LittleFS.open("/config_v2.txt", "r");
     if (!file) {
-        Serial.println("ERROR: Failed to open config.txt for reading! Loading defaults...");
+        Serial.println("ERROR: Failed to open config_v2.txt for reading! Loading defaults...");
         load_default_config(config);
         return false;
     }
 
-    // Load defaults first so any parameters not specified in config.txt will have default values
+    // Load defaults first so any parameters not specified in config_v2.txt will have default values
     load_default_config(config);
 
-    Serial.println("DEBUG: Loading config from config.txt on LittleFS...");
+    Serial.println("DEBUG: Loading config from config_v2.txt on LittleFS...");
     while (file.available()) {
         String line = file.readStringUntil('\n');
         line.trim();
@@ -78,9 +78,9 @@ extern volatile bool system_ready;
 void PARAMS::save(const MASTERc& config) {
     system_ready = false;
     delay(50);
-    File file = LittleFS.open("/config.txt", "w");
+    File file = LittleFS.open("/config_v2.txt", "w");
     if (!file) {
-        Serial.println("ERROR: Failed to open config.txt for writing!");
+        Serial.println("ERROR: Failed to open config_v2.txt for writing!");
         system_ready = true;
         return;
     }
@@ -207,7 +207,7 @@ void PARAMS::save(const MASTERc& config) {
     file.printf("set gnc_nav_imu_calc_gyro_bias_z = %.6f\n", config.gncc.navc.imu_calc.gyro_bias.z());
 
     file.close();
-    Serial.println("DEBUG: Config saved successfully to /config.txt on LittleFS");
+    Serial.println("DEBUG: Config saved successfully to /config_v2.txt on LittleFS");
     system_ready = true;
 }
 

@@ -8,13 +8,14 @@ void PID_scalar::reset() {
 }
 
 float PID_scalar::update(float setpoint, float measurement) {
-    float error = setpoint - measurement;
+    float error = (setpoint - measurement) * cfg.dt_s;
 
     integral += error * cfg.dt_s;
-    if (integral > cfg.i_max) {
-        integral = cfg.i_max;
-    } else if (integral < -cfg.i_max) {
-        integral = -cfg.i_max;
+    float clamp_val = cfg.i_max * cfg.dt_s;
+    if (integral > clamp_val) {
+        integral = clamp_val;
+    } else if (integral < -clamp_val) {
+        integral = -clamp_val;
     }
 
     float derivative = 0.0f;

@@ -47,7 +47,7 @@ void load_default_config(MASTERc& config) {
     config.gncc.navc.gyro_error_degps = 5.0f;
 
     PID_SCALARc angle_pid;
-    angle_pid.kp = 0.01f;
+    angle_pid.kp = 5.0f;
     angle_pid.ki = 0.0f;
     angle_pid.kd = 0.0f;
     angle_pid.i_max = 0.0f;
@@ -56,7 +56,7 @@ void load_default_config(MASTERc& config) {
     angle_pid.dt_s = 0.0f;
 
     PID_SCALARc rate_pid;
-    rate_pid.kp = 0.01f;
+    rate_pid.kp = 10.0f;
     rate_pid.ki = 0.0f;
     rate_pid.kd = 0.0f;
     rate_pid.i_max = 0.5f;
@@ -65,7 +65,7 @@ void load_default_config(MASTERc& config) {
     rate_pid.dt_s = 0.0f;
 
     PID_SCALARc yaw_rate_pid;
-    yaw_rate_pid.kp = 0.001f;
+    yaw_rate_pid.kp = 1.0f;
     yaw_rate_pid.ki = 0.0f;
     yaw_rate_pid.kd = 0.0f;
     yaw_rate_pid.i_max = 0.5f;

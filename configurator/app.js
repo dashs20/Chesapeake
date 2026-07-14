@@ -502,7 +502,7 @@ function buildParametersUI() {
             slider.disabled = false;
             
             const isKd = key.endsWith("_kd");
-            const places = isKd ? 5 : 4;
+            const places = isKd ? 4 : 2;
             valText.value = val.toFixed(places);
             valText.disabled = false;
             
