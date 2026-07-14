@@ -27,7 +27,7 @@ CTL::CTL(GNCc cfg)
 }
 
 CTLb CTL::update(const ALLb& allb) {
-    if (allb.gncb.vsmb.state == STATE::DISARMED || allb.gncb.vsmb.state == STATE::ACT_TEST) {
+    if (!allb.gncb.vsmb.armed || allb.gncb.vsmb.mode == FLIGHT_MODE::ACT_TEST) {
         rate_controller.reset();
         angle_controller.reset();
         return CTLb{Eigen::Vector3f::Zero()};
@@ -37,12 +37,12 @@ CTLb CTL::update(const ALLb& allb) {
 
     CTLb ctlb;
 
-    if (allb.gncb.vsmb.att_mode == ATT_MODE::RATE) {
+    if (allb.gncb.vsmb.mode == FLIGHT_MODE::RATE) {
         Eigen::Vector3f omega_body_setpoint_radps = allb.gncb.guib.omega_body_radps;
         Eigen::Vector3f omega_body_measurement_radps = allb.gncb.navb.omega_body_radps;
 
         ctlb.axes_effort_frac = rate_controller.update(omega_body_setpoint_radps, omega_body_measurement_radps);
-    } else if (allb.gncb.vsmb.att_mode == ATT_MODE::ANGLE) {
+    } else if (allb.gncb.vsmb.mode == FLIGHT_MODE::ANGLE) {
         if (time_accumulator_s >= angle_loop_dt_s) {
             time_accumulator_s = 0.0f;
 

@@ -333,3 +333,160 @@ body {
     font-size: 11px;
 }
 
+.status-card {
+    background-color: #18181b;
+    border: 1px solid #27272a;
+    border-radius: 6px;
+    padding: 12px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 140px;
+}
+
+.status-card-label {
+    font-size: 12px;
+    color: #71717a;
+    text-transform: uppercase;
+    font-weight: bold;
+    letter-spacing: 0.05em;
+}
+
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.badge-disarmed {
+    background-color: #27272a;
+    color: #a1a1aa;
+    border: 1px solid #3f3f46;
+}
+
+.badge-armed {
+    background-color: #3f1e1e;
+    color: #ef4444;
+    border: 1px solid #ef4444;
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+}
+
+.status-section-card {
+    background-color: #121214;
+    border: 1px solid #27272a;
+    border-radius: 6px;
+    padding: 15px;
+}
+
+.status-section-card h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #e4e4e7;
+    border-bottom: 1px solid #202023;
+    padding-bottom: 8px;
+}
+
+.status-actuators-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    justify-items: center;
+}
+
+.actuator-circle-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.actuator-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 4px solid #27272a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: bold;
+    color: #e4e4e7;
+    background-color: #0c0c0e;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.actuator-label {
+    font-size: 12px;
+    color: #71717a;
+    font-weight: 600;
+}
+
+.gyro-rate-row {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gyro-rate-header {
+    display: flex;
+    justify-content: space-between;
+}
+
+.gyro-axis-label {
+    font-size: 13px;
+    color: #a1a1aa;
+    font-weight: 600;
+}
+
+.gyro-rate-val {
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: bold;
+    color: #e4e4e7;
+}
+
+.gyro-bar-track {
+    height: 14px;
+    background-color: #09090b;
+    border: 1px solid #202023;
+    border-radius: 7px;
+    position: relative;
+    overflow: hidden;
+}
+
+.gyro-bar-fill {
+    height: 100%;
+    position: absolute;
+    width: 0%;
+    left: 50%;
+    transition: width 0.05s ease-out, left 0.05s ease-out;
+}
+
+.gyro-bar-x {
+    background-color: #ef4444;
+}
+
+.gyro-bar-y {
+    background-color: #22c55e;
+}
+
+.gyro-bar-z {
+    background-color: #3b82f6;
+}
+
+.gyro-bar-center-line {
+    width: 2px;
+    height: 100%;
+    background-color: #3f3f46;
+    position: absolute;
+    left: 50%;
+    top: 0;
+    transform: translateX(-50%);
+    pointer-events: none;
+}
+
+

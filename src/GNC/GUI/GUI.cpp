@@ -13,12 +13,12 @@ GUIb GUI::update(const ALLb& allb) {
     float yaw_expo_frac = apply_expo(allb.halb.rcrxb.yaw_frac, cfg_data.guic.expoc.yaw);
 
     GUIb guib;
-    if (allb.gncb.vsmb.att_mode == ATT_MODE::RATE) {
+    if (allb.gncb.vsmb.mode == FLIGHT_MODE::RATE || allb.gncb.vsmb.mode == FLIGHT_MODE::ACT_TEST) {
         guib.omega_body_radps.x() = roll_expo_frac * cfg_data.guic.max_rate_radps;
         guib.omega_body_radps.y() = pitch_expo_frac * cfg_data.guic.max_rate_radps;
         guib.omega_body_radps.z() = yaw_expo_frac * cfg_data.guic.max_rate_radps;
         guib.euler_bodyz2up_rad = Eigen::Vector2f::Zero();
-    } else if (allb.gncb.vsmb.att_mode == ATT_MODE::ANGLE) {
+    } else if (allb.gncb.vsmb.mode == FLIGHT_MODE::ANGLE) {
         guib.euler_bodyz2up_rad.x() = roll_expo_frac * cfg_data.guic.max_angle_rad;
         guib.euler_bodyz2up_rad.y() = pitch_expo_frac * cfg_data.guic.max_angle_rad;
         guib.omega_body_radps.x() = 0.0f;

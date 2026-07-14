@@ -11,7 +11,7 @@ private:
     GNCc cfg_data;
 
     ACTb run_allocator(const ALLb& allb);
-    ACTb clamp_actuators(const ALLb& allb, ACTb actb);
+    ACTb clamp_actuators(const ALLb& allb, ACTb actb, float min_motor_frac);
     ACTb allocate_quad(const ALLb& allb);
-    float determine_blink_hz(STATE state);
+    float determine_blink_hz(bool armed, FLIGHT_MODE mode);
 };

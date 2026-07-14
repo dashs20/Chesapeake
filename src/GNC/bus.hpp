@@ -1,14 +1,14 @@
 #pragma once
 #include <Eigen/Dense>
 #include "../HAL/bus.hpp"
+#include "../CFG_APP/bus.hpp"
 
 // VSM BUS ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-enum class STATE{DISARMED, RATE, ANGLE, ACT_TEST};
-enum class ATT_MODE{RATE, ANGLE};
+enum class FLIGHT_MODE { RATE, ANGLE, ACT_TEST };
 
 struct VSMb{
-    STATE state;
-    ATT_MODE att_mode;
+    bool armed;
+    FLIGHT_MODE mode;
 };
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

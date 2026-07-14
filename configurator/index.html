@@ -13,7 +13,8 @@
             <span class="title">CHESAPEAKE CONFIGURATOR</span>
         </div>
         <div class="tabs-navigation">
-            <button class="tab-btn active" data-tab="console-panel">Console & CLI</button>
+            <button class="tab-btn active" data-tab="status-panel">Status</button>
+            <button class="tab-btn" data-tab="console-panel">Console & CLI</button>
             <button class="tab-btn" data-tab="params-panel">Parameters</button>
             <button class="tab-btn" data-tab="test-panel">Actuator Test</button>
         </div>
@@ -27,7 +28,109 @@
     </div>
 
     <div class="dashboard">
-        <div id="console-panel" class="panel tab-content active">
+        <div id="status-panel" class="panel tab-content active">
+            <h2>System Status</h2>
+            <div class="status-container" style="display: flex; flex-direction: column; gap: 20px; flex: 1; overflow-y: auto;">
+                
+                <div class="status-summary-row" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <div class="status-card">
+                        <span class="status-card-label">Arm State</span>
+                        <div id="badge-arm" class="status-badge badge-disarmed">DISARMED</div>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-card-label">Flight Mode</span>
+                        <div id="badge-mode" class="status-badge badge-disarmed">UNKNOWN</div>
+                    </div>
+                    <div class="status-card">
+                        <span class="status-card-label">Battery Voltage</span>
+                        <div class="battery-status-container" style="display: flex; align-items: center; gap: 10px; margin-top: 5px;">
+                            <div class="battery-icon-outer" style="width: 40px; height: 20px; border: 2px solid #3f3f46; border-radius: 3px; padding: 2px; position: relative; background-color: #09090b;">
+                                <div id="battery-level-inner" style="height: 100%; width: 0%; background-color: #ef4444; border-radius: 1px; transition: width 0.3s, background-color 0.3s;"></div>
+                                <div class="battery-tip" style="width: 3px; height: 8px; background-color: #3f3f46; position: absolute; right: -5px; top: 4px; border-radius: 0 1px 1px 0;"></div>
+                            </div>
+                            <span id="label-vbat" style="font-family: monospace; font-size: 15px; font-weight: bold; color: #e4e4e7;">0.00V</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-section-card">
+                    <h3>Actuator Outputs</h3>
+                    <div class="status-actuators-grid">
+                        <div class="actuator-circle-item" id="circle-box-m1">
+                            <div class="actuator-circle" id="circle-m1">0%</div>
+                            <span class="actuator-label">Motor 1</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-m2">
+                            <div class="actuator-circle" id="circle-m2">0%</div>
+                            <span class="actuator-label">Motor 2</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-m3">
+                            <div class="actuator-circle" id="circle-m3">0%</div>
+                            <span class="actuator-label">Motor 3</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-m4">
+                            <div class="actuator-circle" id="circle-m4">0%</div>
+                            <span class="actuator-label">Motor 4</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-s1">
+                            <div class="actuator-circle" id="circle-s1">90°</div>
+                            <span class="actuator-label">Servo 1</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-s2">
+                            <div class="actuator-circle" id="circle-s2">90°</div>
+                            <span class="actuator-label">Servo 2</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-s3">
+                            <div class="actuator-circle" id="circle-s3">90°</div>
+                            <span class="actuator-label">Servo 3</span>
+                        </div>
+                        <div class="actuator-circle-item" id="circle-box-s4">
+                            <div class="actuator-circle" id="circle-s4">90°</div>
+                            <span class="actuator-label">Servo 4</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="status-section-card">
+                    <h3>Rotated Gyro Rates</h3>
+                    <div class="gyro-rates-container" style="display: flex; flex-direction: column; gap: 15px;">
+                        <div class="gyro-rate-row">
+                            <div class="gyro-rate-header">
+                                <span class="gyro-axis-label">Roll Rate (X)</span>
+                                <span id="label-rate-x" class="gyro-rate-val">0.0°/s</span>
+                            </div>
+                            <div class="gyro-bar-track">
+                                <div id="gyro-bar-x" class="gyro-bar-fill gyro-bar-x"></div>
+                                <div class="gyro-bar-center-line"></div>
+                            </div>
+                        </div>
+                        <div class="gyro-rate-row">
+                            <div class="gyro-rate-header">
+                                <span class="gyro-axis-label">Pitch Rate (Y)</span>
+                                <span id="label-rate-y" class="gyro-rate-val">0.0°/s</span>
+                            </div>
+                            <div class="gyro-bar-track">
+                                <div id="gyro-bar-y" class="gyro-bar-fill gyro-bar-y"></div>
+                                <div class="gyro-bar-center-line"></div>
+                            </div>
+                        </div>
+                        <div class="gyro-rate-row">
+                            <div class="gyro-rate-header">
+                                <span class="gyro-axis-label">Yaw Rate (Z)</span>
+                                <span id="label-rate-z" class="gyro-rate-val">0.0°/s</span>
+                            </div>
+                            <div class="gyro-bar-track">
+                                <div id="gyro-bar-z" class="gyro-bar-fill gyro-bar-z"></div>
+                                <div class="gyro-bar-center-line"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="console-panel" class="panel tab-content">
             <h2>Serial Monitor & CLI</h2>
             <div class="cli-container">
                 <div class="monitor-header">Serial Monitor</div>

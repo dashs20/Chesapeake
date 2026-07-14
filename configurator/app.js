@@ -140,6 +140,48 @@ function clearBoardUI() {
         btnCalibrate.textContent = "Calibrate";
         btnCalibrate.disabled = false;
     }
+
+    const badgeArm = document.getElementById("badge-arm");
+    if (badgeArm) {
+        badgeArm.textContent = "DISARMED";
+        badgeArm.className = "status-badge badge-disarmed";
+    }
+    const badgeMode = document.getElementById("badge-mode");
+    if (badgeMode) {
+        badgeMode.textContent = "UNKNOWN";
+        badgeMode.className = "status-badge badge-disarmed";
+    }
+    const labelVbat = document.getElementById("label-vbat");
+    if (labelVbat) labelVbat.textContent = "0.00V";
+    const batteryInner = document.getElementById("battery-level-inner");
+    if (batteryInner) {
+        batteryInner.style.width = "0%";
+        batteryInner.style.backgroundColor = "#ef4444";
+    }
+    
+    const circles = ["m1", "m2", "m3", "m4", "s1", "s2", "s3", "s4"];
+    circles.forEach(id => {
+        const el = document.getElementById("circle-" + id);
+        const def = id.startsWith("m") ? "0%" : "90°";
+        if (el) {
+            el.textContent = def;
+            el.style.borderColor = "#27272a";
+            el.style.boxShadow = "none";
+        }
+    });
+
+    const axes = ["x", "y", "z"];
+    axes.forEach(axis => {
+        const bar = document.getElementById("gyro-bar-" + axis);
+        const label = document.getElementById("label-rate-" + axis);
+        if (bar) {
+            bar.style.width = "0%";
+            bar.style.left = "50%";
+        }
+        if (label) {
+            label.textContent = "0.0°/s";
+        }
+    });
 }
 
 async function writeRaw(text) {
@@ -175,6 +217,7 @@ function handleIncomingChunk(chunk) {
         const trimmed = line.trim();
         if (trimmed.startsWith("$DBG,")) {
             rawOutput += line + "\n";
+            parseTelemetryLine(trimmed);
             continue;
         }
         if (trimmed.startsWith("$")) {
@@ -530,4 +573,112 @@ function initTabs() {
             }
         });
     });
+}
+
+function parseTelemetryLine(line) {
+    const parts = line.split(",");
+    const data = {};
+    for (let i = 1; i < parts.length; i += 2) {
+        if (i + 1 < parts.length) {
+            data[parts[i]] = parts[i+1];
+        }
+    }
+
+    const badgeArm = document.getElementById("badge-arm");
+    if (badgeArm && data.ARMED !== undefined) {
+        const isArmed = data.ARMED === "1";
+        badgeArm.textContent = isArmed ? "ARMED" : "DISARMED";
+        badgeArm.className = isArmed ? "status-badge badge-armed" : "status-badge badge-disarmed";
+    }
+
+    const badgeMode = document.getElementById("badge-mode");
+    if (badgeMode && data.MODE !== undefined) {
+        let modeText = "UNKNOWN";
+        if (data.MODE === "0") modeText = "RATE";
+        else if (data.MODE === "1") modeText = "ANGLE";
+        else if (data.MODE === "2") modeText = "ACTUATOR TEST";
+        badgeMode.textContent = modeText;
+        badgeMode.className = data.MODE === "2" ? "status-badge badge-armed" : "status-badge badge-disarmed";
+    }
+
+    const levelInner = document.getElementById("battery-level-inner");
+    const labelVbat = document.getElementById("label-vbat");
+    if (levelInner && labelVbat && data.VBAT !== undefined) {
+        const vbat = parseFloat(data.VBAT);
+        labelVbat.textContent = vbat.toFixed(2) + "V";
+        
+        const frac = Math.max(0.0, Math.min(1.0, (vbat - 21.6) / 3.6));
+        levelInner.style.width = (frac * 100) + "%";
+        
+        const hue = frac * 120;
+        levelInner.style.backgroundColor = `hsl(${hue}, 100%, 45%)`;
+    }
+
+    function updateCircle(id, value, isFraction) {
+        const el = document.getElementById("circle-" + id);
+        const box = document.getElementById("circle-box-" + id);
+        if (!el || !box) return;
+        
+        const pinKey = id.startsWith("m") ? "mot_" + id + "_pin" : "ser_" + id + "_pin";
+        const pin = parseInt(paramsCache[pinKey] || "255");
+        if (pin === 255 || isNaN(pin)) {
+            box.style.display = "none";
+            return;
+        }
+        box.style.display = "flex";
+
+        const val = parseFloat(value);
+        let pct = 0;
+        if (isFraction) {
+            pct = val;
+            el.textContent = Math.round(pct * 100) + "%";
+        } else {
+            const minDeg = parseFloat(paramsCache["ser_min_ang_deg"] || 0);
+            const maxDeg = parseFloat(paramsCache["ser_max_ang_deg"] || 180);
+            const range = maxDeg - minDeg;
+            pct = range > 0 ? (val - minDeg) / range : 0.5;
+            el.textContent = Math.round(val) + "°";
+        }
+        
+        pct = Math.max(0.0, Math.min(1.0, pct));
+        
+        const hue = (1.0 - pct) * 120;
+        el.style.borderColor = `hsl(${hue}, 100%, 45%)`;
+        el.style.boxShadow = `0 0 8px hsl(${hue}, 100%, 45%, 0.3)`;
+    }
+
+    if (data.M1 !== undefined) updateCircle("m1", data.M1, true);
+    if (data.M2 !== undefined) updateCircle("m2", data.M2, true);
+    if (data.M3 !== undefined) updateCircle("m3", data.M3, true);
+    if (data.M4 !== undefined) updateCircle("m4", data.M4, true);
+
+    if (data.S1 !== undefined) updateCircle("s1", data.S1, false);
+    if (data.S2 !== undefined) updateCircle("s2", data.S2, false);
+    if (data.S3 !== undefined) updateCircle("s3", data.S3, false);
+    if (data.S4 !== undefined) updateCircle("s4", data.S4, false);
+
+    function updateGyroBar(axis, valStr) {
+        const bar = document.getElementById("gyro-bar-" + axis);
+        const label = document.getElementById("label-rate-" + axis);
+        if (!bar || !label) return;
+
+        const val = parseFloat(valStr);
+        label.textContent = val.toFixed(1) + "°/s";
+
+        const maxRate = 500.0;
+        const clampedVal = Math.max(-maxRate, Math.min(maxRate, val));
+        const pct = (clampedVal / maxRate) * 50;
+
+        if (pct >= 0) {
+            bar.style.width = pct + "%";
+            bar.style.left = "50%";
+        } else {
+            bar.style.width = Math.abs(pct) + "%";
+            bar.style.left = (50 - Math.abs(pct)) + "%";
+        }
+    }
+
+    if (data.GX !== undefined) updateGyroBar("x", data.GX);
+    if (data.GY !== undefined) updateGyroBar("y", data.GY);
+    if (data.GZ !== undefined) updateGyroBar("z", data.GZ);
 }
