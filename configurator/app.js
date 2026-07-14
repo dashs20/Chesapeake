@@ -30,6 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (e.key === "Enter") sendCliCommand();
     });
     document.getElementById("btn-send-cli").addEventListener("click", sendCliCommand);
+    initTabs();
 });
 
 async function toggleConnection() {
@@ -512,4 +513,21 @@ async function sendActuatorTestData() {
     const led = "5.0";
     
     await writeRaw(`act_test 1 ${m1} ${m2} ${m3} ${m4} ${s1} ${s2} ${s3} ${s4} ${led}\n`);
+}
+
+function initTabs() {
+    const tabButtons = document.querySelectorAll(".tab-btn");
+    tabButtons.forEach(btn => {
+        btn.addEventListener("click", () => {
+            tabButtons.forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+            
+            btn.classList.add("active");
+            const targetId = btn.getAttribute("data-tab");
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) {
+                targetContent.classList.add("active");
+            }
+        });
+    });
 }

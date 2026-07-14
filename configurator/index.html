@@ -12,6 +12,11 @@
             <img src="chesapeake.png" alt="Chesapeake Logo" class="logo">
             <span class="title">CHESAPEAKE CONFIGURATOR</span>
         </div>
+        <div class="tabs-navigation">
+            <button class="tab-btn active" data-tab="console-panel">Console & CLI</button>
+            <button class="tab-btn" data-tab="params-panel">Parameters</button>
+            <button class="tab-btn" data-tab="test-panel">Actuator Test</button>
+        </div>
         <div class="connection-controls">
             <button id="btn-connect" class="btn">Connect</button>
             <span id="connection-status" class="status-indicator disconnected">Disconnected</span>
@@ -22,7 +27,7 @@
     </div>
 
     <div class="dashboard">
-        <div class="panel console-panel">
+        <div id="console-panel" class="panel tab-content active">
             <h2>Serial Monitor & CLI</h2>
             <div class="cli-container">
                 <div class="monitor-header">Serial Monitor</div>
@@ -36,7 +41,7 @@
             </div>
         </div>
 
-        <div class="panel test-panel">
+        <div id="test-panel" class="panel tab-content">
             <h2>Actuator Test</h2>
             <div class="test-controls" style="display: flex; flex-direction: column; gap: 15px; flex: 1;">
                 <div class="test-enable-row" style="display: flex; align-items: center; gap: 10px;">
@@ -52,7 +57,7 @@
             </div>
         </div>
 
-        <div class="panel params-panel">
+        <div id="params-panel" class="panel tab-content">
             <div class="panel-header">
                 <h2>Parameters</h2>
                 <div class="param-actions">

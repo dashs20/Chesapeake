@@ -29,7 +29,7 @@ body {
 .title {
     font-size: 20px;
     font-weight: 800;
-    color: #f59e0b;
+    color: #ef4444;
 }
 
 .connection-controls {
@@ -95,18 +95,64 @@ body {
 
 .dashboard {
     display: flex;
-    gap: 20px;
+    flex-direction: column;
     height: calc(100vh - 100px);
 }
 
 .panel {
-    flex: 1;
     background-color: #18181b;
     border: 1px solid #27272a;
     border-radius: 6px;
     padding: 20px;
     display: flex;
     flex-direction: column;
+}
+
+.tab-content {
+    display: none !important;
+}
+
+.tab-content.active {
+    display: flex !important;
+    flex: 1;
+    height: 100%;
+    animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tabs-navigation {
+    display: flex;
+    gap: 6px;
+    background-color: #18181b;
+    padding: 4px;
+    border-radius: 6px;
+    border: 1px solid #27272a;
+}
+
+.tab-btn {
+    background: transparent;
+    color: #a1a1aa;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    transition: all 0.2s ease-in-out;
+}
+
+.tab-btn:hover {
+    color: #e4e4e7;
+    background-color: #27272a;
+}
+
+.tab-btn.active {
+    color: #ffffff;
+    background-color: #ef4444;
 }
 
 .panel h2 {
@@ -266,7 +312,7 @@ body {
 }
 
 .test-slider-val {
-    color: #f59e0b;
+    color: #ef4444;
     font-family: monospace;
 }
 
@@ -278,7 +324,7 @@ body {
 
 .test-slider-input {
     flex: 1;
-    accent-color: #f59e0b;
+    accent-color: #ef4444;
     cursor: pointer;
 }
 
