@@ -41,7 +41,7 @@ CTLb CTL::update(const ALLb& allb) {
         case FLIGHT_MODE::RATE: {
             Eigen::Vector3f omega_body_setpoint_radps = allb.gncb.guib.omega_body_radps;
             Eigen::Vector3f omega_body_measurement_radps = allb.gncb.navb.omega_body_radps;
-            ctlb.axes_effort_frac = rate_controller.update(omega_body_setpoint_radps, omega_body_measurement_radps);
+            ctlb.axes_effort_frac = rate_controller.update(omega_body_measurement_radps, omega_body_setpoint_radps);
             break;
         }
         case FLIGHT_MODE::ANGLE: {
@@ -56,7 +56,7 @@ CTLb CTL::update(const ALLb& allb) {
                 target_rates_radps.z() = allb.gncb.guib.omega_body_radps.z();
             }
             Eigen::Vector3f omega_body_measurement_radps = allb.gncb.navb.omega_body_radps;
-            ctlb.axes_effort_frac = rate_controller.update(target_rates_radps, omega_body_measurement_radps);
+            ctlb.axes_effort_frac = rate_controller.update(omega_body_measurement_radps, target_rates_radps);
             break;
         }
         default:
