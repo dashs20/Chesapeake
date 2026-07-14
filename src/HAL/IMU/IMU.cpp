@@ -79,15 +79,15 @@ IMUb IMU::update(const HALb& halb) {
             float raw_y = static_cast<float>(acc_mg[1]) * 0.001f * 9.80665f;
             float raw_z = static_cast<float>(acc_mg[2]) * 0.001f * 9.80665f;
 
-            imub.accel_body_mps2.x() = raw_z - imuc.accel_bias_x_mps2; // I know this looks wrong but it's not, this IMU is cursed
-            imub.accel_body_mps2.y() = raw_y - imuc.accel_bias_y_mps2;
-            imub.accel_body_mps2.z() = raw_x - imuc.accel_bias_z_mps2;
+            imub.accel_body_mps2.x() = raw_z; // I know this looks wrong but it's not, this IMU is cursed
+            imub.accel_body_mps2.y() = raw_y;
+            imub.accel_body_mps2.z() = raw_x;
         }
 
         if (sensor->Get_G_Axes(gyro_mdps) == LSM6DSV16X_OK) {
-            imub.omega_body_radps.x() = (static_cast<float>(gyro_mdps[0]) * 0.001f * 0.0174532925f) - imuc.gyro_bias_x_radps;
-            imub.omega_body_radps.y() = (static_cast<float>(gyro_mdps[1]) * 0.001f * 0.0174532925f) - imuc.gyro_bias_y_radps;
-            imub.omega_body_radps.z() = (static_cast<float>(gyro_mdps[2]) * 0.001f * 0.0174532925f) - imuc.gyro_bias_z_radps;
+            imub.omega_body_radps.x() = (static_cast<float>(gyro_mdps[0]) * 0.001f * 0.0174532925f);
+            imub.omega_body_radps.y() = (static_cast<float>(gyro_mdps[1]) * 0.001f * 0.0174532925f);
+            imub.omega_body_radps.z() = (static_cast<float>(gyro_mdps[2]) * 0.001f * 0.0174532925f);
         }
     }
 

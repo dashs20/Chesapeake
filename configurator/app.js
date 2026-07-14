@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("btn-reboot").addEventListener("click", rebootBoard);
     document.getElementById("btn-defaults").addEventListener("click", resetToDefaults);
     document.getElementById("btn-calibrate").addEventListener("click", startCalibration);
+    document.getElementById("btn-zero-biases").addEventListener("click", zeroBiases);
     document.getElementById("btn-toggle-test").addEventListener("click", toggleActuatorTest);
     document.getElementById("param-search").addEventListener("input", filterParameters);
     document.getElementById("cli-input").addEventListener("keypress", (e) => {
@@ -115,7 +116,7 @@ async function cleanupSerialPort() {
 function updateConnectionUI(connected) {
     const btn = document.getElementById("btn-connect");
     const status = document.getElementById("connection-status");
-    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "btn-calibrate", "cli-input", "btn-send-cli", "param-search", "btn-toggle-test"];
+    const controls = ["btn-refresh", "btn-save", "btn-reboot", "btn-defaults", "btn-zero-biases", "btn-calibrate", "cli-input", "btn-send-cli", "param-search", "btn-toggle-test"];
     btn.textContent = connected ? "Disconnect" : "Connect";
     btn.className = connected ? "btn btn-connected" : "btn";
     status.textContent = connected ? "Connected" : "Disconnected";
@@ -143,6 +144,13 @@ function clearBoardUI() {
     if (btnCalibrate) {
         btnCalibrate.textContent = "Calibrate";
         btnCalibrate.disabled = false;
+        btnCalibrate.removeAttribute("title");
+    }
+    const btnZero = document.getElementById("btn-zero-biases");
+    if (btnZero) {
+        btnZero.style.display = "none";
+        btnZero.textContent = "Zero Biases";
+        btnZero.disabled = true;
     }
 
     const badgeArm = document.getElementById("badge-arm");
@@ -251,29 +259,22 @@ function processIncomingBytes(newBytes) {
         if (foundHeader) {
             const len = incomingBytesBuffer[headerIdx+3] | (incomingBytesBuffer[headerIdx+4] << 8);
             
-            if (len === 320) {
-                const totalPacketLen = 5 + len + 2;
+            if (len > 0 && len < 1000) {
+                const totalPacketLen = 5 + len;
                 
                 if (headerIdx + totalPacketLen <= incomingBytesBuffer.length) {
                     const payload = incomingBytesBuffer.slice(headerIdx + 5, headerIdx + 5 + len);
-                    const checksum = incomingBytesBuffer[headerIdx + 5 + len] | (incomingBytesBuffer[headerIdx + 5 + len + 1] << 8);
                     
-                    const computed = calculateFletcher16(payload);
-                    if (computed === checksum) {
-                        if (headerIdx > 0) {
-                            const textBytes = incomingBytesBuffer.slice(0, headerIdx);
-                            flushTextBytes(textBytes);
-                        }
-                        
-                        parseBinaryALLb(payload);
-                        
-                        incomingBytesBuffer = incomingBytesBuffer.slice(headerIdx + totalPacketLen);
-                        scanIdx = 0;
-                        continue;
-                    } else {
-                        scanIdx = headerIdx + 1;
-                        continue;
+                    if (headerIdx > 0) {
+                        const textBytes = incomingBytesBuffer.slice(0, headerIdx);
+                        flushTextBytes(textBytes);
                     }
+                    
+                    parseBinaryALLb(payload);
+                    
+                    incomingBytesBuffer = incomingBytesBuffer.slice(headerIdx + totalPacketLen);
+                    scanIdx = 0;
+                    continue;
                 } else {
                     if (headerIdx > 0) {
                         const textBytes = incomingBytesBuffer.slice(0, headerIdx);
@@ -416,6 +417,68 @@ function buildParametersUI() {
             row.appendChild(input);
         }
         grid.appendChild(row);
+    }
+    checkBiases();
+}
+
+function checkBiases() {
+    const ax = parseFloat(paramsCache["gnc_nav_imu_calc_accel_bias_x"] || 0);
+    const ay = parseFloat(paramsCache["gnc_nav_imu_calc_accel_bias_y"] || 0);
+    const az = parseFloat(paramsCache["gnc_nav_imu_calc_accel_bias_z"] || 0);
+    const gx = parseFloat(paramsCache["gnc_nav_imu_calc_gyro_bias_x"] || 0);
+    const gy = parseFloat(paramsCache["gnc_nav_imu_calc_gyro_bias_y"] || 0);
+    const gz = parseFloat(paramsCache["gnc_nav_imu_calc_gyro_bias_z"] || 0);
+
+    const hasBiases = (ax !== 0 || ay !== 0 || az !== 0 || gx !== 0 || gy !== 0 || gz !== 0);
+    const btnCalibrate = document.getElementById("btn-calibrate");
+    const btnZeroBiases = document.getElementById("btn-zero-biases");
+
+    if (hasBiases) {
+        if (btnCalibrate) {
+            btnCalibrate.disabled = true;
+            btnCalibrate.title = "Biases must be zeroed pre-calibration";
+        }
+        if (btnZeroBiases) {
+            btnZeroBiases.style.display = "inline-block";
+            btnZeroBiases.disabled = false;
+        }
+    } else {
+        if (btnCalibrate) {
+            btnCalibrate.disabled = false;
+            btnCalibrate.removeAttribute("title");
+        }
+        if (btnZeroBiases) {
+            btnZeroBiases.style.display = "none";
+            btnZeroBiases.disabled = true;
+        }
+    }
+}
+
+async function zeroBiases() {
+    if (!isConnected) return;
+    if (!confirm("Zero out all navigation biases and reboot?")) return;
+    document.getElementById("btn-zero-biases").disabled = true;
+    document.getElementById("btn-zero-biases").textContent = "Zeroing...";
+    try {
+        await writeRaw("set gnc_nav_imu_calc_accel_bias_x = 0\n");
+        await new Promise(r => setTimeout(r, 100));
+        await writeRaw("set gnc_nav_imu_calc_accel_bias_y = 0\n");
+        await new Promise(r => setTimeout(r, 100));
+        await writeRaw("set gnc_nav_imu_calc_accel_bias_z = 0\n");
+        await new Promise(r => setTimeout(r, 100));
+        await writeRaw("set gnc_nav_imu_calc_gyro_bias_x = 0\n");
+        await new Promise(r => setTimeout(r, 100));
+        await writeRaw("set gnc_nav_imu_calc_gyro_bias_y = 0\n");
+        await new Promise(r => setTimeout(r, 100));
+        await writeRaw("set gnc_nav_imu_calc_gyro_bias_z = 0\n");
+        await new Promise(r => setTimeout(r, 100));
+        await writeRaw("save\n");
+        await new Promise(r => setTimeout(r, 200));
+        await disconnect();
+    } catch (err) {
+        alert("Failed to zero biases: " + err.message);
+        document.getElementById("btn-zero-biases").textContent = "Zero Biases";
+        document.getElementById("btn-zero-biases").disabled = false;
     }
 }
 
@@ -680,33 +743,48 @@ function calculateFletcher16(data) {
     return (sum2 << 8) | sum1;
 }
 
-function parseBinaryALLb(payload) {
-    const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+function parseBinaryALLb(flatbufferPayload) {
+    const view = new DataView(flatbufferPayload.buffer, flatbufferPayload.byteOffset, flatbufferPayload.byteLength);
 
-    const vbat = view.getFloat32(48, true);
+    // Extract vector of bytes from the FlatBuffer:
+    const rootOffset = view.getInt32(0, true);
+    const vtableOffset = view.getInt32(rootOffset, true);
+    const vtableStart = rootOffset - vtableOffset;
+    const fieldOffset = view.getUint16(vtableStart + 4, true);
+    if (fieldOffset === 0) {
+        console.error("FlatBuffer payload field not found");
+        return;
+    }
+    const vectorStart = rootOffset + fieldOffset + view.getInt32(rootOffset + fieldOffset, true);
+    const payloadLength = view.getInt32(vectorStart, true);
+    
+    // Now create a DataView for the raw struct inside the FlatBuffer:
+    const structView = new DataView(flatbufferPayload.buffer, flatbufferPayload.byteOffset + vectorStart + 4, payloadLength);
 
-    const rcArm = view.getFloat32(24, true);
-    const rcMod = view.getFloat32(28, true);
-    const rcThr = view.getFloat32(32, true);
-    const rcRol = view.getFloat32(36, true);
-    const rcPit = view.getFloat32(40, true);
-    const rcYaw = view.getFloat32(44, true);
+    const vbat = structView.getFloat32(48, true);
 
-    const armed = view.getUint8(64) === 1;
-    const mode = view.getUint32(68, true);
+    const rcArm = structView.getFloat32(24, true);
+    const rcMod = structView.getFloat32(28, true);
+    const rcThr = structView.getFloat32(32, true);
+    const rcRol = structView.getFloat32(36, true);
+    const rcPit = structView.getFloat32(40, true);
+    const rcYaw = structView.getFloat32(44, true);
 
-    const m1 = view.getFloat32(72, true);
-    const m2 = view.getFloat32(76, true);
-    const m3 = view.getFloat32(80, true);
-    const m4 = view.getFloat32(84, true);
-    const s1 = view.getFloat32(88, true);
-    const s2 = view.getFloat32(92, true);
-    const s3 = view.getFloat32(96, true);
-    const s4 = view.getFloat32(100, true);
+    const armed = structView.getUint8(64) === 1;
+    const mode = structView.getUint32(68, true);
 
-    const gx = view.getFloat32(112, true) * 57.29577951;
-    const gy = view.getFloat32(116, true) * 57.29577951;
-    const gz = view.getFloat32(120, true) * 57.29577951;
+    const m1 = structView.getFloat32(72, true);
+    const m2 = structView.getFloat32(76, true);
+    const m3 = structView.getFloat32(80, true);
+    const m4 = structView.getFloat32(84, true);
+    const s1 = structView.getFloat32(88, true);
+    const s2 = structView.getFloat32(92, true);
+    const s3 = structView.getFloat32(96, true);
+    const s4 = structView.getFloat32(100, true);
+
+    const gx = structView.getFloat32(112, true) * 57.29577951;
+    const gy = structView.getFloat32(116, true) * 57.29577951;
+    const gz = structView.getFloat32(120, true) * 57.29577951;
 
     const badgeArm = document.getElementById("badge-arm");
     if (badgeArm) {

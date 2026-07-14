@@ -9,11 +9,11 @@
 #include "SER/SER.hpp"
 #include "LED/LED.hpp"
 #include "RPI/RPI.hpp"
-#include "DEBUG/DEBUG.hpp"
+#include "PKG/PKG.hpp"
 
 class HAL {
 public:
-    HAL(HALc cfg);
+    HAL(HALc cfg, uint32_t looprate_hz);
     ~HAL();
 
     HALb update(const ALLb& allb_km1);
@@ -29,5 +29,5 @@ private:
     SER ser;
     LED led;
     RPI rpi;
-    DEBUG debug;
+    uint32_t telemetry_counter;
 };

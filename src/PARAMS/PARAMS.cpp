@@ -108,12 +108,7 @@ void PARAMS::print_all(const MASTERc& config) {
         case LSM6DSV16X_ODR::ODR_3840Hz: Serial.println("3840Hz"); break;
         case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
     }
-    Serial.print("imu_accel_bias_x_mps2 = "); Serial.println(config.halc.imuc.accel_bias_x_mps2, 6);
-    Serial.print("imu_accel_bias_y_mps2 = "); Serial.println(config.halc.imuc.accel_bias_y_mps2, 6);
-    Serial.print("imu_accel_bias_z_mps2 = "); Serial.println(config.halc.imuc.accel_bias_z_mps2, 6);
-    Serial.print("imu_gyro_bias_x_radps = "); Serial.println(config.halc.imuc.gyro_bias_x_radps, 6);
-    Serial.print("imu_gyro_bias_y_radps = "); Serial.println(config.halc.imuc.gyro_bias_y_radps, 6);
-    Serial.print("imu_gyro_bias_z_radps = "); Serial.println(config.halc.imuc.gyro_bias_z_radps, 6);
+    // HAL IMU biases removed (handled in GNC/NAV)
 
 
     Serial.print("ser_s1_pin = "); Serial.println(config.halc.serc.s1_pin);
@@ -123,14 +118,9 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("ser_min_us = "); Serial.println(config.halc.serc.min_us);
     Serial.print("ser_max_us = "); Serial.println(config.halc.serc.max_us);
     Serial.print("led_pin = "); Serial.println(config.halc.ledc.pin);
-    Serial.print("rpi_enabled = "); Serial.println(config.halc.rpic.enabled);
-    Serial.print("rpi_uart_id = "); Serial.println(config.halc.rpic.uart_id);
-    Serial.print("rpi_baudrate = "); Serial.println(config.halc.rpic.baudrate);
-    Serial.print("rpi_tx_pin = "); Serial.println(config.halc.rpic.tx_pin);
-    Serial.print("rpi_rx_pin = "); Serial.println(config.halc.rpic.rx_pin);
-    Serial.print("rpi_rate_divisor = "); Serial.println(config.halc.rpic.rate_divisor);
-    Serial.print("debug_enabled = "); Serial.println(config.halc.debugc.enabled);
-    Serial.print("debug_decimation = "); Serial.println(config.halc.debugc.decimation);
+    Serial.print("rcrx_telemetry_hz = "); Serial.println(config.halc.rcrxc.telemetry_hz);
+    Serial.print("hal_telemetry_uart_id = "); Serial.println(config.halc.telemetry_uart_id);
+    Serial.print("hal_telemetry_decimation = "); Serial.println(config.halc.telemetry_decimation);
 
     Serial.print("gnc_looprate_hz = "); Serial.println(config.gncc.looprate_hz);
     Serial.print("angle_loop_hz = "); Serial.println(config.gncc.ctlc.angle_loop_hz);
@@ -154,12 +144,13 @@ void PARAMS::print_all(const MASTERc& config) {
     Serial.print("blink_hz_rate = "); Serial.println(config.gncc.allocc.blink_hz_rate);
     Serial.print("blink_hz_angle = "); Serial.println(config.gncc.allocc.blink_hz_angle);
     Serial.print("gnc_nav_gyro_error = "); Serial.println(config.gncc.navc.gyro_error_degps);
-    Serial.print("gnc_nav_accel_bias_x = "); Serial.println(config.gncc.navc.accel_bias.x(), 6);
-    Serial.print("gnc_nav_accel_bias_y = "); Serial.println(config.gncc.navc.accel_bias.y(), 6);
-    Serial.print("gnc_nav_accel_bias_z = "); Serial.println(config.gncc.navc.accel_bias.z(), 6);
-    Serial.print("gnc_nav_gyro_bias_x = "); Serial.println(config.gncc.navc.gyro_bias.x(), 6);
-    Serial.print("gnc_nav_gyro_bias_y = "); Serial.println(config.gncc.navc.gyro_bias.y(), 6);
-    Serial.print("gnc_nav_gyro_bias_z = "); Serial.println(config.gncc.navc.gyro_bias.z(), 6);
+    Serial.print("alloc_max_motor_frac = "); Serial.println(config.gncc.allocc.max_motor_frac, 6);
+    Serial.print("gnc_nav_imu_calc_accel_bias_x = "); Serial.println(config.gncc.navc.imu_calc.accel_bias.x(), 6);
+    Serial.print("gnc_nav_imu_calc_accel_bias_y = "); Serial.println(config.gncc.navc.imu_calc.accel_bias.y(), 6);
+    Serial.print("gnc_nav_imu_calc_accel_bias_z = "); Serial.println(config.gncc.navc.imu_calc.accel_bias.z(), 6);
+    Serial.print("gnc_nav_imu_calc_gyro_bias_x = "); Serial.println(config.gncc.navc.imu_calc.gyro_bias.x(), 6);
+    Serial.print("gnc_nav_imu_calc_gyro_bias_y = "); Serial.println(config.gncc.navc.imu_calc.gyro_bias.y(), 6);
+    Serial.print("gnc_nav_imu_calc_gyro_bias_z = "); Serial.println(config.gncc.navc.imu_calc.gyro_bias.z(), 6);
     Serial.println("--- END OF DUMP ---");
 }
 
@@ -244,18 +235,12 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
             case LSM6DSV16X_ODR::ODR_3840Hz: Serial.println("3840Hz"); break;
             case LSM6DSV16X_ODR::ODR_7680Hz: Serial.println("7680Hz"); break;
         }
-    } else if (std::strcmp(name, "imu_accel_bias_x_mps2") == 0) {
-        Serial.println(config.halc.imuc.accel_bias_x_mps2, 6);
-    } else if (std::strcmp(name, "imu_accel_bias_y_mps2") == 0) {
-        Serial.println(config.halc.imuc.accel_bias_y_mps2, 6);
-    } else if (std::strcmp(name, "imu_accel_bias_z_mps2") == 0) {
-        Serial.println(config.halc.imuc.accel_bias_z_mps2, 6);
-    } else if (std::strcmp(name, "imu_gyro_bias_x_radps") == 0) {
-        Serial.println(config.halc.imuc.gyro_bias_x_radps, 6);
-    } else if (std::strcmp(name, "imu_gyro_bias_y_radps") == 0) {
-        Serial.println(config.halc.imuc.gyro_bias_y_radps, 6);
-    } else if (std::strcmp(name, "imu_gyro_bias_z_radps") == 0) {
-        Serial.println(config.halc.imuc.gyro_bias_z_radps, 6);
+    } else if (std::strcmp(name, "rcrx_telemetry_hz") == 0) {
+        Serial.println(config.halc.rcrxc.telemetry_hz);
+    } else if (std::strcmp(name, "hal_telemetry_uart_id") == 0) {
+        Serial.println(config.halc.telemetry_uart_id);
+    } else if (std::strcmp(name, "hal_telemetry_decimation") == 0) {
+        Serial.println(config.halc.telemetry_decimation);
     } else if (std::strcmp(name, "ser_s1_pin") == 0) {
         Serial.println(config.halc.serc.s1_pin);
     } else if (std::strcmp(name, "ser_s2_pin") == 0) {
@@ -270,22 +255,8 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.halc.serc.max_us);
     } else if (std::strcmp(name, "led_pin") == 0) {
         Serial.println(config.halc.ledc.pin);
-    } else if (std::strcmp(name, "rpi_enabled") == 0) {
-        Serial.println(config.halc.rpic.enabled);
-    } else if (std::strcmp(name, "rpi_uart_id") == 0) {
-        Serial.println(config.halc.rpic.uart_id);
-    } else if (std::strcmp(name, "rpi_baudrate") == 0) {
-        Serial.println(config.halc.rpic.baudrate);
-    } else if (std::strcmp(name, "rpi_tx_pin") == 0) {
-        Serial.println(config.halc.rpic.tx_pin);
-    } else if (std::strcmp(name, "rpi_rx_pin") == 0) {
-        Serial.println(config.halc.rpic.rx_pin);
-    } else if (std::strcmp(name, "rpi_rate_divisor") == 0) {
-        Serial.println(config.halc.rpic.rate_divisor);
-    } else if (std::strcmp(name, "debug_enabled") == 0) {
-        Serial.println(config.halc.debugc.enabled);
-    } else if (std::strcmp(name, "debug_decimation") == 0) {
-        Serial.println(config.halc.debugc.decimation);
+    } else if (std::strcmp(name, "alloc_max_motor_frac") == 0) {
+        Serial.println(config.gncc.allocc.max_motor_frac, 6);
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
         Serial.println(config.gncc.allocc.blink_hz_disarmed);
     } else if (std::strcmp(name, "blink_hz_rate") == 0) {
@@ -328,18 +299,18 @@ void PARAMS::get_parameter(const MASTERc& config, const char* name) {
         Serial.println(config.gncc.ctlc.angle.yaw.kp);
     } else if (std::strcmp(name, "gnc_nav_gyro_error") == 0) {
         Serial.println(config.gncc.navc.gyro_error_degps);
-    } else if (std::strcmp(name, "gnc_nav_accel_bias_x") == 0) {
-        Serial.println(config.gncc.navc.accel_bias.x(), 6);
-    } else if (std::strcmp(name, "gnc_nav_accel_bias_y") == 0) {
-        Serial.println(config.gncc.navc.accel_bias.y(), 6);
-    } else if (std::strcmp(name, "gnc_nav_accel_bias_z") == 0) {
-        Serial.println(config.gncc.navc.accel_bias.z(), 6);
-    } else if (std::strcmp(name, "gnc_nav_gyro_bias_x") == 0) {
-        Serial.println(config.gncc.navc.gyro_bias.x(), 6);
-    } else if (std::strcmp(name, "gnc_nav_gyro_bias_y") == 0) {
-        Serial.println(config.gncc.navc.gyro_bias.y(), 6);
-    } else if (std::strcmp(name, "gnc_nav_gyro_bias_z") == 0) {
-        Serial.println(config.gncc.navc.gyro_bias.z(), 6);
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_accel_bias_x") == 0) {
+        Serial.println(config.gncc.navc.imu_calc.accel_bias.x(), 6);
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_accel_bias_y") == 0) {
+        Serial.println(config.gncc.navc.imu_calc.accel_bias.y(), 6);
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_accel_bias_z") == 0) {
+        Serial.println(config.gncc.navc.imu_calc.accel_bias.z(), 6);
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_gyro_bias_x") == 0) {
+        Serial.println(config.gncc.navc.imu_calc.gyro_bias.x(), 6);
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_gyro_bias_y") == 0) {
+        Serial.println(config.gncc.navc.imu_calc.gyro_bias.y(), 6);
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_gyro_bias_z") == 0) {
+        Serial.println(config.gncc.navc.imu_calc.gyro_bias.z(), 6);
     } else {
         Serial.println("Error: Unknown parameter");
     }
@@ -438,18 +409,12 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         else if (std::strcmp(value, "3840Hz") == 0 || std::strcmp(value, "3840") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_3840Hz;
         else if (std::strcmp(value, "7680Hz") == 0 || std::strcmp(value, "7680") == 0) config.halc.imuc.gyro_odr = LSM6DSV16X_ODR::ODR_7680Hz;
         else { Serial.println("Error: Invalid gyro ODR"); return; }
-    } else if (std::strcmp(name, "imu_accel_bias_x_mps2") == 0) {
-        config.halc.imuc.accel_bias_x_mps2 = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "imu_accel_bias_y_mps2") == 0) {
-        config.halc.imuc.accel_bias_y_mps2 = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "imu_accel_bias_z_mps2") == 0) {
-        config.halc.imuc.accel_bias_z_mps2 = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "imu_gyro_bias_x_radps") == 0) {
-        config.halc.imuc.gyro_bias_x_radps = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "imu_gyro_bias_y_radps") == 0) {
-        config.halc.imuc.gyro_bias_y_radps = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "imu_gyro_bias_z_radps") == 0) {
-        config.halc.imuc.gyro_bias_z_radps = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "rcrx_telemetry_hz") == 0) {
+        config.halc.rcrxc.telemetry_hz = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "hal_telemetry_uart_id") == 0) {
+        config.halc.telemetry_uart_id = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "hal_telemetry_decimation") == 0) {
+        config.halc.telemetry_decimation = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "ser_s1_pin") == 0) {
         config.halc.serc.s1_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "ser_s2_pin") == 0) {
@@ -464,22 +429,8 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.halc.serc.max_us = static_cast<uint16_t>(std::strtol(value, nullptr, 10));
     } else if (std::strcmp(name, "led_pin") == 0) {
         config.halc.ledc.pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "rpi_enabled") == 0) {
-        config.halc.rpic.enabled = (std::strtol(value, nullptr, 10) != 0);
-    } else if (std::strcmp(name, "rpi_uart_id") == 0) {
-        config.halc.rpic.uart_id = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "rpi_baudrate") == 0) {
-        config.halc.rpic.baudrate = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "rpi_tx_pin") == 0) {
-        config.halc.rpic.tx_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "rpi_rx_pin") == 0) {
-        config.halc.rpic.rx_pin = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "rpi_rate_divisor") == 0) {
-        config.halc.rpic.rate_divisor = static_cast<uint8_t>(std::strtol(value, nullptr, 10));
-    } else if (std::strcmp(name, "debug_enabled") == 0) {
-        config.halc.debugc.enabled = (std::strtol(value, nullptr, 10) != 0);
-    } else if (std::strcmp(name, "debug_decimation") == 0) {
-        config.halc.debugc.decimation = static_cast<uint32_t>(std::strtol(value, nullptr, 10));
+    } else if (std::strcmp(name, "alloc_max_motor_frac") == 0) {
+        config.gncc.allocc.max_motor_frac = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "blink_hz_disarmed") == 0) {
         config.gncc.allocc.blink_hz_disarmed = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "blink_hz_rate") == 0) {
@@ -522,18 +473,18 @@ void PARAMS::set_parameter(MASTERc& config, const char* name, const char* value)
         config.gncc.ctlc.angle.yaw.kp = static_cast<float>(std::strtod(value, nullptr));
     } else if (std::strcmp(name, "gnc_nav_gyro_error") == 0) {
         config.gncc.navc.gyro_error_degps = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "gnc_nav_accel_bias_x") == 0) {
-        config.gncc.navc.accel_bias.x() = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "gnc_nav_accel_bias_y") == 0) {
-        config.gncc.navc.accel_bias.y() = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "gnc_nav_accel_bias_z") == 0) {
-        config.gncc.navc.accel_bias.z() = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "gnc_nav_gyro_bias_x") == 0) {
-        config.gncc.navc.gyro_bias.x() = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "gnc_nav_gyro_bias_y") == 0) {
-        config.gncc.navc.gyro_bias.y() = static_cast<float>(std::strtod(value, nullptr));
-    } else if (std::strcmp(name, "gnc_nav_gyro_bias_z") == 0) {
-        config.gncc.navc.gyro_bias.z() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_accel_bias_x") == 0) {
+        config.gncc.navc.imu_calc.accel_bias.x() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_accel_bias_y") == 0) {
+        config.gncc.navc.imu_calc.accel_bias.y() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_accel_bias_z") == 0) {
+        config.gncc.navc.imu_calc.accel_bias.z() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_gyro_bias_x") == 0) {
+        config.gncc.navc.imu_calc.gyro_bias.x() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_gyro_bias_y") == 0) {
+        config.gncc.navc.imu_calc.gyro_bias.y() = static_cast<float>(std::strtod(value, nullptr));
+    } else if (std::strcmp(name, "gnc_nav_imu_calc_gyro_bias_z") == 0) {
+        config.gncc.navc.imu_calc.gyro_bias.z() = static_cast<float>(std::strtod(value, nullptr));
     } else {
         Serial.println("Error: Unknown parameter");
         return;

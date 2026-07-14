@@ -1,0 +1,35 @@
+namespace MyGame.Example;
+
+enum TestEnum : byte { A, B, C }
+
+struct NestedStruct{
+  a:[int:2];
+  b:TestEnum;
+  c:[TestEnum:2];
+  d:[int64:2];
+}
+
+struct ArrayStruct{
+  a:float;
+  b:[int:0xF];
+  c:byte;
+  d:[NestedStruct:2];
+  e:int32;
+  f:[int64:2];
+}
+
+struct LargeArrayStruct {
+  d:[ubyte:64];
+  e:[float:64];
+  f:[bool:64];
+  g:[NestedStruct:64];
+  h:[TestEnum:64];
+}
+
+table ArrayTable{
+  a:ArrayStruct;
+}
+
+root_type ArrayTable;
+file_identifier "ARRT";
+file_extension "mon";

@@ -2,10 +2,14 @@
 #include <Eigen/Dense>
 #include <cstdint>
 
+struct IMU_CALc {
+    Eigen::Vector3f accel_bias;
+    Eigen::Vector3f gyro_bias;
+};
+
 struct NAVc {
     Eigen::Quaternionf q_IMU2body;      // Rotation from IMU sensor frame to vehicle body frame
-    Eigen::Vector3f accel_bias;        // Accelerometer calibration biases
-    Eigen::Vector3f gyro_bias;         // Gyroscope calibration biases
+    IMU_CALc imu_calc;
     float gyro_error_degps;
 };
 
@@ -37,6 +41,7 @@ enum class ALLOCATOR {
 
 struct ALLOCc {
     float min_motor_frac;
+    float max_motor_frac;
     float ser_min_ang_deg;
     float ser_max_ang_deg;
     float ser_default_ang_deg;

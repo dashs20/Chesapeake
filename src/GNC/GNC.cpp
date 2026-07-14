@@ -29,6 +29,5 @@ GNCb GNC::update_dual_core_internal(const ALLb& allb_km1) {
     gncb.guib = gui.update(allb_km1);
     gncb.ctlb = ctl.update(allb_km1);
     gncb.actb = alloc.update(allb_km1);
-    gncb.cal_feedback = nav.get_cal_feedback();
     return gncb;
 }
