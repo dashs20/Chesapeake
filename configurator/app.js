@@ -10,6 +10,18 @@ let modifiedParams = {};
 let serialBuffer = "";
 let pendingCommandType = null;
 let calibrationState = "idle";
+let smoothedTotalTime = 0;
+let smoothedHalTime = 0;
+let smoothedGncTime = 0;
+let lastLoopTimeUpdate = 0;
+let smoothedTimeImu = 0;
+let smoothedTimeRcrx = 0;
+let smoothedTimeMotors = 0;
+let smoothedTimeServos = 0;
+let smoothedTimeNav = 0;
+let smoothedTimeCtl = 0;
+let smoothedTimeAlloc = 0;
+let smoothedTimeIdle = 0;
 
 let incomingBytesBuffer = new Uint8Array(0);
 let textDecoder = new TextDecoder();
@@ -171,6 +183,33 @@ function clearBoardUI() {
     }
     const labelVbat = document.getElementById("label-vbat");
     if (labelVbat) labelVbat.textContent = "0.00V";
+    const labelLoopTime = document.getElementById("label-loop-time");
+    if (labelLoopTime) {
+        labelLoopTime.textContent = "0.00ms";
+        labelLoopTime.removeAttribute("title");
+    }
+    
+    smoothedTotalTime = 0;
+    smoothedHalTime = 0;
+    smoothedGncTime = 0;
+    smoothedTimeImu = 0;
+    smoothedTimeRcrx = 0;
+    smoothedTimeMotors = 0;
+    smoothedTimeServos = 0;
+    smoothedTimeNav = 0;
+    smoothedTimeCtl = 0;
+    smoothedTimeAlloc = 0;
+    smoothedTimeIdle = 0;
+    
+    const timeFields = ["imu", "rcrx", "nav", "ctl", "alloc", "motors", "servos", "idle"];
+    timeFields.forEach(f => {
+        const bar = document.getElementById("bar-time-" + f);
+        const txt = document.getElementById("txt-time-" + f);
+        if (bar) bar.style.width = "0%";
+        if (txt) txt.textContent = "0.0 us";
+    });
+    const txtTotal = document.getElementById("txt-time-total-avg");
+    if (txtTotal) txtTotal.textContent = "0.00ms active";
     const batteryInner = document.getElementById("battery-level-inner");
     if (batteryInner) {
         batteryInner.style.width = "0%";
@@ -784,7 +823,7 @@ function parseBinaryALLb(flatbufferPayload) {
         if (vectorStart < 0 || vectorStart + 4 > flatbufferPayload.byteLength) return false;
 
         const payloadLength = view.getInt32(vectorStart, true);
-        if (payloadLength !== 288 && payloadLength !== 236) {
+        if (payloadLength !== 304 && payloadLength !== 288 && payloadLength !== 236) {
             return false;
         }
 
@@ -799,8 +838,53 @@ function parseBinaryALLb(flatbufferPayload) {
         let gx, gy, gz;
         let ax, ay, az;
         let isCalibrating = false, progress = 0.0;
+        let halTime = 0.0, gncTime = 0.0;
+        let timeImu = 0.0, timeRcrx = 0.0, timeMotors = 0.0, timeServos = 0.0;
+        let timeNav = 0.0, timeCtl = 0.0, timeAlloc = 0.0;
 
-        if (payloadLength === 288) {
+        if (payloadLength === 304) {
+            vbat = structView.getFloat32(48, true);
+            rcArm = structView.getFloat32(24, true);
+            rcMod = structView.getFloat32(28, true);
+            rcThr = structView.getFloat32(32, true);
+            rcRol = structView.getFloat32(36, true);
+            rcPit = structView.getFloat32(40, true);
+            rcYaw = structView.getFloat32(44, true);
+            
+            armed = structView.getUint8(80) === 1;
+            mode = structView.getUint32(84, true);
+
+            m1 = structView.getFloat32(88, true);
+            m2 = structView.getFloat32(92, true);
+            m3 = structView.getFloat32(96, true);
+            m4 = structView.getFloat32(100, true);
+            s1 = structView.getFloat32(104, true);
+            s2 = structView.getFloat32(108, true);
+            s3 = structView.getFloat32(112, true);
+            s4 = structView.getFloat32(116, true);
+
+            gx = structView.getFloat32(128, true) * 57.29577951;
+            gy = structView.getFloat32(132, true) * 57.29577951;
+            gz = structView.getFloat32(136, true) * 57.29577951;
+
+            ax = structView.getFloat32(12, true);
+            ay = structView.getFloat32(16, true);
+            az = structView.getFloat32(20, true);
+
+            halTime = structView.getFloat32(52, true);
+            timeImu = structView.getFloat32(56, true);
+            timeRcrx = structView.getFloat32(60, true);
+            timeMotors = structView.getFloat32(64, true);
+            timeServos = structView.getFloat32(68, true);
+
+            gncTime = structView.getFloat32(224, true);
+            timeNav = structView.getFloat32(228, true);
+            timeCtl = structView.getFloat32(232, true);
+            timeAlloc = structView.getFloat32(236, true);
+
+            isCalibrating = structView.getUint8(244) === 1;
+            progress = structView.getFloat32(248, true);
+        } else if (payloadLength === 288) {
             vbat = structView.getFloat32(48, true);
             rcArm = structView.getFloat32(24, true);
             rcMod = structView.getFloat32(28, true);
@@ -828,6 +912,9 @@ function parseBinaryALLb(flatbufferPayload) {
             ax = structView.getFloat32(12, true);
             ay = structView.getFloat32(16, true);
             az = structView.getFloat32(20, true);
+
+            halTime = structView.getFloat32(52, true);
+            gncTime = structView.getFloat32(208, true);
 
             isCalibrating = structView.getUint8(228) === 1;
             progress = structView.getFloat32(232, true);
@@ -859,6 +946,9 @@ function parseBinaryALLb(flatbufferPayload) {
             ax = structView.getFloat32(12, true);
             ay = structView.getFloat32(16, true);
             az = structView.getFloat32(20, true);
+
+            halTime = structView.getFloat32(52, true);
+            gncTime = structView.getFloat32(184, true);
 
             isCalibrating = structView.getUint8(188) === 1;
             progress = structView.getFloat32(192, true);
@@ -910,6 +1000,94 @@ function parseBinaryALLb(flatbufferPayload) {
         levelInner.style.width = (frac * 100) + "%";
         const hue = frac * 120;
         levelInner.style.backgroundColor = `hsl(${hue}, 100%, 45%)`;
+    }
+
+    const labelLoopTime = document.getElementById("label-loop-time");
+    if (labelLoopTime) {
+        const totalTime = halTime + gncTime;
+        const alpha = 0.95;
+        if (smoothedTotalTime === 0) {
+            smoothedTotalTime = totalTime;
+            smoothedHalTime = halTime;
+            smoothedGncTime = gncTime;
+            
+            smoothedTimeImu = timeImu;
+            smoothedTimeRcrx = timeRcrx;
+            smoothedTimeMotors = timeMotors;
+            smoothedTimeServos = timeServos;
+            smoothedTimeNav = timeNav;
+            smoothedTimeCtl = timeCtl;
+            smoothedTimeAlloc = timeAlloc;
+        } else {
+            smoothedTotalTime = smoothedTotalTime * alpha + totalTime * (1 - alpha);
+            smoothedHalTime = smoothedHalTime * alpha + halTime * (1 - alpha);
+            smoothedGncTime = smoothedGncTime * alpha + gncTime * (1 - alpha);
+            
+            smoothedTimeImu = smoothedTimeImu * alpha + timeImu * (1 - alpha);
+            smoothedTimeRcrx = smoothedTimeRcrx * alpha + timeRcrx * (1 - alpha);
+            smoothedTimeMotors = smoothedTimeMotors * alpha + timeMotors * (1 - alpha);
+            smoothedTimeServos = smoothedTimeServos * alpha + timeServos * (1 - alpha);
+            smoothedTimeNav = smoothedTimeNav * alpha + timeNav * (1 - alpha);
+            smoothedTimeCtl = smoothedTimeCtl * alpha + timeCtl * (1 - alpha);
+            smoothedTimeAlloc = smoothedTimeAlloc * alpha + timeAlloc * (1 - alpha);
+        }
+
+        const looprateHz = parseFloat(paramsCache["looprate_hz"] || "1000");
+        const looprateUs = 1000000.0 / looprateHz;
+        const activeTimeUs = timeImu + timeRcrx + timeNav + timeCtl + timeAlloc + timeMotors + timeServos;
+        const idleTimeUs = Math.max(0, looprateUs - activeTimeUs);
+
+        if (smoothedTimeIdle === 0) {
+            smoothedTimeIdle = idleTimeUs;
+        } else {
+            smoothedTimeIdle = smoothedTimeIdle * alpha + idleTimeUs * (1 - alpha);
+        }
+
+        const now = performance.now();
+        if (now - lastLoopTimeUpdate > 250) {
+            labelLoopTime.textContent = smoothedTotalTime.toFixed(2) + "ms";
+            labelLoopTime.title = `HAL: ${smoothedHalTime.toFixed(2)}ms, GNC: ${smoothedGncTime.toFixed(2)}ms (Average)`;
+            
+            // Update detailed timing texts
+            const setTimingText = (id, valUs) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = valUs.toFixed(1) + " us";
+            };
+            setTimingText("txt-time-imu", smoothedTimeImu);
+            setTimingText("txt-time-rcrx", smoothedTimeRcrx);
+            setTimingText("txt-time-nav", smoothedTimeNav);
+            setTimingText("txt-time-ctl", smoothedTimeCtl);
+            setTimingText("txt-time-alloc", smoothedTimeAlloc);
+            setTimingText("txt-time-motors", smoothedTimeMotors);
+            setTimingText("txt-time-servos", smoothedTimeServos);
+            setTimingText("txt-time-idle", smoothedTimeIdle);
+            
+            const txtTotal = document.getElementById("txt-time-total-avg");
+            if (txtTotal) {
+                const activeMs = (smoothedTimeImu + smoothedTimeRcrx + smoothedTimeNav + smoothedTimeCtl + smoothedTimeAlloc + smoothedTimeMotors + smoothedTimeServos) / 1000.0;
+                txtTotal.textContent = activeMs.toFixed(2) + "ms active";
+            }
+
+            // Update stacked budget bar widths
+            const totalBudgetUs = Math.max(looprateUs, smoothedTimeImu + smoothedTimeRcrx + smoothedTimeNav + smoothedTimeCtl + smoothedTimeAlloc + smoothedTimeMotors + smoothedTimeServos + smoothedTimeIdle);
+            const setBarWidth = (id, valUs) => {
+                const el = document.getElementById(id);
+                if (el) {
+                    const pct = (valUs / totalBudgetUs) * 100;
+                    el.style.width = pct.toFixed(2) + "%";
+                }
+            };
+            setBarWidth("bar-time-imu", smoothedTimeImu);
+            setBarWidth("bar-time-rcrx", smoothedTimeRcrx);
+            setBarWidth("bar-time-nav", smoothedTimeNav);
+            setBarWidth("bar-time-ctl", smoothedTimeCtl);
+            setBarWidth("bar-time-alloc", smoothedTimeAlloc);
+            setBarWidth("bar-time-motors", smoothedTimeMotors);
+            setBarWidth("bar-time-servos", smoothedTimeServos);
+            setBarWidth("bar-time-idle", smoothedTimeIdle);
+
+            lastLoopTimeUpdate = now;
+        }
     }
 
     function updateCircle(id, val, isFraction) {

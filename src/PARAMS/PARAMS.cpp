@@ -22,7 +22,7 @@ bool PARAMS::load(MASTERc& config) {
     EEPROM.get(0, config);
     config.halc.imuc.spi_port = &SPI1;
     Serial.printf("DEBUG: Loaded config. Magic = 0x%08X, Size = %u\n", config.magic, (unsigned int)sizeof(MASTERc));
-    return (config.magic == 0x4348455A);
+    return (config.magic == 0x4348455B);
 }
 
 extern volatile bool system_ready;
@@ -31,7 +31,7 @@ void PARAMS::save(const MASTERc& config) {
     system_ready = false;
     delay(50);
     MASTERc mutable_config = config;
-    mutable_config.magic = 0x4348455A;
+    mutable_config.magic = 0x4348455B;
     EEPROM.put(0, mutable_config);
     bool success = EEPROM.commit();
     Serial.printf("DEBUG: EEPROM.commit() success = %d\n", success);
