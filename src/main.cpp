@@ -6,6 +6,7 @@
 #include "CFG_APP/CFG_APP.hpp"
 #include "HAL/HAL.hpp"
 #include "GNC/GNC.hpp"
+#include "hardware/vreg.h"
 
 
 
@@ -22,8 +23,21 @@ static volatile bool shifted = false;
 volatile bool system_ready = false;
 
 void setup() {
+    #if F_CPU >= 240000000L
+    vreg_set_voltage(VREG_VOLTAGE_1_20);
+    delay(10);
+    #elif F_CPU >= 200000000L
+    vreg_set_voltage(VREG_VOLTAGE_1_15);
+    delay(10);
+    #endif
+
     Serial.begin(115200);
     delay(500);
+
+    Serial.printf("\n--- Chesapeake Flight Controller Boot ---\n");
+    Serial.printf("CPU Frequency: %lu MHz\n", rp2040.f_cpu() / 1000000UL);
+    Serial.printf("Core Voltage (approx): %s\n", 
+                  (F_CPU >= 240000000L) ? "1.20V" : (F_CPU >= 200000000L ? "1.15V" : "1.10V (stock)"));
 
     params_ptr = new PARAMS();
     if (!params_ptr->load(config_data)) {
