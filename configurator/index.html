@@ -124,6 +124,65 @@
                                 <div class="gyro-bar-center-line"></div>
                             </div>
                         </div>
+                </div>
+
+                <div class="status-section-card">
+                    <h3>RC Receiver Channels</h3>
+                    <div class="rc-channels-container" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Throttle</span>
+                                <span id="label-rc-thr" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-thr" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 0;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Roll</span>
+                                <span id="label-rc-rol" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-rol" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 0;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Pitch</span>
+                                <span id="label-rc-pit" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-pit" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 0;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Yaw</span>
+                                <span id="label-rc-yaw" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-yaw" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 0;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Arm Switch</span>
+                                <span id="label-rc-arm" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-arm" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 0;"></div>
+                            </div>
+                        </div>
+                        <div class="rc-channel-row">
+                            <div class="rc-channel-header" style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #a1a1aa; margin-bottom: 4px;">
+                                <span class="rc-channel-label">Mode Switch</span>
+                                <span id="label-rc-mod" style="font-family: monospace; font-weight: bold; color: #e4e4e7;">0%</span>
+                            </div>
+                            <div class="rc-bar-track" style="height: 10px; background-color: #09090b; border: 1px solid #202023; border-radius: 5px; overflow: hidden; position: relative;">
+                                <div id="rc-bar-mod" style="height: 100%; width: 0%; background-color: #ef4444; transition: width 0.05s ease-out; position: absolute; left: 0;"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

@@ -64,7 +64,7 @@ void DEBUG::update(const ALLb& allb_km1) {
     float nav_y_degps = allb_km1.gncb.navb.omega_body_radps.y() * 57.29577951f;
     float nav_z_degps = allb_km1.gncb.navb.omega_body_radps.z() * 57.29577951f;
 
-    Serial.printf("$DBG,ARMED,%d,MODE,%d,M1,%0.4f,M2,%0.4f,M3,%0.4f,M4,%0.4f,S1,%0.2f,S2,%0.2f,S3,%0.2f,S4,%0.2f,GX,%0.2f,GY,%0.2f,GZ,%0.2f,VBAT,%0.2f\n",
+    Serial.printf("$DBG,ARMED,%d,MODE,%d,M1,%0.4f,M2,%0.4f,M3,%0.4f,M4,%0.4f,S1,%0.2f,S2,%0.2f,S3,%0.2f,S4,%0.2f,GX,%0.2f,GY,%0.2f,GZ,%0.2f,VBAT,%0.2f,RC_THR,%0.4f,RC_ROL,%0.4f,RC_PIT,%0.4f,RC_YAW,%0.4f,RC_ARM,%0.4f,RC_MOD,%0.4f\n",
                   allb_km1.gncb.vsmb.armed,
                   static_cast<int>(allb_km1.gncb.vsmb.mode),
                   allb_km1.gncb.actb.m1_frac,
@@ -78,5 +78,11 @@ void DEBUG::update(const ALLb& allb_km1) {
                   nav_x_degps,
                   nav_y_degps,
                   nav_z_degps,
-                  allb_km1.halb.vbat_volts);
+                  allb_km1.halb.vbat_volts,
+                  allb_km1.halb.rcrxb.thr_frac,
+                  allb_km1.halb.rcrxb.roll_frac,
+                  allb_km1.halb.rcrxb.pitch_frac,
+                  allb_km1.halb.rcrxb.yaw_frac,
+                  allb_km1.halb.rcrxb.arm_frac,
+                  allb_km1.halb.rcrxb.mode_frac);
 }

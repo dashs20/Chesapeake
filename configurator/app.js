@@ -182,6 +182,14 @@ function clearBoardUI() {
             label.textContent = "0.0°/s";
         }
     });
+
+    const rcChs = ["thr", "rol", "pit", "yaw", "arm", "mod"];
+    rcChs.forEach(ch => {
+        const bar = document.getElementById("rc-bar-" + ch);
+        const label = document.getElementById("label-rc-" + ch);
+        if (bar) bar.style.width = "0%";
+        if (label) label.textContent = "0%";
+    });
 }
 
 async function writeRaw(text) {
@@ -678,7 +686,25 @@ function parseTelemetryLine(line) {
         }
     }
 
+    function updateRcBar(ch, valStr) {
+        const bar = document.getElementById("rc-bar-" + ch);
+        const label = document.getElementById("label-rc-" + ch);
+        if (!bar || !label) return;
+
+        const val = parseFloat(valStr);
+        const pct = Math.max(0.0, Math.min(1.0, val));
+        bar.style.width = (pct * 100) + "%";
+        label.textContent = Math.round(pct * 100) + "%";
+    }
+
     if (data.GX !== undefined) updateGyroBar("x", data.GX);
     if (data.GY !== undefined) updateGyroBar("y", data.GY);
     if (data.GZ !== undefined) updateGyroBar("z", data.GZ);
+
+    if (data.RC_THR !== undefined) updateRcBar("thr", data.RC_THR);
+    if (data.RC_ROL !== undefined) updateRcBar("rol", data.RC_ROL);
+    if (data.RC_PIT !== undefined) updateRcBar("pit", data.RC_PIT);
+    if (data.RC_YAW !== undefined) updateRcBar("yaw", data.RC_YAW);
+    if (data.RC_ARM !== undefined) updateRcBar("arm", data.RC_ARM);
+    if (data.RC_MOD !== undefined) updateRcBar("mod", data.RC_MOD);
 }
