@@ -39,6 +39,9 @@ def verify_generated_offsets():
         "cgx": 212,
         "cgy": 216,
         "cgz": 220,
+        "effRol": 192,
+        "effPit": 196,
+        "effYaw": 200,
         "isCalibrating": 244,
         "progress": 248
     }

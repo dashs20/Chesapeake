@@ -369,6 +369,56 @@
                 </div>
                 
                 <div class="pid-layout-container" style="display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex: 1; padding-right: 5px; margin-top: 15px;">
+                    <!-- Axis Rotation Efforts Visualization Box -->
+                    <div class="pid-controller-box" style="border: 1px solid #27272a; border-radius: 8px; padding: 20px; background-color: #09090b;">
+                        <h3 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 10px; color: #a1a1aa; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;">Axis Rotation Efforts</h3>
+                        <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                            
+                            <!-- Roll Effort -->
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #ef4444;">
+                                    <span>Roll Effort</span>
+                                    <span id="txt-effort-roll" font-family="monospace">0.0000</span>
+                                </div>
+                                <div style="width: 100%; height: 10px; background-color: #18181b; border: 1px solid #27272a; border-radius: 5px; position: relative; overflow: hidden;">
+                                    <!-- Center line -->
+                                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background-color: #3f3f46; z-index: 2;"></div>
+                                    <!-- Effort Bar -->
+                                    <div id="bar-effort-roll" style="position: absolute; height: 100%; width: 0%; left: 50%; background-color: #ef4444; border-radius: 1px;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pitch Effort -->
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #3b82f6;">
+                                    <span>Pitch Effort</span>
+                                    <span id="txt-effort-pitch" font-family="monospace">0.0000</span>
+                                </div>
+                                <div style="width: 100%; height: 10px; background-color: #18181b; border: 1px solid #27272a; border-radius: 5px; position: relative; overflow: hidden;">
+                                    <!-- Center line -->
+                                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background-color: #3f3f46; z-index: 2;"></div>
+                                    <!-- Effort Bar -->
+                                    <div id="bar-effort-pitch" style="position: absolute; height: 100%; width: 0%; left: 50%; background-color: #3b82f6; border-radius: 1px;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Yaw Effort -->
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #10b981;">
+                                    <span>Yaw Effort</span>
+                                    <span id="txt-effort-yaw" font-family="monospace">0.0000</span>
+                                </div>
+                                <div style="width: 100%; height: 10px; background-color: #18181b; border: 1px solid #27272a; border-radius: 5px; position: relative; overflow: hidden;">
+                                    <!-- Center line -->
+                                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background-color: #3f3f46; z-index: 2;"></div>
+                                    <!-- Effort Bar -->
+                                    <div id="bar-effort-yaw" style="position: absolute; height: 100%; width: 0%; left: 50%; background-color: #10b981; border-radius: 1px;"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
                     <!-- Rate Controller Box -->
                     <div class="pid-controller-box" style="border: 1px solid #27272a; border-radius: 8px; padding: 20px; background-color: #09090b;">
                         <h3 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 10px; color: #ef4444; font-size: 15px; font-weight: bold;">Rate Controller</h3>

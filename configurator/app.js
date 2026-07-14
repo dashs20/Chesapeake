@@ -173,6 +173,16 @@ function clearBoardUI() {
         if (elText) elText.textContent = "0.000000";
         if (elCircle) elCircle.style.fillOpacity = 0.1;
     });
+ 
+    ["roll", "pitch", "yaw"].forEach(axis => {
+        const elText = document.getElementById(`txt-effort-${axis}`);
+        const elBar = document.getElementById(`bar-effort-${axis}`);
+        if (elText) elText.textContent = "0.0000";
+        if (elBar) {
+            elBar.style.width = "0%";
+            elBar.style.left = "50%";
+        }
+    });
 
     const pidKeys = [
         "roll_rate_kp", "roll_rate_ki", "roll_rate_kd", "roll_rate_imax",
@@ -921,6 +931,10 @@ function parseBinaryALLb(flatbufferPayload) {
         const rcPit = getFloat32(ALLb_LAYOUT.rcPit);
         const rcYaw = getFloat32(ALLb_LAYOUT.rcYaw);
         
+        const effRol = getFloat32(ALLb_LAYOUT.effRol);
+        const effPit = getFloat32(ALLb_LAYOUT.effPit);
+        const effYaw = getFloat32(ALLb_LAYOUT.effYaw);
+        
         const armed = getUint8(ALLb_LAYOUT.armed) === 1;
         const mode = getUint32(ALLb_LAYOUT.mode);
 
@@ -1231,7 +1245,30 @@ function parseBinaryALLb(flatbufferPayload) {
     updateMotorIndicator("m2", m2);
     updateMotorIndicator("m3", m3);
     updateMotorIndicator("m4", m4);
-
+ 
+    // Update Axis Rotation Efforts
+    const updateEffortBar = (axis, val) => {
+        const elText = document.getElementById(`txt-effort-${axis}`);
+        const elBar = document.getElementById(`bar-effort-${axis}`);
+        if (elText) {
+            const sign = val >= 0 ? "+" : "";
+            elText.textContent = sign + val.toFixed(4);
+        }
+        if (elBar) {
+            const clamped = Math.max(-1.0, Math.min(1.0, val));
+            const percentWidth = Math.abs(clamped) * 50; // 0% to 50%
+            elBar.style.width = percentWidth.toFixed(2) + "%";
+            if (clamped >= 0) {
+                elBar.style.left = "50%";
+            } else {
+                elBar.style.left = (50 - percentWidth).toFixed(2) + "%";
+            }
+        }
+    };
+    updateEffortBar("roll", effRol);
+    updateEffortBar("pitch", effPit);
+    updateEffortBar("yaw", effYaw);
+ 
     return true;
     } catch (e) {
         console.error("Error parsing ALLb packet: ", e);

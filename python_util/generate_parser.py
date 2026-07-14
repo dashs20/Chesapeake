@@ -149,6 +149,9 @@ def generate_layout():
         "cgx": "gncb.guib.omega_body_radps.x",
         "cgy": "gncb.guib.omega_body_radps.y",
         "cgz": "gncb.guib.omega_body_radps.z",
+        "effRol": "gncb.ctlb.axes_effort_frac.x",
+        "effPit": "gncb.ctlb.axes_effort_frac.y",
+        "effYaw": "gncb.ctlb.axes_effort_frac.z",
         "isCalibrating": "cfg_appb.is_calibrating",
         "progress": "cfg_appb.calibration_progress_frac"
     }
