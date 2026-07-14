@@ -78,8 +78,8 @@ void load_default_config(MASTERc& config) {
     config.gncc.guic.expoc.pitch = 0.3f;
     config.gncc.guic.expoc.yaw = 0.3f;
 
-    config.gncc.allocc.min_motor_frac = 0.15f;
-    config.gncc.allocc.max_motor_frac = 1.0f;
+    config.gncc.allocc.min_motor_frac = 0.05f;
+    config.gncc.allocc.max_motor_frac = 0.66f;
     config.gncc.allocc.ser_min_ang_deg = -30.0f;
     config.gncc.allocc.ser_max_ang_deg = 30.0f;
     config.gncc.allocc.ser_default_ang_deg = 90.0f;
