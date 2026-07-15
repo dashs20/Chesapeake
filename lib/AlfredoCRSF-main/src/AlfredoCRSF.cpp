@@ -2,9 +2,10 @@
 
 AlfredoCRSF::AlfredoCRSF() :
     _crc(0xd5),
+    _rxBufPos(0),
     _lastReceive(0), _lastChannelsPacket(0), _linkIsUp(false)
 {
-     
+    memset(_channels, 0, sizeof(_channels));
 }
 
 void AlfredoCRSF::begin(Stream &port)

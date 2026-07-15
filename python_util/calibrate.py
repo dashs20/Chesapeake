@@ -148,7 +148,7 @@ def main():
     ser.write(f"set gnc_nav_imu_calc_gyro_bias_z = {avg_gz:.6f}\n".encode())
     time.sleep(0.1)
     
-    print("Saving parameters to EEPROM and rebooting board...")
+    print("Saving parameters to LittleFS and rebooting board...")
     ser.write(b"save\n")
     time.sleep(0.5)
     ser.close()

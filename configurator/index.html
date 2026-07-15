@@ -16,12 +16,14 @@
             <button class="tab-btn active" data-tab="status-panel">Status</button>
             <button class="tab-btn" data-tab="timing-panel">Timing</button>
             <button class="tab-btn" data-tab="console-panel">Console & CLI</button>
-            <button class="tab-btn" data-tab="params-panel">Parameters</button>
+            <button class="tab-btn" data-tab="pid-panel">PID Tuning</button>
             <button class="tab-btn" data-tab="test-panel">Actuator Test</button>
+            <button class="tab-btn" data-tab="allocate-panel">Allocate</button>
         </div>
         <div class="connection-controls">
             <button id="btn-connect" class="btn">Connect</button>
             <span id="connection-status" class="status-indicator disconnected">Disconnected</span>
+            <button id="btn-save" class="btn btn-success" disabled>Save</button>
             <button id="btn-reboot" class="btn" disabled>Reboot</button>
             <button id="btn-defaults" class="btn btn-warning" disabled>Reset Defaults</button>
             <button id="btn-zero-biases" class="btn btn-danger" disabled style="display: none;">Zero Biases</button>
@@ -354,23 +356,310 @@
             </div>
         </div>
 
-        <div id="params-panel" class="panel tab-content">
+        <div id="pid-panel" class="panel tab-content">
             <div class="panel-header">
-                <h2>Parameters</h2>
+                <h2>PID Tuning</h2>
                 <div class="param-actions">
-                    <input type="text" id="param-search" placeholder="Search..." disabled>
                     <button id="btn-refresh" class="btn" disabled>Reload</button>
-                    <button id="btn-save" class="btn btn-success" disabled>Save Changes</button>
                 </div>
             </div>
-            <div class="params-container">
+            <div class="params-container" style="display: flex; flex-direction: column; flex: 1; overflow: hidden;">
                 <div id="params-loading" class="params-placeholder">
                     Connect to view and edit flight parameters.
                 </div>
-                <div id="params-grid" class="params-grid" style="display: none;"></div>
+                
+                <div class="pid-layout-container" style="display: flex; flex-direction: column; gap: 20px; overflow-y: auto; flex: 1; padding-right: 5px; margin-top: 15px;">
+                    <!-- Axis Rotation Efforts Visualization Box -->
+                    <div class="pid-controller-box" style="border: 1px solid #27272a; border-radius: 8px; padding: 20px; background-color: #09090b;">
+                        <h3 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 10px; color: #a1a1aa; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;">Axis Rotation Efforts</h3>
+                        <div style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px;">
+                            
+                            <!-- Roll Effort -->
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #ef4444;">
+                                    <span>Roll Effort</span>
+                                    <span id="txt-effort-roll" font-family="monospace">0.0000</span>
+                                </div>
+                                <div style="width: 100%; height: 10px; background-color: #18181b; border: 1px solid #27272a; border-radius: 5px; position: relative; overflow: hidden;">
+                                    <!-- Center line -->
+                                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background-color: #3f3f46; z-index: 2;"></div>
+                                    <!-- Effort Bar -->
+                                    <div id="bar-effort-roll" style="position: absolute; height: 100%; width: 0%; left: 50%; background-color: #ef4444; border-radius: 1px;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Pitch Effort -->
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #3b82f6;">
+                                    <span>Pitch Effort</span>
+                                    <span id="txt-effort-pitch" font-family="monospace">0.0000</span>
+                                </div>
+                                <div style="width: 100%; height: 10px; background-color: #18181b; border: 1px solid #27272a; border-radius: 5px; position: relative; overflow: hidden;">
+                                    <!-- Center line -->
+                                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background-color: #3f3f46; z-index: 2;"></div>
+                                    <!-- Effort Bar -->
+                                    <div id="bar-effort-pitch" style="position: absolute; height: 100%; width: 0%; left: 50%; background-color: #3b82f6; border-radius: 1px;"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Yaw Effort -->
+                            <div style="display: flex; flex-direction: column; gap: 6px;">
+                                <div style="display: flex; justify-content: space-between; font-size: 11px; font-weight: bold; color: #10b981;">
+                                    <span>Yaw Effort</span>
+                                    <span id="txt-effort-yaw" font-family="monospace">0.0000</span>
+                                </div>
+                                <div style="width: 100%; height: 10px; background-color: #18181b; border: 1px solid #27272a; border-radius: 5px; position: relative; overflow: hidden;">
+                                    <!-- Center line -->
+                                    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1px; background-color: #3f3f46; z-index: 2;"></div>
+                                    <!-- Effort Bar -->
+                                    <div id="bar-effort-yaw" style="position: absolute; height: 100%; width: 0%; left: 50%; background-color: #10b981; border-radius: 1px;"></div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Rate Controller Box -->
+                    <div class="pid-controller-box" style="border: 1px solid #27272a; border-radius: 8px; padding: 20px; background-color: #09090b;">
+                        <h3 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 10px; color: #ef4444; font-size: 15px; font-weight: bold;">Rate Controller</h3>
+                        <div class="pid-axes-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 15px;">
+                            <!-- Roll Axis -->
+                            <div class="pid-axis-box" style="border: 1px solid #1c1c1e; border-radius: 6px; padding: 15px; background-color: #121214;">
+                                <h4 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 8px; font-size: 13px; font-weight: bold; color: #ef4444;">Roll Rate</h4>
+                                <div class="pid-sliders" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Kp</span>
+                                        <input type="range" id="slider-roll_rate_kp" min="0.00" max="50.00" step="0.01" style="flex: 1; accent-color: #ef4444;" disabled>
+                                        <input type="text" id="val-roll_rate_kp" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Ki</span>
+                                        <input type="range" id="slider-roll_rate_ki" min="0.00" max="50.00" step="0.01" style="flex: 1; accent-color: #ef4444;" disabled>
+                                        <input type="text" id="val-roll_rate_ki" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Kd</span>
+                                        <input type="range" id="slider-roll_rate_kd" min="0.000" max="5.000" step="0.001" style="flex: 1; accent-color: #ef4444;" disabled>
+                                        <input type="text" id="val-roll_rate_kd" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Imax</span>
+                                        <input type="range" id="slider-roll_rate_imax" min="0.00" max="10.00" step="0.01" style="flex: 1; accent-color: #ef4444;" disabled>
+                                        <input type="text" id="val-roll_rate_imax" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Pitch Axis -->
+                            <div class="pid-axis-box" style="border: 1px solid #1c1c1e; border-radius: 6px; padding: 15px; background-color: #121214;">
+                                <h4 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 8px; font-size: 13px; font-weight: bold; color: #3b82f6;">Pitch Rate</h4>
+                                <div class="pid-sliders" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Kp</span>
+                                        <input type="range" id="slider-pitch_rate_kp" min="0.00" max="50.00" step="0.01" style="flex: 1; accent-color: #3b82f6;" disabled>
+                                        <input type="text" id="val-pitch_rate_kp" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Ki</span>
+                                        <input type="range" id="slider-pitch_rate_ki" min="0.00" max="50.00" step="0.01" style="flex: 1; accent-color: #3b82f6;" disabled>
+                                        <input type="text" id="val-pitch_rate_ki" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Kd</span>
+                                        <input type="range" id="slider-pitch_rate_kd" min="0.000" max="5.000" step="0.001" style="flex: 1; accent-color: #3b82f6;" disabled>
+                                        <input type="text" id="val-pitch_rate_kd" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Imax</span>
+                                        <input type="range" id="slider-pitch_rate_imax" min="0.00" max="10.00" step="0.01" style="flex: 1; accent-color: #3b82f6;" disabled>
+                                        <input type="text" id="val-pitch_rate_imax" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Yaw Axis -->
+                            <div class="pid-axis-box" style="border: 1px solid #1c1c1e; border-radius: 6px; padding: 15px; background-color: #121214;">
+                                <h4 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 8px; font-size: 13px; font-weight: bold; color: #10b981;">Yaw Rate</h4>
+                                <div class="pid-sliders" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Kp</span>
+                                        <input type="range" id="slider-yaw_rate_kp" min="0.00" max="50.00" step="0.01" style="flex: 1; accent-color: #10b981;" disabled>
+                                        <input type="text" id="val-yaw_rate_kp" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Ki</span>
+                                        <input type="range" id="slider-yaw_rate_ki" min="0.00" max="50.00" step="0.01" style="flex: 1; accent-color: #10b981;" disabled>
+                                        <input type="text" id="val-yaw_rate_ki" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Kd</span>
+                                        <input type="range" id="slider-yaw_rate_kd" min="0.000" max="5.000" step="0.001" style="flex: 1; accent-color: #10b981;" disabled>
+                                        <input type="text" id="val-yaw_rate_kd" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Imax</span>
+                                        <input type="range" id="slider-yaw_rate_imax" min="0.00" max="10.00" step="0.01" style="flex: 1; accent-color: #10b981;" disabled>
+                                        <input type="text" id="val-yaw_rate_imax" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Angle Controller Box -->
+                    <div class="pid-controller-box" style="border: 1px solid #27272a; border-radius: 8px; padding: 20px; background-color: #09090b;">
+                        <h3 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 10px; color: #3b82f6; font-size: 15px; font-weight: bold;">Angle Controller</h3>
+                        <div class="pid-axes-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 15px;">
+                            <!-- Roll Angle -->
+                            <div class="pid-axis-box" style="border: 1px solid #1c1c1e; border-radius: 6px; padding: 15px; background-color: #121214;">
+                                <h4 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 8px; font-size: 13px; font-weight: bold; color: #ef4444;">Roll Angle</h4>
+                                <div class="pid-sliders" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Kp</span>
+                                        <input type="range" id="slider-roll_ang_kp" min="0.00" max="50.00" step="0.01" style="flex: 1; accent-color: #ef4444;" disabled>
+                                        <input type="text" id="val-roll_ang_kp" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Pitch Angle -->
+                            <div class="pid-axis-box" style="border: 1px solid #1c1c1e; border-radius: 6px; padding: 15px; background-color: #121214;">
+                                <h4 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 8px; font-size: 13px; font-weight: bold; color: #3b82f6;">Pitch Angle</h4>
+                                <div class="pid-sliders" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Kp</span>
+                                        <input type="range" id="slider-pitch_ang_kp" min="0.00" max="50.00" step="0.01" style="flex: 1; accent-color: #3b82f6;" disabled>
+                                        <input type="text" id="val-pitch_ang_kp" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Yaw Angle -->
+                            <div class="pid-axis-box" style="border: 1px solid #1c1c1e; border-radius: 6px; padding: 15px; background-color: #121214;">
+                                <h4 style="margin-top: 0; border-bottom: 1px solid #27272a; padding-bottom: 8px; font-size: 13px; font-weight: bold; color: #10b981;">Yaw Angle</h4>
+                                <div class="pid-sliders" style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                                    <div class="pid-slider-row" style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                                        <span style="font-size: 12px; font-weight: bold; width: 35px; color: #a1a1aa;">Kp</span>
+                                        <input type="range" id="slider-yaw_ang_kp" min="0.00" max="50.00" step="0.01" style="flex: 1; accent-color: #10b981;" disabled>
+                                        <input type="text" id="val-yaw_ang_kp" style="width: 65px; font-family: monospace; font-size: 11px; text-align: right; background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 3px; border-radius: 3px;" disabled>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="allocate-panel" class="panel tab-content">
+            <div class="panel-header">
+                <h2>Actuator Allocation</h2>
+                <div class="allocator-select-container" style="display: flex; align-items: center; gap: 10px;">
+                    <label for="select-allocator" style="font-size: 13px; font-weight: bold; color: #a1a1aa;">Active Allocator:</label>
+                    <select id="select-allocator" class="param-select" style="background: #09090b; border: 1px solid #27272a; color: #e4e4e7; padding: 5px; border-radius: 4px; font-size: 13px;" disabled>
+                        <option value="QUAD">Quadcopter (X)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="params-container" style="display: flex; flex-direction: column; flex: 1; overflow-y: auto; background-color: #09090b; border: 1px solid #27272a; border-radius: 8px; margin-top: 15px; padding: 20px;">
+                <div class="allocation-layout" style="display: flex; flex-direction: row; flex-wrap: wrap; gap: 30px; justify-content: center; align-items: stretch; width: 100%;">
+                    
+                    <!-- Left Box: Quadcopter X Graphic -->
+                    <div class="quad-graphic-box" style="flex: 1.5; min-width: 300px; max-width: 480px; background: #0c0c0e; border: 1px solid #1c1c1e; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <h3 style="margin-top: 0; color: #a1a1aa; font-size: 13px; font-weight: bold; border-bottom: 1px solid #1c1c1e; padding-bottom: 8px; width: 100%; text-align: center; letter-spacing: 0.5px;">VEHICLE MIXER & STATUS</h3>
+                        <div id="quad-graphic-container" style="width: 100%; display: block; position: relative;">
+                            <svg viewBox="0 0 500 500" width="100%" height="100%" style="display: block;">
+                                <!-- Diagonal Arms -->
+                                <line x1="250" y1="250" x2="130" y2="130" stroke="#27272a" stroke-width="8" stroke-linecap="round" />
+                                <line x1="250" y1="250" x2="370" y2="130" stroke="#27272a" stroke-width="8" stroke-linecap="round" />
+                                <line x1="250" y1="250" x2="130" y2="370" stroke="#27272a" stroke-width="8" stroke-linecap="round" />
+                                <line x1="250" y1="250" x2="370" y2="370" stroke="#27272a" stroke-width="8" stroke-linecap="round" />
+
+                                <!-- Center Body -->
+                                <circle cx="250" cy="250" r="35" fill="#18181b" stroke="#3f3f46" stroke-width="3" />
+                                <!-- Forward Indicator (Triangle pointing up) -->
+                                <polygon points="250,225 240,245 260,245" fill="#ef4444" />
+                                <text x="250" y="270" font-size="11" fill="#a1a1aa" text-anchor="middle" font-weight="600">FRONT</text>
+
+                                <!-- Motor 4 (Top-Left, CW) -->
+                                <g transform="translate(130, 130)">
+                                    <circle id="circle-alloc-m4" cx="0" cy="0" r="28" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-width="2.5" />
+                                    <text x="0" y="4" font-size="12" fill="#e4e4e7" font-weight="bold" text-anchor="middle">M4</text>
+                                    <!-- CW Arrow (concentric, clean) -->
+                                    <path d="M 0,-22 A 22,22 0 1,1 -22,0" fill="none" stroke="#10b981" stroke-width="2" />
+                                    <polygon points="-22,0 -26,6 -18,6" fill="#10b981" />
+                                    <text x="0" y="-35" font-size="11" fill="#10b981" font-weight="bold" text-anchor="middle">CW</text>
+                                    <!-- Actuator Command Frac Text -->
+                                    <text id="val-alloc-m4" x="0" y="-48" font-family="monospace" font-size="12" fill="#10b981" font-weight="bold" text-anchor="middle">0.000000</text>
+                                </g>
+         
+                                <!-- Motor 2 (Top-Right, CCW) -->
+                                <g transform="translate(370, 130)">
+                                    <circle id="circle-alloc-m2" cx="0" cy="0" r="28" fill="#ef4444" fill-opacity="0.1" stroke="#ef4444" stroke-width="2.5" />
+                                    <text x="0" y="4" font-size="12" fill="#e4e4e7" font-weight="bold" text-anchor="middle">M2</text>
+                                    <!-- CCW Arrow (concentric, clean) -->
+                                    <path d="M 0,-22 A 22,22 0 1,0 22,0" fill="none" stroke="#ef4444" stroke-width="2" />
+                                    <polygon points="22,0 18,6 26,6" fill="#ef4444" />
+                                    <text x="0" y="-35" font-size="11" fill="#ef4444" font-weight="bold" text-anchor="middle">CCW</text>
+                                    <!-- Actuator Command Frac Text -->
+                                    <text id="val-alloc-m2" x="0" y="-48" font-family="monospace" font-size="12" fill="#ef4444" font-weight="bold" text-anchor="middle">0.000000</text>
+                                </g>
+         
+                                <!-- Motor 3 (Bottom-Left, CCW) -->
+                                <g transform="translate(130, 370)">
+                                    <circle id="circle-alloc-m3" cx="0" cy="0" r="28" fill="#ef4444" fill-opacity="0.1" stroke="#ef4444" stroke-width="2.5" />
+                                    <text x="0" y="4" font-size="12" fill="#e4e4e7" font-weight="bold" text-anchor="middle">M3</text>
+                                    <!-- CCW Arrow (concentric, clean) -->
+                                    <path d="M 0,-22 A 22,22 0 1,0 22,0" fill="none" stroke="#ef4444" stroke-width="2" />
+                                    <polygon points="22,0 18,6 26,6" fill="#ef4444" />
+                                    <text x="0" y="-35" font-size="11" fill="#ef4444" font-weight="bold" text-anchor="middle">CCW</text>
+                                    <!-- Actuator Command Frac Text -->
+                                    <text id="val-alloc-m3" x="0" y="-48" font-family="monospace" font-size="12" fill="#ef4444" font-weight="bold" text-anchor="middle">0.000000</text>
+                                </g>
+         
+                                <!-- Motor 1 (Bottom-Right, CW) -->
+                                <g transform="translate(370, 370)">
+                                    <circle id="circle-alloc-m1" cx="0" cy="0" r="28" fill="#10b981" fill-opacity="0.1" stroke="#10b981" stroke-width="2.5" />
+                                    <text x="0" y="4" font-size="12" fill="#e4e4e7" font-weight="bold" text-anchor="middle">M1</text>
+                                    <!-- CW Arrow (concentric, clean) -->
+                                    <path d="M 0,-22 A 22,22 0 1,1 -22,0" fill="none" stroke="#10b981" stroke-width="2" />
+                                    <polygon points="-22,0 -26,6 -18,6" fill="#10b981" />
+                                    <text x="0" y="-35" font-size="11" fill="#10b981" font-weight="bold" text-anchor="middle">CW</text>
+                                    <!-- Actuator Command Frac Text -->
+                                    <text id="val-alloc-m1" x="0" y="-48" font-family="monospace" font-size="12" fill="#10b981" font-weight="bold" text-anchor="middle">0.000000</text>
+                                </g>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Box: Coordinate Frame Indicator -->
+                    <div class="coord-frame-box" style="flex: 1; min-width: 250px; max-width: 380px; background: #0c0c0e; border: 1px solid #1c1c1e; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                        <h3 style="margin-top: 0; color: #a1a1aa; font-size: 13px; font-weight: bold; border-bottom: 1px solid #1c1c1e; padding-bottom: 8px; width: 100%; text-align: center; letter-spacing: 0.5px;">BODY COORDINATE FRAME</h3>
+                        <div style="width: 100%; max-width: 240px; margin-top: 25px; margin-bottom: 20px;">
+                            <svg viewBox="0 0 160 160" width="100%" height="100%" style="display: block; margin: auto;">
+                                <!-- X and Y originate from Z at center (80, 80) -->
+                                <!-- Draw X axis (Forward) - Red pointing UP -->
+                                <line x1="80" y1="80" x2="80" y2="25" stroke="#ef4444" stroke-width="2.5" />
+                                <polygon points="80,25 76,33 84,33" fill="#ef4444" />
+                                <text x="80" y="15" font-size="11" fill="#ef4444" text-anchor="middle" font-weight="bold">X (Forward)</text>
+
+                                <!-- Draw Y axis (Right) - Green pointing RIGHT -->
+                                <line x1="80" y1="80" x2="135" y2="80" stroke="#10b981" stroke-width="2.5" />
+                                <polygon points="135,80 127,76 127,84" fill="#10b981" />
+                                <text x="142" y="84" font-size="11" fill="#10b981" text-anchor="start" font-weight="bold">Y (Right)</text>
+
+                                <!-- Z axis (Down) - Blue Circle centered at (80, 80) with Cross inside -->
+                                <circle cx="80" cy="80" r="10" fill="#0c0c0e" stroke="#3b82f6" stroke-width="2.5" />
+                                <line x1="73" y1="73" x2="87" y2="87" stroke="#3b82f6" stroke-width="2" />
+                                <line x1="87" y1="73" x2="73" y2="87" stroke="#3b82f6" stroke-width="2" />
+                                <text x="80" y="105" font-size="11" fill="#3b82f6" text-anchor="middle" font-weight="bold">Z (Down)</text>
+                            </svg>
+                        </div>
+                        <div style="margin-top: 15px; font-size: 11px; color: #a1a1aa; line-height: 1.5; text-align: center; border-top: 1px solid #1c1c1e; padding-top: 15px; width: 100%;">
+                            Standard Aerospace Body Coordinate System (Forward-Right-Down). X-axis (red) points forward, Y-axis (green) points right, and Z-axis (blue) points down into the page.
+                        </div>
+                    </div>
+                    
+                </div>
             </div>
         </div>
     </div>
+    <script src="telemetry_layout.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

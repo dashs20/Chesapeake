@@ -72,3 +72,7 @@ Correction Log:
     *   *Mistake*: Attempted to run the serial monitor, which blocks/interferes with the user's terminal environment.
     *   *Advised Solution*: You are NOT allowed to open the serial monitor anymore. When you want to test, ask the USER and they will do it.
     *   *Action*: Replaced the serial monitor lifespan rule with an absolute prohibition on using the serial monitor, and logged the correction.
+*   **Correction #4 (2026-07-14)**: Coordinate Axes Colors and Layout.
+    *   *Mistake*: Rendered coordinate axes using non-standard colors (Y as Blue, Z as Green), and positioned the indicator overlapping the main quadcopter graphics.
+    *   *Advised Solution*: Standardize 3D coordinate system indicator colors to RGB-to-XYZ mapping (X = Red, Y = Green, Z = Blue). Ensure indicators are compact and sufficiently offset to prevent overlapping any graphic components.
+    *   *Action*: Repositioned the indicator to `translate(20, 20)`, shortened the axes to 35px, updated X to Red (`#ef4444`), Y to Green (`#10b981`), Z to Blue (`#3b82f6`), and documented this correction.

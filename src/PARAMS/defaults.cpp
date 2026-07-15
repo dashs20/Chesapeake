@@ -42,21 +42,12 @@ void load_default_config(MASTERc& config) {
     config.gncc.allocator = ALLOCATOR::QUAD;
 
     config.gncc.navc.q_IMU2body = Eigen::Quaternionf(0.000000f, 0.707107f, 0.707107f, 0.000000f);
-    config.gncc.navc.imu_calc.accel_bias = Eigen::Vector3f::Zero();
-    config.gncc.navc.imu_calc.gyro_bias = Eigen::Vector3f::Zero();
+    config.gncc.navc.imu_calc.accel_bias = Eigen::Vector3f(-0.005663f, -0.001337f, 0.093921f);
+    config.gncc.navc.imu_calc.gyro_bias = Eigen::Vector3f(0.004731f, -0.025025f, 0.012595f);
     config.gncc.navc.gyro_error_degps = 5.0f;
 
-    PID_SCALARc rate_pid;
-    rate_pid.kp = 0.1f;
-    rate_pid.ki = 0.0f;
-    rate_pid.kd = 0.0f;
-    rate_pid.i_max = 0.5f;
-    rate_pid.out_min = -1.0f;
-    rate_pid.out_max = 1.0f;
-    rate_pid.dt_s = 0.0f;
-
     PID_SCALARc angle_pid;
-    angle_pid.kp = 0.1f;
+    angle_pid.kp = 5.0f;
     angle_pid.ki = 0.0f;
     angle_pid.kd = 0.0f;
     angle_pid.i_max = 0.0f;
@@ -64,10 +55,29 @@ void load_default_config(MASTERc& config) {
     angle_pid.out_max = 1.0f;
     angle_pid.dt_s = 0.0f;
 
+    PID_SCALARc rate_pid;
+    rate_pid.kp = 15.0f;
+    rate_pid.ki = 0.10f;
+    rate_pid.kd = 0.0f;
+    rate_pid.i_max = 2.0f;
+    rate_pid.out_min = -1.0f;
+    rate_pid.out_max = 1.0f;
+    rate_pid.dt_s = 0.0f;
+
+    PID_SCALARc yaw_rate_pid;
+    yaw_rate_pid.kp = 12.0f;
+    yaw_rate_pid.ki = 0.10f;
+    yaw_rate_pid.kd = 0.0f;
+    yaw_rate_pid.i_max = 10.0f;
+    yaw_rate_pid.out_min = -1.0f;
+    yaw_rate_pid.out_max = 1.0f;
+    yaw_rate_pid.dt_s = 0.0f;
+
     config.gncc.ctlc.angle_loop_hz = 500;
     config.gncc.ctlc.rate.roll = rate_pid;
     config.gncc.ctlc.rate.pitch = rate_pid;
-    config.gncc.ctlc.rate.yaw = rate_pid;
+
+    config.gncc.ctlc.rate.yaw = yaw_rate_pid;
     config.gncc.ctlc.angle.roll = angle_pid;
     config.gncc.ctlc.angle.pitch = angle_pid;
     config.gncc.ctlc.angle.yaw = angle_pid;

@@ -20,6 +20,13 @@ void send_packet(const T& data, Stream* port) {
     builder.Finish(flatbuffers::Offset<void>(end));
 
     uint16_t fb_len = builder.GetSize();
+
+    if (port == &Serial) {
+        if (!Serial) {
+            return;
+        }
+    }
+
     uint8_t header[5];
     header[0] = 0xAA;
     header[1] = 0xBB;

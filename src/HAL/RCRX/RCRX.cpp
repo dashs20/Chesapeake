@@ -5,21 +5,8 @@ RCRX::RCRX(RCRXc rcrxc, uint32_t looprate_hz)
     : rcrxc(rcrxc), 
       dt_s(1.0f / static_cast<float>(looprate_hz)), 
       telemetry_dt_s(1.0f / rcrxc.telemetry_hz), 
-      time_accumulator_s(0.0f) {
-    if (rcrxc.uart_id == 1) {
-        Serial1.setTX(0);
-        Serial1.setRX(1);
-        Serial1.begin(420000);
-        port = &Serial1;
-    } else if (rcrxc.uart_id == 2) {
-        // Serial2 defaults or custom pins if needed
-        Serial2.begin(420000);
-        port = &Serial2;
-    }
-
-    if (port != nullptr) {
-        crsf.begin(*port);
-    }
+      time_accumulator_s(0.0f),
+      is_initialized(false) {
 }
 
 RCRX::~RCRX() {}
@@ -32,6 +19,29 @@ RCRXb RCRX::update(const HALb& halb) {
     rcrxb.roll_frac = 0.0f;
     rcrxb.pitch_frac = 0.0f;
     rcrxb.yaw_frac = 0.0f;
+
+    if (!is_initialized) {
+        if (rcrxc.uart_id == 1) {
+            Serial1.setTX(0);
+            Serial1.setRX(1);
+            Serial1.begin(420000);
+            gpio_pull_up(1); // Fix RP2350-E9 erratum: disable pull-down and enable pull-up on RX pin
+            port = &Serial1;
+        } else if (rcrxc.uart_id == 2) {
+            // Serial2 defaults or custom pins if needed
+            Serial2.begin(420000);
+            port = &Serial2;
+        }
+
+        if (port != nullptr) {
+            // Flush any boot-time noise or startup garbage
+            while (port->available() > 0) {
+                port->read();
+            }
+            crsf.begin(*port);
+        }
+        is_initialized = true;
+    }
 
     if (port == nullptr) {
         return rcrxb;
