@@ -18,4 +18,5 @@ private:
     float dt_s;
     float telemetry_dt_s;
     float time_accumulator_s;
+    bool is_initialized = false;
 };

@@ -7,6 +7,7 @@
 #include "HAL/HAL.hpp"
 #include "GNC/GNC.hpp"
 #include "hardware/vreg.h"
+#include "hardware/clocks.h"
 
 
 
@@ -23,18 +24,21 @@ static volatile bool shifted = false;
 volatile bool system_ready = false;
 
 void setup() {
-    // Delay 2 seconds on boot to let the ELRS receiver and power rails fully stabilize
-    delay(2000);
+    // Delay 5 seconds on boot to let the ELRS receiver and power rails fully stabilize
+    delay(5000);
 
     #if F_CPU >= 240000000L
     vreg_set_voltage(VREG_VOLTAGE_1_20);
     delay(10);
+    set_sys_clock_khz(F_CPU / 1000, true);
     #elif F_CPU >= 200000000L
     vreg_set_voltage(VREG_VOLTAGE_1_15);
     delay(10);
+    set_sys_clock_khz(F_CPU / 1000, true);
     #endif
 
     Serial.begin(115200);
+    Serial.ignoreFlowControl(true);
     delay(500);
 
     Serial.printf("\n--- Chesapeake Flight Controller Boot ---\n");
@@ -175,6 +179,7 @@ void __not_in_flash_func(core1_halt_loop)() {
 }
 
 void setup1() {
+    delay(5000);
 }
 
 void loop1() {
