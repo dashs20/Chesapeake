@@ -16,7 +16,7 @@ graph TD
     end
 
     subgraph Parameters [PARAMS Module]
-        P_CLI -->|EEPROM Read/Write| EEPROM[(EEPROM Flash)]
+        P_CLI -->|LittleFS Read/Write| LFS[(LittleFS Flash)]
         P_CLI -->|Tuning & Config| M_CFG[MASTERc Structure]
     end
 
@@ -188,9 +188,8 @@ Telemetry packetization is built on FlatBuffers to achieve high speed and cross-
 
 ## 6. Parameter Management & CLI Commands
 
-Chesapeake includes an interactive Serial Command Line Interface (CLI) operating at 115200 baud. Parameters can be modified in RAM and committed to the RP2350 emulated EEPROM flash.
-*   **EEPROM Persistence**: Parameters are committed to a flash-emulated EEPROM storage space of size `sizeof(MASTERc)`.
-*   **Magic Byte Validation**: Valid configuration blocks are recognized by the magic word `0x43484558` ("CHEX").
+Chesapeake includes an interactive Serial Command Line Interface (CLI) operating at 115200 baud. Parameters can be modified in RAM and committed to the RP2350 LittleFS filesystem.
+*   **LittleFS Persistence**: Parameters are committed to a text file `/config_v2.txt` stored in a 256 KB LittleFS filesystem partition.
 
 The following commands are available:
 *   `help` - Show options.
@@ -198,7 +197,7 @@ The following commands are available:
 *   `get <param>` - Fetch the current value of a specific parameter.
 *   `set <param> = <value>` - Adjust a parameter value in RAM (ensure no spaces around the `=` sign).
 *   `defaults` - Load default factory parameters into RAM.
-*   `save` - Commit RAM parameters to EEPROM and reboot the flight controller.
+*   `save` - Commit RAM parameters to `/config_v2.txt` on LittleFS and reboot the flight controller.
 *   `calibrate` - Request IMU bias calibration (keep the board flat and still).
 *   `reboot` - Perform a system reboot (`rp2040.reboot()`).
 *   `act_test <enabled> <m1> <m2> <m3> <m4> <s1> <s2> <s3> <s4> <led>` - Interactive command to override motor fractions (0.0 to 1.0), servo positions (degrees), and LED blinks for bench testing actuators.
@@ -233,7 +232,7 @@ Chesapeake includes a browser-based Web Serial GUI configurator located in the `
 ### How to Use:
 1. Open [configurator/index.html](file:///C:/Users/dashs/OneDrive/Documents/PlatformIO/Projects/Chesapeake/configurator/index.html) in a compatible browser.
 2. Click **Connect** and select the flight controller's USB COM port.
-3. Once connected, parameters will auto-populate in the grid. Make changes and click **Save Changes** to commit them to EEPROM.
+3. Once connected, parameters will auto-populate in the grid. Make changes and click **Save Changes** to commit them to LittleFS.
 
 ---
 
