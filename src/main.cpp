@@ -24,8 +24,8 @@ static volatile bool shifted = false;
 volatile bool system_ready = false;
 
 void setup() {
-    // Delay 5 seconds on boot to let the ELRS receiver and power rails fully stabilize
-    delay(5000);
+    // Delay 1 seconds on boot to let the ELRS receiver and power rails fully stabilize
+    delay(1000);
 
     #if F_CPU >= 240000000L
     vreg_set_voltage(VREG_VOLTAGE_1_20);
@@ -179,7 +179,7 @@ void __not_in_flash_func(core1_halt_loop)() {
 }
 
 void setup1() {
-    delay(5000);
+    delay(1000);
 }
 
 void loop1() {
