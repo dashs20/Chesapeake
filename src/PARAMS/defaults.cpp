@@ -59,7 +59,7 @@ void load_default_config(MASTERc& config) {
     rate_pid.kp = 15.0f;
     rate_pid.ki = 0.10f;
     rate_pid.kd = 0.0f;
-    rate_pid.i_max = 0.5f;
+    rate_pid.i_max = 2.0f;
     rate_pid.out_min = -1.0f;
     rate_pid.out_max = 1.0f;
     rate_pid.dt_s = 0.0f;
@@ -68,7 +68,7 @@ void load_default_config(MASTERc& config) {
     yaw_rate_pid.kp = 12.0f;
     yaw_rate_pid.ki = 0.10f;
     yaw_rate_pid.kd = 0.0f;
-    yaw_rate_pid.i_max = 1.0f;
+    yaw_rate_pid.i_max = 10.0f;
     yaw_rate_pid.out_min = -1.0f;
     yaw_rate_pid.out_max = 1.0f;
     yaw_rate_pid.dt_s = 0.0f;
